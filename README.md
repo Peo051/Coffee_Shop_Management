@@ -342,5 +342,5 @@ Mở file `index.html` bằng trình duyệt web (Chrome / Edge / Firefox).
 
 ## 📄 Bản quyền
 
-© 2026 **GIBOR COFFEE**. Đồ án học thuật — Team 3, Kỳ 4 (2025–2026).  
+© 2026 **GIBOR COFFEE**. Đồ án học thuật, Kỳ 4 (2025–2026).  
 Trường Đại học Công Thương TP. Hồ Chí Minh (HUIT).
