@@ -377,6 +377,53 @@ body.dark .option-label {
   transform: translateY(0);
 }
 
+/* ===== DARK THEME POPUP ===== */
+body.dark .popup-box {
+  background: #1f1f1f;
+  color: #f4e9de;
+}
+
+body.dark .popup-desc {
+  color: #c4b5a6;
+}
+
+body.dark .size-btn,
+body.dark .option-btn,
+body.dark .topping-btn,
+body.dark .qty-btn {
+  background: #2a2a2a;
+  border-color: #5b4638;
+  color: #f4e9de;
+}
+
+body.dark .size-btn.active,
+body.dark .option-btn.active,
+body.dark .topping-btn.active {
+  background: var(--accent, #d4a373);
+  border-color: var(--accent, #d4a373);
+  color: #2d1b13;
+}
+
+body.dark .popup-note {
+  background: #252525;
+  border-color: #5b4638;
+  color: #f4e9de;
+}
+
+body.dark .popup-note::placeholder {
+  color: #9f8a78;
+}
+
+body.dark .popup-quantity .option-label,
+body.dark .qty-value {
+  color: var(--accent, #d4a373);
+}
+
+body.dark .add-cart {
+  background: var(--accent, #d4a373);
+  color: #2d1b13;
+}
+
 /* ===== TOAST THÔNG BÁO ===== */
 .popup-toast {
   position: fixed;

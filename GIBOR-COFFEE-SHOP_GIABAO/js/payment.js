@@ -58,6 +58,21 @@ function renderOrderSummary() {
   let html = "";
   cart.forEach((item) => {
     const total = item.price * item.quantity;
+    const comboItems =
+      Array.isArray(item.comboItems) && item.comboItems.length > 0
+        ? item.comboItems
+        : typeof window.getComboItemsByName === "function"
+          ? window.getComboItemsByName(item.name)
+          : [];
+    const metaParts = [];
+    if (comboItems.length > 0) metaParts.push("Gồm: " + comboItems.join(" + "));
+    if (item.size && item.size !== "Mặc định") metaParts.push("Size " + item.size);
+    if (item.sugar) metaParts.push("Đường " + item.sugar);
+    if (item.ice) metaParts.push("Đá " + item.ice);
+    if (item.toppings && item.toppings.length > 0) {
+      metaParts.push("Topping: " + item.toppings.map((t) => t.name).join(", "));
+    }
+
     html += `
       <div class="order-item">
         <div class="order-item-img">
@@ -66,7 +81,7 @@ function renderOrderSummary() {
         </div>
         <div class="order-item-info">
           <div class="order-item-name">${item.name}</div>
-          <div class="order-item-meta">${item.size === "Mặc định" ? "" : "Size " + item.size}${item.sugar ? " | Đường " + item.sugar : ""}${item.ice ? " | Đá " + item.ice : ""}${item.toppings && item.toppings.length > 0 ? " | Topping: " + item.toppings.map(t => t.name).join(", ") : ""}</div>
+          ${metaParts.length > 0 ? `<div class="order-item-meta">${metaParts.join(" | ")}</div>` : ""}
           ${item.note ? `<div class="order-item-note">Ghi chú: ${item.note}</div>` : ""}
         </div>
         <div class="order-item-price">${formatPrice(total)}</div>
@@ -204,7 +219,11 @@ function initPoints() {
   if (!section) return;
 
   // Chỉ hiện khi đã đăng nhập
-  if (typeof UserManager === "undefined" || !UserManager.isLoggedIn() || typeof PointsManager === "undefined") {
+  if (
+    typeof UserManager === "undefined" ||
+    !UserManager.isLoggedIn() ||
+    typeof PointsManager === "undefined"
+  ) {
     section.style.display = "none";
     return;
   }
@@ -214,7 +233,8 @@ function initPoints() {
   // Hiển điểm hiện tại
   const currentPoints = PointsManager.getPoints();
   const currentEl = document.getElementById("pointsCurrent");
-  if (currentEl) currentEl.textContent = currentPoints.toLocaleString("vi-VN") + " điểm";
+  if (currentEl)
+    currentEl.textContent = currentPoints.toLocaleString("vi-VN") + " điểm";
 
   // Set max cho input
   const input = document.getElementById("pointsInput");
@@ -250,7 +270,11 @@ function applyPoints() {
   }
 
   if (points > currentPoints) {
-    showToast("Bạn không đủ điểm! Hiện có: " + currentPoints.toLocaleString("vi-VN") + " điểm.");
+    showToast(
+      "Bạn không đủ điểm! Hiện có: " +
+        currentPoints.toLocaleString("vi-VN") +
+        " điểm.",
+    );
     input.value = currentPoints;
     return;
   }
@@ -278,7 +302,9 @@ function applyPoints() {
     usedPoints = 0;
     showToast("Đã hủy sử dụng điểm.");
   } else {
-    showToast(`Áp dụng ${usedPoints.toLocaleString("vi-VN")} điểm, giảm ${formatPrice(pointsDiscount)}!`);
+    showToast(
+      `Áp dụng ${usedPoints.toLocaleString("vi-VN")} điểm, giảm ${formatPrice(pointsDiscount)}!`,
+    );
   }
 
   updateTotals(subtotal);
@@ -313,8 +339,7 @@ function selectPayment(method) {
     if (bankInfo) bankInfo.style.display = "block";
     // Đổi text nút thành "ĐẶ HÀNG"
     if (btnPlace)
-      btnPlace.innerHTML =
-        '<i class="fa-solid fa-credit-card"></i> ĐẶT HÀNG';
+      btnPlace.innerHTML = '<i class="fa-solid fa-credit-card"></i> ĐẶT HÀNG';
     // Cập nhật QR code với số tiền hiện tại
     updateQRCode();
   } else {
@@ -689,10 +714,14 @@ async function placeOrder() {
     let fullAddress = "";
     if (selectedShipping === "delivery") {
       const streetAddr = ckAddressEl ? ckAddressEl.value.trim() : "";
-      const wardName = ckWardEl ? ckWardEl.options[ckWardEl.selectedIndex]?.text : "";
-      const cityName = ckCityEl ? ckCityEl.options[ckCityEl.selectedIndex]?.text : "";
+      const wardName = ckWardEl
+        ? ckWardEl.options[ckWardEl.selectedIndex]?.text
+        : "";
+      const cityName = ckCityEl
+        ? ckCityEl.options[ckCityEl.selectedIndex]?.text
+        : "";
       const parts = [streetAddr, wardName, cityName].filter(
-        (p) => p && p !== "--- Chọn ---"
+        (p) => p && p !== "--- Chọn ---",
       );
       fullAddress = parts.join(", ");
     }
@@ -714,6 +743,7 @@ async function placeOrder() {
         ice: i.ice || "",
         toppings: i.toppings || [],
         note: i.note || "",
+        comboItems: i.comboItems || [],
       })),
       total: Math.max(0, subtotal - currentDiscount - pointsDiscount),
       subtotal: subtotal,
@@ -737,7 +767,10 @@ async function placeOrder() {
         PointsManager.usePoints(usedPoints);
       }
       // Cộng điểm mới (chỉ tính trên tiền hàng, không tính phí ship)
-      const productOnly = Math.max(0, subtotal - currentDiscount - pointsDiscount);
+      const productOnly = Math.max(
+        0,
+        subtotal - currentDiscount - pointsDiscount,
+      );
       const earnedPoints = PointsManager.earnPoints(productOnly);
     }
   }
@@ -1174,7 +1207,8 @@ function makeSearchable(selectId) {
   // Nút hiển thị giá trị đã chọn
   const display = document.createElement("div");
   display.className = "ss-display";
-  display.innerHTML = '<span class="ss-display-text">--- Chọn ---</span><i class="fa-solid fa-magnifying-glass-location ss-arrow"></i>';
+  display.innerHTML =
+    '<span class="ss-display-text">--- Chọn ---</span><i class="fa-solid fa-magnifying-glass-location ss-arrow"></i>';
 
   // Dropdown
   const dropdown = document.createElement("div");
@@ -1233,7 +1267,9 @@ function makeSearchable(selectId) {
 function refreshSearchable(selectId) {
   const select = document.getElementById(selectId);
   if (!select) return;
-  const wrapper = select.parentElement.querySelector('.ss-wrapper[data-for="' + selectId + '"]');
+  const wrapper = select.parentElement.querySelector(
+    '.ss-wrapper[data-for="' + selectId + '"]',
+  );
   if (!wrapper) return;
 
   const optList = wrapper.querySelector(".ss-options");
@@ -1257,7 +1293,9 @@ function refreshSearchable(selectId) {
       wrapper.querySelector(".ss-display").classList.add("selected");
       wrapper.classList.remove("open");
       // Highlight
-      optList.querySelectorAll(".ss-option").forEach((o) => o.classList.remove("active"));
+      optList
+        .querySelectorAll(".ss-option")
+        .forEach((o) => o.classList.remove("active"));
       div.classList.add("active");
     });
 

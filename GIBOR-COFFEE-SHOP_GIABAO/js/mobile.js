@@ -11,6 +11,30 @@
   const path = location.pathname.replace(/\\/g, '/');
   const page = path.split('/').pop() || 'index.html';
 
+  function safeParseJSON(value, fallback) {
+    try {
+      return JSON.parse(value);
+    } catch (e) {
+      return fallback;
+    }
+  }
+
+  function getCurrentPageKey() {
+    if (['login.html', 'register.html'].includes(page)) return 'account';
+    return page;
+  }
+
+  function setBodyScrollLock(locked) {
+    document.body.classList.toggle('m-lock-scroll', !!locked);
+  }
+
+  function syncHeaderHeightVar() {
+    const header = document.querySelector('.header');
+    if (!header) return;
+    const height = Math.ceil(header.getBoundingClientRect().height || 56);
+    document.documentElement.style.setProperty('--m-header-h', `${height}px`);
+  }
+
   // ===== UTILITY =====
   function isMobile() {
     return window.innerWidth <= MOBILE_BP;
@@ -26,7 +50,7 @@
     overlay.className = 'm-drawer-overlay';
 
     const isLoggedIn = localStorage.getItem('loggedInUser');
-    const user = isLoggedIn ? JSON.parse(isLoggedIn) : null;
+    const user = isLoggedIn ? safeParseJSON(isLoggedIn, null) : null;
     const authLabel = user ? `Xin chào, ${user.firstName || 'User'}` : 'Đăng nhập';
     const authHref = user ? '#' : 'login.html';
     const authId = user ? 'id="m-drawer-logout"' : '';
@@ -53,16 +77,34 @@
     document.body.appendChild(overlay);
 
     // Highlight current page
+    const currentPageKey = getCurrentPageKey();
     overlay.querySelectorAll('.m-drawer-nav a').forEach(a => {
-      if (a.dataset.page === page) a.classList.add('active');
+      if (a.dataset.page === currentPageKey) a.classList.add('active');
     });
 
     // Close handlers
-    const closeDrawer = () => overlay.classList.remove('open');
+    const setDrawerState = (open) => {
+      overlay.classList.toggle('open', open);
+      setBodyScrollLock(open && isMobile());
+    };
+    const closeDrawer = () => setDrawerState(false);
     overlay.querySelector('.m-drawer-close').addEventListener('click', closeDrawer);
     overlay.addEventListener('click', function (e) {
       if (e.target === overlay) closeDrawer();
     });
+    overlay.querySelectorAll('.m-drawer-nav a').forEach((a) => {
+      a.addEventListener('click', closeDrawer);
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') closeDrawer();
+    });
+
+    // Handle viewport changes: always close drawer when leaving mobile layout.
+    window.addEventListener('resize', function () {
+      if (!isMobile()) closeDrawer();
+    });
+
+    window.setMobileDrawerState = setDrawerState;
 
     // Logout handler
     const logoutBtn = document.getElementById('m-drawer-logout');
@@ -87,7 +129,13 @@
       e.preventDefault();
       e.stopPropagation();
       const overlay = document.getElementById('m-drawer-overlay');
-      if (overlay) overlay.classList.toggle('open');
+      if (!overlay) return;
+      const open = !overlay.classList.contains('open');
+      if (typeof window.setMobileDrawerState === 'function') {
+        window.setMobileDrawerState(open);
+      } else {
+        overlay.classList.toggle('open', open);
+      }
     });
   }
 
@@ -110,7 +158,7 @@
     `;
 
     // Detect logged-in user for Account btn
-    const user = localStorage.getItem('loggedInUser');
+    const user = safeParseJSON(localStorage.getItem('loggedInUser'), null);
     if (user) {
       const accLink = nav.querySelector('[data-page="login.html"]');
       if (accLink) {
@@ -127,8 +175,9 @@
     }
 
     // Mark active
+    const currentPageKey = getCurrentPageKey();
     nav.querySelectorAll('a[data-page]').forEach(a => {
-      if (a.dataset.page === page) a.classList.add('active');
+      if (a.dataset.page === currentPageKey) a.classList.add('active');
     });
 
     document.body.appendChild(nav);
@@ -136,7 +185,7 @@
 
   function getCartCount() {
     try {
-      const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+      const cart = safeParseJSON(localStorage.getItem('cart') || '[]', []);
       return cart.reduce((sum, i) => sum + (i.quantity || 1), 0);
     } catch (e) {
       return 0;
@@ -215,7 +264,7 @@
         // Scroll to section
         const headerH = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--m-header-h')) || 56;
         const tabsH = tabs.offsetHeight;
-        const y = sec.getBoundingClientRect().top + window.scrollY - headerH - tabsH - 4;
+        const y = sec.getBoundingClientRect().top + window.scrollY - headerH - tabsH - 14;
         window.scrollTo({ top: y, behavior: 'smooth' });
       });
       tabs.appendChild(btn);
@@ -225,6 +274,18 @@
     const menuContainer = document.querySelector('.menu-container') || document.querySelector('.menu-section')?.parentElement;
     if (menuContainer) {
       menuContainer.insertBefore(tabs, menuContainer.firstChild);
+
+      const syncTabsOffset = () => {
+        if (!isMobile()) {
+          menuContainer.style.removeProperty('padding-top');
+          return;
+        }
+        syncHeaderHeightVar();
+        menuContainer.style.paddingTop = `${tabs.offsetHeight + 18}px`;
+      };
+
+      syncTabsOffset();
+      window.addEventListener('resize', syncTabsOffset);
     }
 
     // Update active tab on scroll
@@ -254,13 +315,45 @@
     });
   }
 
+  // ===== MEDIA PERFORMANCE =====
+  function optimizeImagesForMobile() {
+    if (!isMobile()) return;
+    const images = document.querySelectorAll('img');
+    images.forEach((img, idx) => {
+      if (!img.hasAttribute('decoding')) {
+        img.setAttribute('decoding', 'async');
+      }
+      // Keep first few visuals eager for perceived speed; defer the rest.
+      if (idx > 2 && !img.hasAttribute('loading')) {
+        img.setAttribute('loading', 'lazy');
+      }
+      if (idx > 2 && !img.hasAttribute('fetchpriority')) {
+        img.setAttribute('fetchpriority', 'low');
+      }
+    });
+  }
+
   // ===== INIT =====
   function init() {
+    syncHeaderHeightVar();
+    window.addEventListener('resize', syncHeaderHeightVar);
+    window.addEventListener('orientationchange', syncHeaderHeightVar);
+    window.addEventListener('pageshow', syncHeaderHeightVar);
+
     initDrawer();
     bindMenuToggle();
     initBottomNav();
     initFooterAccordion();
     initCategoryTabs();
+    optimizeImagesForMobile();
+
+    // Keep cart badge fresh when coming back from background / navigation.
+    ['focus', 'pageshow', 'visibilitychange', 'storage'].forEach((evt) => {
+      window.addEventListener(evt, () => {
+        if (evt === 'visibilitychange' && document.hidden) return;
+        window.updateBottomNavBadge();
+      });
+    });
   }
 
   if (document.readyState === 'loading') {
