@@ -28,6 +28,23 @@
     document.body.classList.toggle('m-lock-scroll', !!locked);
   }
 
+  function cleanupDesktopArtifacts() {
+    const overlay = document.getElementById('m-drawer-overlay');
+    if (overlay) overlay.remove();
+
+    const bottomNav = document.getElementById('m-bottom-nav');
+    if (bottomNav) bottomNav.remove();
+
+    const tabs = document.querySelector('.m-category-tabs');
+    if (tabs) tabs.remove();
+
+    const menuContainer = document.querySelector('.menu-container') || document.querySelector('.menu-section')?.parentElement;
+    if (menuContainer) menuContainer.style.removeProperty('padding-top');
+
+    setBodyScrollLock(false);
+    window.setMobileDrawerState = null;
+  }
+
   function syncHeaderHeightVar() {
     const header = document.querySelector('.header');
     if (!header) return;
@@ -42,6 +59,7 @@
 
   // ===== DRAWER =====
   function initDrawer() {
+    if (!isMobile()) return;
     // Create drawer overlay + drawer if not exists
     if (document.getElementById('m-drawer-overlay')) return;
 
@@ -125,7 +143,10 @@
   function bindMenuToggle() {
     const toggle = document.querySelector('.menu-toggle, #menuToggle');
     if (!toggle) return;
+    if (toggle.dataset.mDrawerBound === '1') return;
+    toggle.dataset.mDrawerBound = '1';
     toggle.addEventListener('click', function (e) {
+      if (!isMobile()) return;
       e.preventDefault();
       e.stopPropagation();
       const overlay = document.getElementById('m-drawer-overlay');
@@ -141,6 +162,7 @@
 
   // ===== BOTTOM NAVIGATION =====
   function initBottomNav() {
+    if (!isMobile()) return;
     if (document.getElementById('m-bottom-nav')) return;
 
     const cartCount = getCartCount();
@@ -233,6 +255,7 @@
 
   // ===== CATEGORY TABS (menu page) =====
   function initCategoryTabs() {
+    if (!isMobile()) return;
     if (page !== 'menu.html') return;
     if (document.querySelector('.m-category-tabs')) return;
 
@@ -335,17 +358,40 @@
 
   // ===== INIT =====
   function init() {
+    let mobileMode = isMobile();
+
     syncHeaderHeightVar();
     window.addEventListener('resize', syncHeaderHeightVar);
     window.addEventListener('orientationchange', syncHeaderHeightVar);
     window.addEventListener('pageshow', syncHeaderHeightVar);
 
-    initDrawer();
     bindMenuToggle();
-    initBottomNav();
-    initFooterAccordion();
-    initCategoryTabs();
-    optimizeImagesForMobile();
+
+    if (mobileMode) {
+      initDrawer();
+      initBottomNav();
+      initFooterAccordion();
+      initCategoryTabs();
+      optimizeImagesForMobile();
+    } else {
+      cleanupDesktopArtifacts();
+    }
+
+    window.addEventListener('resize', () => {
+      const nextMobileMode = isMobile();
+      if (nextMobileMode === mobileMode) return;
+      mobileMode = nextMobileMode;
+
+      if (mobileMode) {
+        initDrawer();
+        initBottomNav();
+        initFooterAccordion();
+        initCategoryTabs();
+        optimizeImagesForMobile();
+      } else {
+        cleanupDesktopArtifacts();
+      }
+    });
 
     // Keep cart badge fresh when coming back from background / navigation.
     ['focus', 'pageshow', 'visibilitychange', 'storage'].forEach((evt) => {
