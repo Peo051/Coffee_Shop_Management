@@ -35,6 +35,7 @@ body.dark {
     opacity: 1;
   }
 }
+
 .contact-page {
   padding: 120px 5%;
   background: linear-gradient(180deg, var(--primary) 0%, var() 100%);
@@ -258,7 +259,6 @@ body.dark {
   }
 }
 
-}
 @media (max-width: 768px) {
   .contact-page {
     padding: 60px 4%;
