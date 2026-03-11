@@ -599,7 +599,7 @@ body.dark .checkout-item-price {
     font-weight: 700;
     font-size: 12px;
     text-transform: uppercase;
-    color: var(--accent);
+    color: #b68357;
     display: block;
     margin-bottom: 4px;
   }
@@ -638,6 +638,31 @@ body.dark .checkout-item-price {
   .cart-product img {
     width: 50px;
     height: 50px;
+  }
+
+  .cart-product-name {
+    color: #4b2c20;
+    font-weight: 700;
+  }
+
+  .cart-product-options {
+    color: #7b6253;
+    opacity: 1;
+  }
+
+  .cart-product-note {
+    color: #7b6253;
+    opacity: 1;
+  }
+
+  body.dark .cart-product-name {
+    color: #4b2c20;
+  }
+
+  body.dark .cart-product-options,
+  body.dark .cart-product-note {
+    color: #7b6253;
+    opacity: 1;
   }
 
   .cart-summary {
