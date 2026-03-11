@@ -523,8 +523,8 @@ body.dark .add-cart {
 /* Khung chứa banner */
 .popup-content-ads {
   background: white;
-  width: 50%;
-  max-width: 75%;
+  width: 85%;
+  max-width: 95%;
   border-radius: 20px;
   overflow: hidden;
   position: relative;
