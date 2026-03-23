@@ -20,9 +20,33 @@
     }
   }
 
+  function getActiveUser() {
+    if (typeof UserManager !== 'undefined' && typeof UserManager.getCurrentUser === 'function') {
+      return UserManager.getCurrentUser();
+    }
+    const currentUser = safeParseJSON(localStorage.getItem('gibor_current_user'), null);
+    if (currentUser) return currentUser;
+    return safeParseJSON(localStorage.getItem('loggedInUser'), null);
+  }
+
   function getCurrentPageKey() {
     if (['login.html', 'register.html'].includes(page)) return 'account';
     return page;
+  }
+
+  function openAccountPanel() {
+    if (typeof showProfilePopup === 'function') {
+      showProfilePopup();
+      return;
+    }
+
+    const authLink = document.getElementById('authLink');
+    if (authLink) {
+      authLink.click();
+      return;
+    }
+
+    location.href = 'login.html';
   }
 
   function setBodyScrollLock(locked) {
@@ -91,11 +115,10 @@
     overlay.id = 'm-drawer-overlay';
     overlay.className = 'm-drawer-overlay';
 
-    const isLoggedIn = localStorage.getItem('loggedInUser');
-    const user = isLoggedIn ? safeParseJSON(isLoggedIn, null) : null;
-    const authLabel = user ? `Xin chào, ${user.firstName || 'User'}` : 'Đăng nhập';
-    const authHref = user ? '#' : 'login.html';
-    const authId = user ? 'id="m-drawer-logout"' : '';
+    const user = getActiveUser();
+    const authLabel = user ? 'Tài khoản của tôi' : 'Đăng nhập';
+    const authHref = '#';
+    const authId = user ? 'id="m-drawer-account"' : '';
 
     overlay.innerHTML = `
       <div class="m-drawer">
@@ -149,16 +172,21 @@
 
     window.setMobileDrawerState = setDrawerState;
 
-    // Logout handler
-    const logoutBtn = document.getElementById('m-drawer-logout');
-    if (logoutBtn) {
-      logoutBtn.addEventListener('click', function (e) {
+    // Account/login handler
+    const accountBtn = document.getElementById('m-drawer-account');
+    if (accountBtn) {
+      accountBtn.addEventListener('click', function (e) {
         e.preventDefault();
-        if (typeof UserManager !== 'undefined') {
-          UserManager.logout();
-        } else {
-          localStorage.removeItem('loggedInUser');
-        }
+        closeDrawer();
+        openAccountPanel();
+      });
+    }
+
+    const authBtn = overlay.querySelector('.m-drawer-auth');
+    if (authBtn && !user) {
+      authBtn.addEventListener('click', function (e) {
+        e.preventDefault();
+        closeDrawer();
         location.href = 'login.html';
       });
     }
@@ -208,7 +236,7 @@
     `;
 
     // Detect logged-in user for Account btn
-    const user = safeParseJSON(localStorage.getItem('loggedInUser'), null);
+    const user = getActiveUser();
     if (user) {
       const accLink = nav.querySelector('[data-page="login.html"]');
       if (accLink) {
@@ -217,9 +245,7 @@
         accLink.querySelector('span').textContent = 'Tài khoản';
         accLink.addEventListener('click', function (e) {
           e.preventDefault();
-          // Trigger existing auth dropdown
-          const authLink = document.getElementById('authLink');
-          if (authLink) authLink.click();
+          openAccountPanel();
         });
       }
     }
