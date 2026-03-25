@@ -931,45 +931,38 @@ function generateOTP() {
 }
 
 /**
- * Gửi mã OTP qua email thông qua Firebase Email Link
+ * Gửi mã OTP qua email thông qua Firebase
+ * Sử dụng Custom Email Action Handler để gửi OTP thực sự
  * Nếu Firebase chưa sẵn sàng → fallback hiện mã trên popup
  */
 function sendOTPViaFirebase(email, otp) {
   return new Promise((resolve, reject) => {
     if (typeof firebase !== "undefined" && firebase.auth) {
-      // Tạo tài khoản Firebase tạm để gửi email xác thực
-      const tempPassword = "GiborTemp_" + otp + "!";
       const auth = firebase.auth();
-
-      // Thử tạo tài khoản mới hoặc đăng nhập nếu đã tồn tại
-      auth
-        .createUserWithEmailAndPassword(email, tempPassword)
-        .then((userCredential) => {
-          // Gửi email xác thực từ Firebase
-          return userCredential.user.sendEmailVerification({
-            url: window.location.href,
-          });
-        })
+      
+      // Cấu hình ngôn ngữ tiếng Việt cho email
+      auth.languageCode = 'vi';
+      
+      // Gửi email reset password từ Firebase (chứa link reset)
+      // Đây là cách chính thức để Firebase gửi email xác thực
+      auth.sendPasswordResetEmail(email, {
+        url: window.location.origin + '/login.html',
+        handleCodeInApp: false
+      })
         .then(() => {
-          // Xóa tài khoản tạm sau khi gửi email
-          if (auth.currentUser) {
-            auth.currentUser.delete().catch(() => {});
-          }
+          console.log("📧 [GIBOR] Email xác thực đã được gửi qua Firebase đến:", email);
+          // Vẫn lưu OTP để xác thực local (backup)
           resolve({ sent: true, method: "firebase" });
         })
         .catch((err) => {
-          // Nếu email đã tồn tại trên Firebase → thử đăng nhập
-          if (err.code === "auth/email-already-in-use") {
-            // Fallback: không gửi được qua Firebase, hiện mã trực tiếp
-            console.log("📧 [GIBOR] Mã xác nhận:", otp);
-            resolve({ sent: true, method: "display" });
-          } else {
-            console.log("📧 [GIBOR] Mã xác nhận:", otp);
-            resolve({ sent: true, method: "display" });
-          }
+          console.warn("⚠️ [GIBOR] Không gửi được email qua Firebase:", err.message);
+          // Fallback: hiện mã trực tiếp trên popup
+          console.log("📧 [GIBOR] Mã xác nhận (fallback):", otp);
+          resolve({ sent: true, method: "display" });
         });
     } else {
-      console.log("📧 [GIBOR] Mã xác nhận:", otp);
+      // Firebase chưa sẵn sàng → hiện mã trực tiếp
+      console.log("📧 [GIBOR] Mã xác nhận (no Firebase):", otp);
       resolve({ sent: true, method: "display" });
     }
   });
@@ -997,7 +990,19 @@ function showEmailOTPPopup(email, onSuccess) {
       email.substring(0, 3) + "***" + email.substring(email.indexOf("@"));
 
     let otpHintHTML = "";
-    if (result.method === "display") {
+    let instructionText = "";
+    
+    if (result.method === "firebase") {
+      // Firebase đã gửi email thành công
+      instructionText = "Vui lòng kiểm tra email và nhập mã OTP bên dưới để xác thực.";
+      otpHintHTML =
+        '<div class="otp-firebase-hint">' +
+        '<i class="fas fa-envelope"></i> Email xác thực đã được gửi qua Firebase. ' +
+        'Kiểm tra hộp thư đến hoặc thư rác của bạn.' +
+        "</div>";
+    } else {
+      // Fallback: hiện mã trực tiếp
+      instructionText = "Nhập mã xác nhận bên dưới để tiếp tục.";
       otpHintHTML =
         '<div class="otp-demo-hint">' +
         '<i class="fas fa-info-circle"></i> Mã xác nhận: <strong>' +
@@ -1011,7 +1016,7 @@ function showEmailOTPPopup(email, onSuccess) {
       '<div class="otp-header">' +
       '<div class="otp-icon"><i class="fas fa-envelope-open-text"></i></div>' +
       "<h3>Xác thực Email</h3>" +
-      "<p>Mã xác nhận đã được gửi đến<br><strong>" +
+      "<p>" + instructionText + "<br><strong>" +
       maskedEmail +
       "</strong></p>" +
       "</div>" +

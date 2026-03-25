@@ -140,7 +140,7 @@
             <ul class="order-items">${itemRows || "<li>Không có chi tiết sản phẩm</li>"}</ul>
             <div class="order-card-foot">
               <span>${order.payment || "Chưa rõ thanh toán"} · ${order.shipping || "Chưa rõ giao hàng"}</span>
-              <strong>${total}d</strong>
+              <strong>${total}đ</strong>
             </div>
           </article>
         `;
@@ -237,6 +237,16 @@
         return;
       }
 
+      // Kiểm tra mật khẩu cũ trước khi gửi OTP
+      const users = UserManager.getUsers();
+      const user = users.find((u) => u.id === currentUser.id);
+      
+      if (!user || user.password !== oldPassword) {
+        notifyError("Sai mật khẩu", "Mật khẩu hiện tại không đúng. Vui lòng thử lại.");
+        return;
+      }
+
+      // Hàm thực hiện đổi mật khẩu sau khi xác thực OTP
       const doChange = () => {
         const result = UserManager.updatePassword(oldPassword, newPassword);
         if (!result.success) {
@@ -244,14 +254,19 @@
           return;
         }
 
-        notifySuccess("Thành công", "Bạn đã đổi mật khẩu thành công.", () => {
+        notifySuccess("Thành công", "Bạn đã đổi mật khẩu thành công. Vui lòng đăng nhập lại.", () => {
           form.reset();
+          // Đăng xuất và chuyển về trang đăng nhập
+          UserManager.logout();
+          window.location.href = "login.html";
         });
       };
 
+      // Hiện popup OTP để xác thực qua email
       if (typeof showEmailOTPPopup === "function") {
         showEmailOTPPopup(currentUser.email, doChange);
       } else {
+        // Fallback nếu không có popup OTP
         doChange();
       }
     });
