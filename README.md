@@ -867,7 +867,7 @@ Dự án này là đồ án học thuật, không nhận contributions từ bên
 ### Team Members
 
 **Trần Dương Gia Bảo** - Core Developer
-- Email: tranduonggiabao0501@gmail,com
+- Email: tranduonggiabao0501@gmail.com
 - GitHub: [@Peo051](https://github.com/Peo051)
 - Role: Data Layer, Cart, Payment, Account
 
