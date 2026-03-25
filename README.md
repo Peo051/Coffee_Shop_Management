@@ -30,7 +30,7 @@
 - **Chi nhánh:** 15 chi nhánh (5 TP.HCM · 5 Hà Nội · 5 Đà Nẵng)
 - **Giờ mở cửa:** 07:00 – 22:00 hàng ngày
 - **Trường:** Đại học Công Thương TP.HCM (HUIT)
-- **Học kỳ:** Kỳ 4 (2025-2026) - Team 3
+- **Học kỳ:** Kỳ 4 (2025-2026) - Team 4
 
 ---
 
@@ -957,30 +957,17 @@ Nếu bạn gặp vấn đề hoặc có câu hỏi:
 ![Mobile Menu](screenshots/mobile-menu.png)
 *Bottom navigation và drawer menu*
 
-
-## 📚 Additional Documentation
-
-Tài liệu chi tiết được lưu trong thư mục `/docs`:
-
-- **[API Documentation](docs/API.md)** - Chi tiết các functions và methods
-- **[Database Schema](docs/DATABASE.md)** - Cấu trúc database
-- **[Style Guide](docs/STYLE_GUIDE.md)** - Quy tắc coding và naming
-- **[Deployment Guide](docs/DEPLOYMENT.md)** - Hướng dẫn deploy
-- **[Testing Guide](docs/TESTING.md)** - Hướng dẫn test
-- **[Email Verification Guide](HUONG_DAN_KIEM_TRA_EMAIL_DUY_NHAT.md)** - Hướng dẫn xác thực email
-- **[Password Change Guide](HUONG_DAN_DOI_MAT_KHAU.md)** - Hướng dẫn đổi mật khẩu
-
 ---
 
 ## 🌟 Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=yourusername/GIBOR-COFFEE-SHOP&type=Date)](https://star-history.com/#yourusername/GIBOR-COFFEE-SHOP&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=Peo051/GIBOR-COFFEE-SHOP&type=Date)](https://star-history.com/#Peo051/GIBOR-COFFEE-SHOP&Date)
 
 ---
 
 <div align="center">
 
-### Made with ☕ by Team 3 - HUIT
+### Made with ☕ by Team 4 - HUIT
 
 **GIBOR COFFEE SHOP** © 2026
 
