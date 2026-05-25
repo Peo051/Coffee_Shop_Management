@@ -69,14 +69,15 @@
 /* ===== ẢNH SẢN PHẨM ===== */
 .popup-img-wrap {
   width: 100%;
-  height: 260px;
+  height: 320px;
   overflow: hidden;
+  background-color: var(--card, #fff);
 }
 
 .popup-img-wrap img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   transition: transform 0.4s ease;
 }
 
@@ -383,6 +384,10 @@ body.dark .popup-box {
   color: #f4e9de;
 }
 
+body.dark .popup-img-wrap {
+  background-color: var(--dark-popup-bg, #1f1f1f);
+}
+
 body.dark .popup-desc {
   color: #c4b5a6;
 }
@@ -460,7 +465,7 @@ body.dark .add-cart {
     width: 95vw;
   }
   .popup-img-wrap {
-    height: 200px;
+    height: 240px;
   }
   .popup-info {
     padding: 15px;
