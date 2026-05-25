@@ -5,6 +5,7 @@
 [![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=flat&logo=html5&logoColor=white)](https://html.spec.whatwg.org/)
 [![CSS3](https://img.shields.io/badge/CSS3-1572B6?style=flat&logo=css3&logoColor=white)](https://www.w3.org/Style/CSS/)
 [![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=flat&logo=javascript&logoColor=black)](https://www.javascript.com/)
+[![Bootstrap](https://img.shields.io/badge/Bootstrap-5.3.3-7952B3?style=flat&logo=bootstrap&logoColor=white)](https://getbootstrap.com/)
 [![Firebase](https://img.shields.io/badge/Firebase-FFCA28?style=flat&logo=firebase&logoColor=black)](https://firebase.google.com/)
 
 ---
@@ -557,6 +558,28 @@ document.body.classList.toggle("dark");
 }
 ```
 
+### 📦 Tích hợp Bootstrap 5
+
+Dự án tích hợp thư viện **Bootstrap v5.3.3** để chuẩn hóa hệ thống layout responsive và tối ưu hóa các components tương tác:
+
+- **Hệ thống Grid (Bootstrap Grid System):**
+  - Sử dụng các lớp `.container`, `.row`, `.col-12`, `.col-md-*`, `.col-lg-*` nhằm xây dựng bố cục thích ứng (responsive layout) tự động trên mọi độ phân giải màn hình.
+  - Các khu vực như lưới sản phẩm trong menu, danh sách chi nhánh tự động co giãn và chuyển đổi cột linh hoạt (ví dụ: 3-4 cột trên Desktop, 2 cột trên Tablet, 1 cột trên Mobile).
+  
+- **Bootstrap Carousel:**
+  - Banner khuyến mãi tại trang chủ (`index.html`) sử dụng component `.carousel.slide` của Bootstrap.
+  - Tích hợp các thuộc tính điều khiển tự động chạy (`data-bs-ride="carousel"`), thời gian chuyển banner (`data-bs-interval="4500"`), dừng khi di chuột (`data-bs-pause="hover"`) và hỗ trợ vuốt chạm trên thiết bị cảm ứng (`data-bs-touch="true"`).
+  
+- **Dropdown & Modal Popups:**
+  - Tận dụng các lớp dropdown và modal của Bootstrap để thiết kế thanh điều hướng, menu lựa chọn và các thông báo xác nhận tương tác với người dùng.
+  
+- **Các Class Tiện Ích (Utility Classes):**
+  - Áp dụng rộng rãi các class tiện ích để tối giản hóa mã nguồn CSS:
+    - Flexbox: `d-flex`, `justify-content-center`, `align-items-center`, `gap-3`
+    - Spacing: `mb-4`, `py-5`, `px-3`, `mx-auto`
+    - Typography: `text-center`, `text-uppercase`, `fw-bold`, `text-danger`
+    - Display: `d-none`, `d-md-block`, `d-lg-flex`
+
 ---
 
 ## 🗄️ Database Schema
@@ -907,6 +930,7 @@ Nếu bạn gặp vấn đề hoặc có câu hỏi:
 
 ### Technologies
 
+- [Bootstrap 5](https://getbootstrap.com/) - Responsive CSS Framework (v5.3.3)
 - [Firebase](https://firebase.google.com/) - Authentication & Hosting
 - [Font Awesome](https://fontawesome.com/) - Icons
 - [Google Fonts](https://fonts.google.com/) - Typography
