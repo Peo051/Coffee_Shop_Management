@@ -45,6 +45,7 @@ body.dark {
   --text: #f5f5f5;
   --navbar: rgba(75, 44, 32, 0.95);
   --card: #1e1e1e;
+
   .menu-title,
   .menu-section h3 {
     color: var(--accent);
@@ -90,7 +91,8 @@ body {
 ========================================== PHẦN HEADER ==================================
 */
 .header {
-  position: sticky; /* cuộn xuống */
+  position: sticky;
+  /* cuộn xuống */
   top: 0;
   z-index: 999;
   background: var(--primary);
@@ -190,12 +192,14 @@ body {
 
 /* Khi scroll */
 .header.scrolled {
-  background-color: var(
-    --primary-color
-  ); /* Sử dụng đúng tên biến đã khai báo ở :root */
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4); /* Đổ bóng dùng rgba để chỉnh độ mờ cho đẹp */
-  padding: 10px 5%; /* Thu gọn header lại một chút khi cuộn cho tinh tế */
-  transition: all 0.4s ease; /* Giúp hiệu ứng biến đổi mượt mà */
+  background-color: var(--primary-color);
+  /* Sử dụng đúng tên biến đã khai báo ở :root */
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  /* Đổ bóng dùng rgba để chỉnh độ mờ cho đẹp */
+  padding: 10px 5%;
+  /* Thu gọn header lại một chút khi cuộn cho tinh tế */
+  transition: all 0.4s ease;
+  /* Giúp hiệu ứng biến đổi mượt mà */
 }
 
 .header-actions {
@@ -416,9 +420,11 @@ a {
   .nav.active .nav-links li:nth-child(1) {
     transition-delay: 0.1s;
   }
+
   .nav.active .nav-links li:nth-child(2) {
     transition-delay: 0.2s;
   }
+
   .nav.active .nav-links li:nth-child(3) {
     transition-delay: 0.3s;
   }
@@ -530,7 +536,7 @@ body.dark .menu-container {
 .menu-carousel .carousel-inner,
 .menu-carousel .carousel-item {
   width: 100%;
-  aspect-ratio: 1536 / 350;
+  aspect-ratio: 1530 / 340;
 }
 
 .menu-carousel-img {
@@ -586,7 +592,8 @@ body.dark .menu-card p {
    MỖI NHÓM MENU (CÀ PHÊ / TRÀ / ...)
 ========================================= */
 .menu-section {
-  margin-bottom: clamp(34px, 5vw, 56px); /* Tách các nhóm menu ra */
+  margin-bottom: clamp(34px, 5vw, 56px);
+  /* Tách các nhóm menu ra */
 }
 
 /* =========================================
@@ -625,8 +632,7 @@ body.dark .menu-card p {
     transform 460ms var(--motion-ease-standard, cubic-bezier(0.22, 1, 0.36, 1)),
     box-shadow 460ms var(--motion-ease-standard, cubic-bezier(0.22, 1, 0.36, 1)),
     border-color 320ms var(--motion-ease-standard, cubic-bezier(0.22, 1, 0.36, 1)),
-    background-color 320ms
-      var(--motion-ease-standard, cubic-bezier(0.22, 1, 0.36, 1));
+    background-color 320ms var(--motion-ease-standard, cubic-bezier(0.22, 1, 0.36, 1));
   position: relative;
   will-change: transform, box-shadow;
   isolation: isolate;
@@ -637,19 +643,16 @@ body.dark .menu-card p {
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background: linear-gradient(
-    160deg,
-    rgba(255, 255, 255, 0.22) 0%,
-    rgba(255, 255, 255, 0) 42%,
-    rgba(194, 123, 67, 0.08) 100%
-  );
+  background: linear-gradient(160deg,
+      rgba(255, 255, 255, 0.22) 0%,
+      rgba(255, 255, 255, 0) 42%,
+      rgba(194, 123, 67, 0.08) 100%);
   opacity: 0;
   pointer-events: none;
-  transition: opacity 420ms
-    var(--motion-ease-standard, cubic-bezier(0.22, 1, 0.36, 1));
+  transition: opacity 420ms var(--motion-ease-standard, cubic-bezier(0.22, 1, 0.36, 1));
 }
 
-.menu-card > * {
+.menu-card>* {
   position: relative;
   z-index: 1;
 }
@@ -856,10 +859,12 @@ body.dark .menu-card p {
     transform: rotate(-8deg) scale(1);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25);
   }
+
   50% {
     transform: rotate(-8deg) scale(1.05);
     box-shadow: 0 8px 20px rgba(255, 87, 34, 0.42);
   }
+
   100% {
     transform: rotate(-8deg) scale(1);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25);
@@ -868,17 +873,21 @@ body.dark .menu-card p {
 
 /* ANIMATION CHO IC0N*/
 @keyframes fireWiggle {
+
   0%,
   100% {
     transform: rotate(0deg);
   }
+
   25% {
     transform: rotate(-10deg);
   }
+
   75% {
     transform: rotate(10deg);
   }
 }
+
 /* 
 ========================================================================================
 
@@ -903,12 +912,10 @@ body.dark .menu-card p {
     right: 0;
     bottom: -1px;
     height: 1px;
-    background: linear-gradient(
-      90deg,
-      transparent 0%,
-      rgba(212, 163, 115, 0.55) 50%,
-      transparent 100%
-    );
+    background: linear-gradient(90deg,
+        transparent 0%,
+        rgba(212, 163, 115, 0.55) 50%,
+        transparent 100%);
     pointer-events: none;
   }
 
@@ -1130,16 +1137,12 @@ body.dark .menu-card p {
     padding: 72px 0 24px;
     color: #f3ece6;
     background:
-      radial-gradient(
-        circle at 10% 10%,
+      radial-gradient(circle at 10% 10%,
         rgba(212, 163, 115, 0.2),
-        transparent 42%
-      ),
-      radial-gradient(
-        circle at 90% 0%,
+        transparent 42%),
+      radial-gradient(circle at 90% 0%,
         rgba(255, 255, 255, 0.08),
-        transparent 28%
-      ),
+        transparent 28%),
       linear-gradient(160deg, #25160f 0%, #3a2418 45%, #4b2c20 100%);
     overflow: hidden;
   }
@@ -1151,12 +1154,10 @@ body.dark .menu-card p {
     right: 0;
     top: 0;
     height: 1px;
-    background: linear-gradient(
-      90deg,
-      transparent 0%,
-      rgba(212, 163, 115, 0.7) 50%,
-      transparent 100%
-    );
+    background: linear-gradient(90deg,
+        transparent 0%,
+        rgba(212, 163, 115, 0.7) 50%,
+        transparent 100%);
   }
 
   .footer-container {
