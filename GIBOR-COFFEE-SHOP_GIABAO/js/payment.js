@@ -800,6 +800,7 @@ async function placeOrder() {
       branch: selectedBranch
         ? { name: selectedBranch.name, address: selectedBranch.address }
         : null,
+      status: "Đã ghi nhận", // Thêm thuộc tính status
     });
 
     // Xử lý điểm tích lũy

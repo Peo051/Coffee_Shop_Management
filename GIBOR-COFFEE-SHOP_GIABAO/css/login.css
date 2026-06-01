@@ -118,6 +118,7 @@
   font-size: 16px;
   pointer-events: none;
   transition: color 0.3s ease;
+  z-index: 10;
 }
 
 /* Đổi màu icon khi focus */
@@ -132,11 +133,19 @@
   padding: 0 44px 0 42px;
   border: none;
   outline: none;
-  background: transparent;
+  background: transparent !important;
   font-family: var(--font-body, "Montserrat", sans-serif);
   font-size: 14px;
   color: #2d2424;
   min-height: 48px;
+  box-shadow: none !important;
+}
+
+.input-field:focus {
+  outline: none;
+  box-shadow: none !important;
+  background: transparent !important;
+  border: none !important;
 }
 
 .input-field::placeholder {
@@ -154,6 +163,7 @@
   padding: 4px;
   font-size: 16px;
   transition: color 0.2s ease;
+  z-index: 10;
 }
 
 .toggle-password:hover {

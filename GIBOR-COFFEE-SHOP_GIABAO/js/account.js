@@ -136,17 +136,38 @@
         const createdLabel = formatDate(order.createdAt || order.date);
         const total = Number(order.total || 0).toLocaleString("vi-VN");
         const code = order.code || "DH" + Date.now();
+        const status = order.status || "Đã ghi nhận";
+
+        // Badge màu sắc bắt mắt theo trạng thái đơn hàng
+        let badgeStyle = "background: #e8f0fe; color: #1a73e8;"; // Đã ghi nhận (xanh lam nhạt)
+        if (status === "Đang xử lý") badgeStyle = "background: #fef7e0; color: #b06000;"; // cam
+        else if (status === "Đang giao") badgeStyle = "background: #e6f4ea; color: #137333;"; // xanh lá nhạt
+        else if (status === "Hoàn tất") badgeStyle = "background: #137333; color: #ffffff;"; // xanh lá đậm
+        else if (status === "Đã hủy") badgeStyle = "background: #fce8e6; color: #c5221f;"; // đỏ
+
+        const isCancelable = status === "Đã ghi nhận" || status === "Đang xử lý";
 
         return `
-          <article class="order-card">
-            <div class="order-card-top">
-              <div class="order-code">#${code}</div>
-              <div class="order-date">${createdLabel}</div>
+          <article class="order-card" style="position: relative; margin-bottom: 15px;">
+            <div class="order-card-top" style="display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 10px;">
+              <div class="order-code" style="font-weight: 700; color: #4f311d;">#${code}</div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span class="status-badge" style="padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; ${badgeStyle}">${escapeHTML(status)}</span>
+                <span class="order-date" style="font-size: 0.82rem; color: #796454;">${createdLabel}</span>
+              </div>
             </div>
-            <ul class="order-items">${itemRows || "<li>Không có chi tiết sản phẩm</li>"}</ul>
-            <div class="order-card-foot">
-              <span>${order.payment || "Chưa rõ thanh toán"} · ${order.shipping || "Chưa rõ giao hàng"}</span>
-              <strong>${total}đ</strong>
+            <ul class="order-items" style="margin: 0; padding-left: 18px; color: #574434; margin-bottom: 10px;">
+              ${itemRows || "<li>Không có chi tiết sản phẩm</li>"}
+            </ul>
+            <div class="order-card-foot" style="display: flex; justify-content: space-between; align-items: center; padding-top: 10px; border-top: 1px dashed rgba(95, 61, 36, 0.25);">
+              <span style="font-size: 0.92rem; color: #614b3a;">
+                <i class="fa-solid fa-credit-card" style="font-size: 0.85rem; margin-right: 3px;"></i> ${order.payment || "Chưa rõ"} · 
+                <i class="fa-solid fa-truck" style="font-size: 0.85rem; margin-right: 3px;"></i> ${order.shipping || "Chưa rõ"}
+              </span>
+              <div style="display: flex; align-items: center; gap: 12px;">
+                ${isCancelable ? `<button class="btn-cancel-order" data-cancel-order-code="${escapeHTML(code)}" style="background: #fce8e6; color: #c5221f; border: 1px solid #fad2cf; padding: 4px 12px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all 0.2s;">Hủy đơn</button>` : ''}
+                <strong style="font-size: 1.1rem; color: #5f3d24;">${total}đ</strong>
+              </div>
             </div>
           </article>
         `;
@@ -311,6 +332,34 @@
     });
   }
 
+  function bindOrderCancel() {
+    const list = document.getElementById("orderList");
+    if (!list) return;
+
+    list.addEventListener("click", (e) => {
+      const btn = e.target.closest(".btn-cancel-order");
+      if (!btn) return;
+
+      const code = btn.dataset.cancelOrderCode;
+      if (!code) return;
+
+      if (confirm(`Bạn có chắc muốn hủy đơn hàng #${code} không?`)) {
+        const allOrders = JSON.parse(localStorage.getItem("gibor_orders") || "[]");
+        const idx = allOrders.findIndex(o => o.code === code);
+        if (idx > -1) {
+          allOrders[idx].status = "Đã hủy";
+          localStorage.setItem("gibor_orders", JSON.stringify(allOrders));
+          
+          notifySuccess("Đã hủy đơn", `Đơn hàng #${code} đã được hủy thành công!`, () => {
+            renderOrders(); // Tải lại danh sách đơn hàng
+          });
+        } else {
+          notifyError("Thất bại", "Không tìm thấy đơn hàng trong hệ thống.");
+        }
+      }
+    });
+  }
+
   function init() {
     if (typeof UserManager === "undefined") return;
 
@@ -340,6 +389,7 @@
     bindProfileSave(currentUser);
     bindPasswordSave(currentUser);
     bindLogout();
+    bindOrderCancel(); // Gọi hàm xử lý hủy đơn hàng
 
     setActiveSubtab("info");
     setActivePanel(parseTabFromURL());

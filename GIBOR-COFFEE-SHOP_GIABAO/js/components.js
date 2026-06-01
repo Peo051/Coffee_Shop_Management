@@ -12,6 +12,7 @@ const NAV_ITEMS = [
   { href: "branches.html", label: "Chi nhánh" },
   { href: "about.html", label: "Giới thiệu" },
   { href: "contact.html", label: "Liên hệ" },
+  { href: "admin.html", label: "Admin" },
 ];
 
 const TOP_BANNER_ITEMS = [
@@ -180,6 +181,7 @@ const FooterComponent = `
           <ul class="footer-links">
             <li><a href="index.html">Trang chủ</a></li>
             <li><a href="menu.html">Menu</a></li>
+            <li><a href="admin.html">Admin</a></li>
             <li><a href="branches.html">Chi nhánh</a></li>
             <li><a href="about.html">Giới thiệu</a></li>
             <li><a href="contact.html">Liên hệ</a></li>
