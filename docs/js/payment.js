@@ -6,6 +6,95 @@
 ========================================================================================
 */
 
+async function updateQRCode() {
+  const loader = document.getElementById("qrLoader");
+  const qrImg = document.getElementById("qrImage");
+  const amountEl = document.getElementById("displayAmount");
+  const descEl = document.getElementById("displayDesc");
+  const bankingInfo = document.getElementById("bankingInfo");
+
+  if (!loader || !qrImg || !amountEl || !descEl || !bankingInfo) return;
+
+  payosPaymentSuccess = false;
+  currentPayosPayment = null;
+  if (payosSyncTimeout) clearTimeout(payosSyncTimeout);
+  if (payosSyncInterval) clearInterval(payosSyncInterval);
+
+  const amountNum = getCurrentCheckoutAmount();
+  if (amountNum <= 0) {
+    loader.style.display = "none";
+    qrImg.style.display = "none";
+    showToast("Khong the tao QR: tong tien khong hop le.");
+    return;
+  }
+
+  const oldSuccess = bankingInfo.querySelector(".payos-success-check");
+  if (oldSuccess) oldSuccess.remove();
+
+  let statusLabel = bankingInfo.querySelector(".payos-status-label");
+  if (!statusLabel) {
+    statusLabel = document.createElement("div");
+    statusLabel.className = "payos-status-label";
+    statusLabel.style.cssText = "font-size:0.8rem;font-weight:700;color:#007bff;margin:10px 0;text-align:center;display:flex;align-items:center;justify-content:center;gap:6px;";
+    bankingInfo.appendChild(statusLabel);
+  }
+
+  const qrDetails = bankingInfo.querySelector(".qr-details");
+  if (qrDetails) qrDetails.style.display = "block";
+  qrImg.style.display = "none";
+  loader.style.display = "block";
+  statusLabel.style.display = "flex";
+  statusLabel.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Dang tao ma QR payOS...`;
+  statusLabel.style.color = "#007bff";
+
+  let payment;
+  try {
+    payment = await createPayosPaymentRequest(amountNum);
+  } catch (error) {
+    console.error("Khong tao duoc payment link payOS:", error);
+    loader.style.display = "none";
+    qrImg.style.display = "none";
+    statusLabel.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> Khong tao duoc ma thanh toan payOS. Kiem tra cau hinh API key hoac CORS cua payOS.`;
+    statusLabel.style.color = "#c5221f";
+    showToast("Khong tao duoc ma thanh toan payOS.");
+    return;
+  }
+
+  currentPayosPayment = payment;
+  amountEl.innerText = amountNum.toLocaleString("vi-VN") + "d";
+  descEl.innerText = payment.description;
+  statusLabel.innerHTML = "";
+  statusLabel.style.display = "none";
+
+  let checkoutLink = bankingInfo.querySelector(".payos-checkout-link");
+  if (!checkoutLink) {
+    checkoutLink = document.createElement("a");
+    checkoutLink.className = "payos-checkout-link";
+    checkoutLink.target = "_blank";
+    checkoutLink.rel = "noopener noreferrer";
+    checkoutLink.style.cssText = "display:none;margin:8px auto 0;width:max-content;font-size:0.82rem;font-weight:700;color:#007bff;text-decoration:none;";
+    bankingInfo.appendChild(checkoutLink);
+  }
+
+  if (payment.checkoutUrl) {
+    checkoutLink.href = payment.checkoutUrl;
+    checkoutLink.innerHTML = `<i class="fa-solid fa-arrow-up-right-from-square"></i> Mo trang thanh toan payOS`;
+    checkoutLink.style.display = "block";
+  } else {
+    checkoutLink.style.display = "none";
+  }
+
+  qrImg.onload = function () {
+    loader.style.display = "none";
+    qrImg.style.display = "block";
+  };
+  qrImg.onerror = function () {
+    loader.style.display = "none";
+    qrImg.style.display = "none";
+    showToast("Khong tai duoc ma QR thanh toan payOS.");
+  };
+  qrImg.src = getQrImageUrl(payment);
+}
 // ===== ĐỌC GIỎ HÀNG TỪ LOCALSTORAGE =====
 function getCart() {
   // Key chính là giborCart; giữ fallback cart cho dữ liệu cũ.
@@ -681,6 +770,10 @@ function showConfirmPayment() {
     }
 
     const handleOk = () => {
+      // Dọn dẹp polling và timeout payOS
+      if (typeof payosSyncTimeout !== "undefined" && payosSyncTimeout) clearTimeout(payosSyncTimeout);
+      if (typeof payosSyncInterval !== "undefined" && payosSyncInterval) clearInterval(payosSyncInterval);
+      
       overlay.classList.remove("show");
       btnOk.removeEventListener("click", handleOk);
       btnCancel.removeEventListener("click", handleCancel);
@@ -688,12 +781,16 @@ function showConfirmPayment() {
     };
 
     const handleCancel = () => {
+      // Dọn dẹp polling và timeout payOS
+      if (typeof payosSyncTimeout !== "undefined" && payosSyncTimeout) clearTimeout(payosSyncTimeout);
+      if (typeof payosSyncInterval !== "undefined" && payosSyncInterval) clearInterval(payosSyncInterval);
+      
       overlay.classList.remove("show");
-      // Bấm hủy thì cập nhật lại số tiền hiện tại và tạo lại QR mới
+      // Bấm hủy thì cập nhật lại số tiền hiện tại
       const cart = getCart();
       const subtotal = cart.reduce((s, i) => s + i.price * i.quantity, 0);
       updateTotals(subtotal);
-      updateQRCode();
+      
       btnOk.removeEventListener("click", handleOk);
       btnCancel.removeEventListener("click", handleCancel);
       resolve(false);
@@ -768,6 +865,23 @@ async function placeOrder() {
       fullAddress = parts.join(", ");
     }
 
+    let finalBranch = null;
+    if (selectedShipping === "dine-in" && selectedBranch) {
+      finalBranch = { id: selectedBranch.id, name: selectedBranch.name, address: selectedBranch.address };
+    } else if (selectedShipping === "delivery") {
+      const cityVal = ckCityEl ? ckCityEl.value : "";
+      if (cityVal && typeof window.GIBOR_BRANCH_UTILS !== "undefined") {
+        const branchesOfCity = window.GIBOR_BRANCH_UTILS.getByCity(cityVal);
+        if (branchesOfCity && branchesOfCity.length > 0) {
+          finalBranch = { id: branchesOfCity[0].id, name: branchesOfCity[0].name, address: branchesOfCity[0].address };
+        }
+      } else if (cityVal && BRANCHES[cityVal] && BRANCHES[cityVal].length > 0) {
+        finalBranch = { id: BRANCHES[cityVal][0].id, name: BRANCHES[cityVal][0].name, address: BRANCHES[cityVal][0].address };
+      }
+    }
+
+    const grandTotal = getCurrentCheckoutAmount();
+
     OrderManager.saveOrder({
       code: code,
       customer: {
@@ -787,7 +901,7 @@ async function placeOrder() {
         note: i.note || "",
         comboItems: i.comboItems || [],
       })),
-      total: Math.max(0, subtotal - currentDiscount - pointsDiscount),
+      total: grandTotal,
       subtotal: subtotal,
       couponDiscount: currentDiscount,
       pointsUsed: usedPoints,
@@ -797,9 +911,15 @@ async function placeOrder() {
           ? "Chuyển khoản"
           : "Thanh toán khi nhận hàng",
       shipping: selectedShipping === "delivery" ? "Giao hàng" : "Uống tại quán",
-      branch: selectedBranch
-        ? { name: selectedBranch.name, address: selectedBranch.address }
-        : null,
+      paymentProvider: selectedPayment === "banking" ? (currentPayosPayment && currentPayosPayment.provider) || "payos" : "cod",
+      paymentOrderCode: currentPayosPayment ? currentPayosPayment.orderCode : "",
+      paymentLinkId: currentPayosPayment ? currentPayosPayment.paymentLinkId || "" : "",
+      checkoutUrl: currentPayosPayment ? currentPayosPayment.checkoutUrl || "" : "",
+      branch: finalBranch,
+      status: selectedPayment === "banking"
+        ? ((typeof payosPaymentSuccess !== "undefined" && payosPaymentSuccess) ? "Đang xử lý" : "Chờ thanh toán")
+        : "Đã ghi nhận",
+      paymentStatus: (typeof payosPaymentSuccess !== "undefined" && payosPaymentSuccess) ? "Đã thanh toán" : "Chưa thanh toán",
     });
 
     // Xử lý điểm tích lũy
@@ -1487,117 +1607,178 @@ document.addEventListener("DOMContentLoaded", () => {
 ========================================================================================
 */
 
-// Cấu hình ngân hàng
-const CONFIG = {
-  BANK_ID: "MB", // Ngân hàng MB Bank
-  ACC_NO: "398383979",
-  ACC_NAME: "TRAN GIA BAO",
-  TEMPLATE: "qr_only", // 'compact', 'compact2', hoặc 'qr_only'
-};
+var payosSyncTimeout = null;
+var payosSyncInterval = null;
+var currentPayosPayment = null;
+var payosPaymentSuccess = false; // Biến đánh dấu đã thanh toán thành công qua payOS
 
-// Hàm updateQRCode() - Cập nhật mã QR thanh toán với số tiền hiện tại
-function updateQRCode() {
-  const loader = document.getElementById("qrLoader");
-  const qrImg = document.getElementById("qrImage");
-  const amountEl = document.getElementById("displayAmount");
-  const descEl = document.getElementById("displayDesc");
+// Hàm phát âm thanh thông báo thành công (Web Audio API)
+function getPayosConfig() {
+  return {
+    clientId: (localStorage.getItem("gibor_payos_client_id") || "").trim(),
+    apiKey: (localStorage.getItem("gibor_payos_api_key") || "").trim(),
+    checksumKey: (localStorage.getItem("gibor_payos_checksum_key") || "").trim(),
+  };
+}
+
+function getCurrentCheckoutAmount() {
   const totalEl = document.getElementById("grandTotal");
+  const totalText = totalEl ? totalEl.innerText : "0";
+  return parseInt(totalText.replace(/[^0-9]/g, "") || "0", 10);
+}
 
-  if (!loader || !qrImg || !amountEl || !descEl || !totalEl) return;
+function buildPayosOrderCode() {
+  return Number(String(Date.now()).slice(-9));
+}
 
-  // 1. Lấy số tiền từ giao diện
-  let totalStr = totalEl.innerText;
-  let amount = totalStr.replace(/[^0-9]/g, ""); // Chỉ lấy số
-  const amountNum = parseInt(amount || "0", 10);
+function buildReturnUrl() {
+  const url = new URL(window.location.href);
+  url.searchParams.set("payos", "return");
+  return url.toString();
+}
 
-  // 2. Tạo nội dung chuyển khoản
-  let orderId = "GB" + Math.floor(1000 + Math.random() * 9000);
-  let desc = `GIBOR ${orderId}`;
-
-  // Cập nhật text hiển thị
-  amountEl.innerText = amountNum.toLocaleString("vi-VN") + "đ";
-  descEl.innerText = desc;
-
-  if (amountNum <= 0) {
-    loader.style.display = "none";
-    showToast("Không thể tạo QR: tổng tiền không hợp lệ.");
-    return;
+async function createHmacSha256Hex(message, secret) {
+  if (!window.crypto || !window.crypto.subtle) {
+    throw new Error("Trinh duyet khong ho tro Web Crypto API de tao chu ky payOS.");
   }
 
-  // 3. Gọi API VietQR
-  // Cấu trúc: https://img.vietqr.io/image/<BANK_ID>-<ACCOUNT_NO>-<TEMPLATE>.png?amount=<AMOUNT>&addInfo=<DESCRIPTION>&accountName=<NAME>
-  const amountParam = String(amountNum);
-  const base = "https://img.vietqr.io/image";
-  const bankIds = [CONFIG.BANK_ID, "MBBANK"];
-  const templates = [CONFIG.TEMPLATE, "compact2", "compact"];
-  const builtUrls = [];
+  const encoder = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    "raw",
+    encoder.encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const signature = await crypto.subtle.sign("HMAC", key, encoder.encode(message));
+  return Array.from(new Uint8Array(signature))
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
+}
 
-  bankIds.forEach((bankId) => {
-    templates.forEach((template) => {
-      builtUrls.push(
-        `${base}/${bankId}-${CONFIG.ACC_NO}-${template}.png?amount=${amountParam}&addInfo=${encodeURIComponent(desc)}&accountName=${encodeURIComponent(CONFIG.ACC_NAME)}&t=${Date.now()}`,
-      );
-    });
+async function createPayosSignature({ amount, cancelUrl, description, orderCode, returnUrl }, checksumKey) {
+  const raw = `amount=${amount}&cancelUrl=${cancelUrl}&description=${description}&orderCode=${orderCode}&returnUrl=${returnUrl}`;
+  return createHmacSha256Hex(raw, checksumKey);
+}
+
+async function createPayosPaymentRequest(amount) {
+  const config = getPayosConfig();
+  if (!config.clientId || !config.apiKey || !config.checksumKey) {
+    throw new Error("Chưa cấu hình Client ID, API Key hoặc Checksum Key payOS.");
+  }
+
+  const orderCode = buildPayosOrderCode();
+  const description = `GIBOR${orderCode}`;
+  const returnUrl = buildReturnUrl();
+  const cancelUrl = buildReturnUrl();
+  const signature = await createPayosSignature(
+    { amount, cancelUrl, description, orderCode, returnUrl },
+    config.checksumKey,
+  );
+
+  const response = await fetch("https://api-merchant.payos.vn/v2/payment-requests", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-client-id": config.clientId,
+      "x-api-key": config.apiKey,
+    },
+    body: JSON.stringify({
+      orderCode,
+      amount,
+      description,
+      returnUrl,
+      cancelUrl,
+      signature,
+      items: getCart().map((item) => ({
+        name: String(item.name || "GIBOR item").slice(0, 50),
+        quantity: Number(item.quantity || 1),
+        price: Number(item.price || 0),
+      })),
+    }),
   });
 
-  const qrUrls = Array.from(new Set(builtUrls));
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok || result.code !== "00" || !result.data) {
+    throw new Error(result.desc || result.message || "Không tạo được link thanh toán payOS.");
+  }
 
-  // Ảnh QR nằm trong popup nên cần tải ngay, tránh bị mobile lazy-load trì hoãn.
-  qrImg.setAttribute("loading", "eager");
-  qrImg.setAttribute("fetchpriority", "high");
-  qrImg.setAttribute("decoding", "async");
-
-  // Hiển thị loader trong khi tải ảnh
-  qrImg.style.display = "none";
-  loader.style.display = "block";
-
-  let handled = false;
-  let timeoutId = null;
-
-  const cleanup = () => {
-    qrImg.onload = null;
-    qrImg.onerror = null;
-    if (timeoutId) clearTimeout(timeoutId);
+  return {
+    provider: "payos",
+    orderCode,
+    description,
+    amount,
+    paymentLinkId: result.data.paymentLinkId || "",
+    checkoutUrl: result.data.checkoutUrl || "",
+    qrCode: result.data.qrCode || "",
   };
+}
 
-  const showLoadFailed = () => {
-    showToast("Không tải được mã QR. Vui lòng thử lại sau.");
+async function fetchPayosPaymentStatus(payment) {
+  if (!payment || !payment.orderCode) return null;
+  const config = getPayosConfig();
+  if (!config.clientId || !config.apiKey) return null;
+
+  const response = await fetch(`https://api-merchant.payos.vn/v2/payment-requests/${encodeURIComponent(payment.orderCode)}`, {
+    method: "GET",
+    headers: {
+      Accept: "application/json",
+      "x-client-id": config.clientId,
+      "x-api-key": config.apiKey,
+    },
+  });
+  if (!response.ok) return null;
+  const result = await response.json().catch(() => null);
+  if (!result || result.code !== "00" || !result.data) return null;
+
+  const code = String(result.data.code || "").toUpperCase();
+  const status = String(result.data.status || "").toUpperCase();
+  const paidAmount = Number(result.data.amountPaid || 0);
+  const expectedAmount = Number(result.data.amount || payment.amount || 0);
+  const isPaid = code === "00" || status === "PAID" || (expectedAmount > 0 && paidAmount >= expectedAmount);
+
+  return {
+    data: result.data,
+    isPaid,
+    status: isPaid ? "Đang xử lý" : "Chờ thanh toán",
+    paymentStatus: isPaid ? "Đã thanh toán" : "Chưa thanh toán",
   };
+}
 
-  qrImg.onload = function () {
-    if (handled) return;
-    handled = true;
-    cleanup();
-    loader.style.display = "none";
-    qrImg.style.display = "block";
-  };
+function getQrImageUrl(payment) {
+  if (payment.qrCode) {
+    return `https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encodeURIComponent(payment.qrCode)}`;
+  }
+  return payment.qrImageUrl || "";
+}
 
-  let currentIndex = 0;
-  qrImg.onerror = function () {
-    if (handled) return;
+function playSuccessSound() {
+  try {
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const oscillator = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
 
-    currentIndex += 1;
-    if (currentIndex < qrUrls.length) {
-      qrImg.src = qrUrls[currentIndex];
-      return;
-    }
+    oscillator.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
 
-    handled = true;
-    cleanup();
-    loader.style.display = "none";
-    showLoadFailed();
-  };
+    oscillator.type = "sine";
+    oscillator.frequency.setValueAtTime(523.25, audioCtx.currentTime); // C5
+    gainNode.gain.setValueAtTime(0.08, audioCtx.currentTime);
+    oscillator.start();
+    
+    setTimeout(() => {
+      oscillator.frequency.setValueAtTime(659.25, audioCtx.currentTime); // E5
+    }, 120);
+    setTimeout(() => {
+      oscillator.frequency.setValueAtTime(783.99, audioCtx.currentTime); // G5
+    }, 240);
 
-  timeoutId = setTimeout(() => {
-    if (handled) return;
-    handled = true;
-    cleanup();
-    loader.style.display = "none";
-    showLoadFailed();
-  }, 10000);
-
-  // Gắn sự kiện trước rồi mới set src để tránh mất onload khi ảnh cache tải quá nhanh
-  qrImg.src = qrUrls[0];
+    setTimeout(() => {
+      oscillator.stop();
+    }, 400);
+  } catch (e) {
+    console.log("Audio API not supported or blocked:", e);
+  }
 }
 
 /*

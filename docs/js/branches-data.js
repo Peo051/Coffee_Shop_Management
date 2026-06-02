@@ -194,60 +194,68 @@
       .trim();
   }
 
-  const branches = BRANCH_BASE_LIST.map((branch, index) => {
-    const contact = BRANCH_CONTACT_BY_CITY[branch.cityCode] || {};
-    const descriptions = createDescriptions(branch);
+  function getStoredBranches() {
+    try {
+      const stored = localStorage.getItem("gibor_branches");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
+      }
+    } catch (e) {
+      console.error("Lỗi đọc branches từ localStorage:", e);
+    }
 
-    return {
-      ...branch,
-      order: index + 1,
-      image:
-        branch.image ||
-        BRANCH_IMAGE_BY_CITY[branch.cityCode] ||
-        "images/logo/logo.jpg",
-      shortDescription: descriptions.shortDescription,
-      fullDescription: descriptions.fullDescription,
-      contactPhone: contact.phone || "",
-      contactEmail: contact.email || "",
-      mapEmbedUrl: createMapEmbedUrl(branch.address),
-    };
-  });
-
-  const branchById = {};
-  const branchesByCity = { hcm: [], hn: [], dn: [] };
-
-  branches.forEach((branch) => {
-    branchById[branch.id] = branch;
-    if (!branchesByCity[branch.cityCode]) branchesByCity[branch.cityCode] = [];
-    branchesByCity[branch.cityCode].push(branch);
-  });
+    // Khởi sinh dữ liệu ban đầu
+    const initialBranches = BRANCH_BASE_LIST.map((branch, index) => {
+      const contact = BRANCH_CONTACT_BY_CITY[branch.cityCode] || {};
+      const descriptions = createDescriptions(branch);
+      return {
+        ...branch,
+        order: index + 1,
+        image: branch.image || BRANCH_IMAGE_BY_CITY[branch.cityCode] || "images/logo/logo.jpg",
+        shortDescription: descriptions.shortDescription,
+        fullDescription: descriptions.fullDescription,
+        contactPhone: contact.phone || "",
+        contactEmail: contact.email || "",
+        mapEmbedUrl: createMapEmbedUrl(branch.address),
+      };
+    });
+    localStorage.setItem("gibor_branches", JSON.stringify(initialBranches));
+    return initialBranches;
+  }
 
   function cloneBranch(branch) {
     return branch ? { ...branch } : null;
   }
 
-  // Expose dữ liệu và helper dùng chung cho các trang khác.
-  window.GIBOR_BRANCHES = branches.map(cloneBranch);
+  // Khởi tạo biến toàn cục để đồng bộ tương thích ngược
+  window.GIBOR_BRANCHES = getStoredBranches().map(cloneBranch);
+
   window.GIBOR_BRANCH_UTILS = {
     all() {
-      return branches.map(cloneBranch);
+      return getStoredBranches().map(cloneBranch);
     },
     getByCity(cityCode) {
-      return (branchesByCity[cityCode] || []).map(cloneBranch);
+      const list = getStoredBranches();
+      return list.filter(b => b.cityCode === cityCode).map(cloneBranch);
     },
     getById(branchId) {
-      return cloneBranch(branchById[branchId]);
+      const list = getStoredBranches();
+      const branch = list.find(b => b.id === branchId);
+      return cloneBranch(branch);
     },
     search(keyword, cityCode) {
       const normalizedKeyword = normalizeText(keyword);
-      const list =
-        cityCode && cityCode !== "all"
-          ? branchesByCity[cityCode] || []
-          : branches;
+      const list = getStoredBranches();
+      const filteredList = cityCode && cityCode !== "all"
+        ? list.filter(b => b.cityCode === cityCode)
+        : list;
 
-      if (!normalizedKeyword) return list.map(cloneBranch);
+      if (!normalizedKeyword) return filteredList.map(cloneBranch);
 
-      return list
+      return filteredList
         .filter((branch) => {
           const haystack = normalizeText(
             [
@@ -262,6 +270,79 @@
         })
         .map(cloneBranch);
     },
+    save(branches) {
+      const cleanList = (branches || []).filter(Boolean);
+      localStorage.setItem("gibor_branches", JSON.stringify(cleanList));
+      window.GIBOR_BRANCHES = cleanList.map(cloneBranch);
+    },
+    add(branch) {
+      const list = getStoredBranches();
+      const id = branch.id || `br-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+      const descriptions = createDescriptions(branch);
+      const cityNameMap = {
+        hcm: "TP. Hồ Chí Minh",
+        hn: "Hà Nội",
+        dn: "Đà Nẵng"
+      };
+
+      const newBranch = {
+        id: id,
+        cityCode: branch.cityCode || "hcm",
+        cityName: cityNameMap[branch.cityCode] || branch.cityName || "TP. Hồ Chí Minh",
+        district: branch.district || "",
+        name: branch.name || "Chi nhánh mới",
+        address: branch.address || "",
+        image: branch.image || "images/logo/logo.jpg",
+        shortDescription: branch.shortDescription || descriptions.shortDescription,
+        fullDescription: branch.fullDescription || descriptions.fullDescription,
+        contactPhone: branch.contactPhone || "",
+        contactEmail: branch.contactEmail || "",
+        mapEmbedUrl: branch.mapEmbedUrl || createMapEmbedUrl(branch.address || ""),
+        order: list.length + 1
+      };
+
+      list.push(newBranch);
+      this.save(list);
+      return newBranch;
+    },
+    update(branchId, updatedBranch) {
+      const list = getStoredBranches();
+      const index = list.findIndex(b => b.id === branchId);
+      if (index === -1) return false;
+
+      const current = list[index];
+      const cityNameMap = {
+        hcm: "TP. Hồ Chí Minh",
+        hn: "Hà Nội",
+        dn: "Đà Nẵng"
+      };
+      
+      const newCityCode = updatedBranch.cityCode || current.cityCode;
+      
+      list[index] = {
+        ...current,
+        ...updatedBranch,
+        cityCode: newCityCode,
+        cityName: cityNameMap[newCityCode] || updatedBranch.cityName || current.cityName,
+        mapEmbedUrl: updatedBranch.mapEmbedUrl || (updatedBranch.address ? createMapEmbedUrl(updatedBranch.address) : current.mapEmbedUrl)
+      };
+
+      this.save(list);
+      return true;
+    },
+    delete(branchId) {
+      const list = getStoredBranches();
+      const filtered = list.filter(b => b.id !== branchId);
+      if (filtered.length === list.length) return false;
+      
+      // Cập nhật lại số thứ tự (order)
+      filtered.forEach((b, idx) => {
+        b.order = idx + 1;
+      });
+
+      this.save(filtered);
+      return true;
+    }
   };
 })();
 /* 

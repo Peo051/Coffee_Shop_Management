@@ -8,14 +8,218 @@
   Lưu trữ & xử lý dữ liệu người dùng bằng localStorage
 */
 
+const ADMIN_PRODUCTS_KEY = "gibor_admin_products";
+
+const defaultProducts = [
+  { id: "p-1", name: "Cà phê đen", category: "Cà phê", price: 25000, img: "images/menu/capheden.jpg", desc: "Đậm đà nguyên chất – chuẩn gu truyền thống", isBestSeller: false, status: "active" },
+  { id: "p-2", name: "Cà phê sữa", category: "Cà phê", price: 30000, img: "images/menu/caphesua.jpg", desc: "Béo nhẹ hòa quyện – dễ uống mỗi ngày", isBestSeller: false, status: "active" },
+  { id: "p-3", name: "Bạc xỉu", category: "Cà phê", price: 32000, img: "images/menu/bacxiu.jpg", desc: "Ngọt ngào sữa nhiều – cà phê thoang thoảng", isBestSeller: true, status: "active" },
+  { id: "p-4", name: "Cà phê muối", category: "Cà phê", price: 36000, img: "images/menu/caphemuoi.jpg", desc: "Đậm vị cà phê – lớp kem muối béo mịn", isBestSeller: false, status: "active" },
+  { id: "p-5", name: "Matcha Latte", category: "Matcha", price: 40000, img: "images/menu/matchalatte.jpg", desc: "Matcha nguyên chất – béo thơm dịu nhẹ", isBestSeller: false, status: "active" },
+  { id: "p-6", name: "Matcha Dừa", category: "Matcha", price: 36000, img: "images/menu/matchadua.jpg", desc: "Matcha hòa dừa – thanh mát, béo nhẹ", isBestSeller: false, status: "active" },
+  { id: "p-7", name: "Matcha Dâu", category: "Matcha", price: 36000, img: "images/menu/matchadau.jpg", desc: "Chua ngọt dâu – cân bằng vị matcha", isBestSeller: false, status: "active" },
+  { id: "p-8", name: "Matcha Xoài", category: "Matcha", price: 36000, img: "images/menu/matchaxoai.jpg", desc: "Xoài tươi ngọt dịu – kết hợp matcha độc đáo", isBestSeller: false, status: "active" },
+  { id: "p-9", name: "Trà Dâu", category: "Trà", price: 30000, img: "images/menu/tradau.jpg", desc: "Thanh mát trà – thơm ngọt vị dâu", isBestSeller: false, status: "active" },
+  { id: "p-10", name: "Trà Vải", category: "Trà", price: 30000, img: "images/menu/travai.jpg", desc: "Ngọt nhẹ vải – giải khát sảng khoái", isBestSeller: false, status: "active" },
+  { id: "p-11", name: "Trà Lựu Hibiscus", category: "Trà", price: 30000, img: "images/menu/luuhibicus.jpg", desc: "Chua nhẹ hibiscus – tươi mát lựu đỏ", isBestSeller: false, status: "active" },
+  { id: "p-12", name: "Trà Đào", category: "Trà", price: 28000, img: "images/menu/tradao.jpg", desc: "Đào thơm dịu – vị trà thanh nhẹ", isBestSeller: false, status: "active" },
+  { id: "p-13", name: "Trà Sữa Trân Châu Đường Đen", category: "Trà sữa", price: 30000, img: "images/menu/tranchauduongden.jpg", desc: "Ngọt đậm đường đen – trân châu dẻo dai", isBestSeller: true, status: "active" },
+  { id: "p-14", name: "Trà Sữa Truyền Thống", category: "Trà sữa", price: 25000, img: "images/menu/truyenthong.jpg", desc: "Hương trà sữa classic – ngọt dịu dễ uống", isBestSeller: false, status: "active" },
+  { id: "p-15", name: "Trà Sữa Thái Xanh", category: "Trà sữa", price: 20000, img: "images/menu/thaixanh.jpg", desc: "Thơm trà Thái – thanh mát nhẹ nhàng", isBestSeller: false, status: "active" },
+  { id: "p-16", name: "Trà Sữa Caramel", category: "Trà sữa", price: 35000, img: "images/menu/trasuacaramel.jpg", desc: "Ngọt thanh vị trà sữa – Lớp caramel béo ngậy", isBestSeller: true, status: "active" },
+  { id: "p-17", name: "Trà Sữa Gạo Rang", category: "Trà sữa", price: 30000, img: "images/menu/trasuagaorang.jpg", desc: "Thơm nhẹ mùi gạo rang – Ngọt thanh của sữa và trà", isBestSeller: false, status: "active" },
+  { id: "p-18", name: "Trà Sữa Kem Cheese", category: "Trà sữa", price: 38000, img: "images/menu/trasuakemcheese.jpg", desc: "Thanh mát của trà – Lớp kem cheese mặn mặn", isBestSeller: false, status: "active" },
+  { id: "p-19", name: "Trà Sữa Khoai Môn", category: "Trà sữa", price: 32000, img: "images/menu/trasuakhoaimon.jpg", desc: "Thơm ngon – Khoai môn béo ngậy", isBestSeller: false, status: "active" },
+  { id: "p-20", name: "Trà Sữa Oreo", category: "Trà sữa", price: 30000, img: "images/menu/trasuaoreo.jpg", desc: "Thơm nhẹ vị trà, vị béo của sữa tươi – Kem Oreo", isBestSeller: false, status: "active" },
+  { id: "p-21", name: "Trà Sữa Pudding", category: "Trà sữa", price: 35000, img: "images/menu/trasuapudding.jpg", desc: "Thơm ngon – Ít ngọt cùng pudding mềm mịn", isBestSeller: false, status: "active" },
+  { id: "p-22", name: "Trà Sữa Socola", category: "Trà sữa", price: 20000, img: "images/menu/trasuasocola.jpg", desc: "Vị sữa béo nhẹ và socola đậm đà", isBestSeller: false, status: "active" },
+  { id: "p-23", name: "Bánh Cheesecake", category: "Bánh ngọt", price: 35000, img: "images/menu/cheesecake.jpg", desc: "Béo mịn phô mai – tan ngay đầu lưỡi", isBestSeller: false, status: "active" },
+  { id: "p-24", name: "Bánh Cupcake", category: "Bánh ngọt", price: 33000, img: "images/menu/cupcake.jpg", desc: "Mềm xốp nhỏ xinh – ngọt ngào tinh tế", isBestSeller: false, status: "active" },
+  { id: "p-25", name: "Bánh Bông Lan Kem Tươi", category: "Bánh ngọt", price: 30000, img: "images/menu/bonglankemtuoi.jpg", desc: "Nhẹ mềm – kem tươi mát dịu", isBestSeller: false, status: "active" },
+  { id: "p-26", name: "Bánh Cookie", category: "Bánh ngọt", price: 36000, img: "images/menu/cookie.jpg", desc: "Giòn tan – ngọt nhẹ vừa ăn", isBestSeller: false, status: "active" },
+  { id: "p-27", name: "Bánh Brownie Socola", category: "Bánh ngọt", price: 40000, img: "images/menu/brownie.jpg", desc: "Đậm vị socola – mềm ẩm quyến rũ", isBestSeller: false, status: "active" },
+  { id: "p-28", name: "Bánh Mousse Dâu", category: "Bánh ngọt", price: 38000, img: "images/menu/mousse.jpg", desc: "Mịn mát – chua ngọt vị dâu", isBestSeller: false, status: "active" },
+  { id: "p-29", name: "Bánh Tiramisu", category: "Bánh ngọt", price: 35000, img: "images/menu/tiramisu.jpg", desc: "Cà phê thơm – mềm mịn chuẩn Ý", isBestSeller: true, status: "active" },
+  { id: "p-30", name: "Bánh Red Velvet", category: "Bánh ngọt", price: 45000, img: "images/menu/redvelvet.jpg", desc: "Mềm xốp đỏ quyến rũ – kem cheese béo nhẹ", isBestSeller: false, status: "active" },
+  { id: "p-31", name: "Combo 1", category: "Combo", price: 55000, img: "images/menu/combo1.jpg", desc: "Bạc xỉu + Bánh Cheesecake", isBestSeller: true, status: "active" },
+  { id: "p-32", name: "Combo 2", category: "Combo", price: 50000, img: "images/menu/combo2.jpg", desc: "Cà phê đen + Bánh Cookie", isBestSeller: false, status: "active" },
+  { id: "p-33", name: "Combo 3", category: "Combo", price: 60000, img: "images/menu/combo3.jpg", desc: "Cà phê sữa + Bánh CupCake", isBestSeller: false, status: "active" },
+  { id: "p-34", name: "Combo 4", category: "Combo", price: 58000, img: "images/menu/combo4.jpg", desc: "Cà phê muối + Bánh Bông Lan Kem Tươi", isBestSeller: false, status: "active" },
+  { id: "p-35", name: "Combo 5", category: "Combo", price: 45000, img: "images/menu/combo5.jpg", desc: "Matcha Dâu + Bánh Mousse Dâu", isBestSeller: false, status: "active" },
+  { id: "p-36", name: "Combo 6", category: "Combo", price: 52000, img: "images/menu/combo6.jpg", desc: "Matcha Xoài + Bánh Tiramisu", isBestSeller: false, status: "active" },
+  { id: "p-37", name: "Combo 7", category: "Combo", price: 48000, img: "images/menu/combo7.jpg", desc: "Matcha Dừa + Bánh Cheesecake", isBestSeller: false, status: "active" },
+  { id: "p-38", name: "Combo 8", category: "Combo", price: 55000, img: "images/menu/combo8.jpg", desc: "Matcha Latte + Bánh Bông Lan Kem Tươi", isBestSeller: true, status: "active" },
+  { id: "p-39", name: "Combo 9", category: "Combo", price: 50000, img: "images/menu/combo9.jpg", desc: "Trà Vải + Bánh Brownie Socola", isBestSeller: false, status: "active" },
+  { id: "p-40", name: "Combo 10", category: "Combo", price: 48000, img: "images/menu/combo10.jpg", desc: "Trà Lựu Hibiscus + Bánh Red Velvet", isBestSeller: true, status: "active" },
+  { id: "p-41", name: "Combo 11", category: "Combo", price: 52000, img: "images/menu/combo11.jpg", desc: "Trà Đào + Bánh Bông Lan Kem Tươi", isBestSeller: false, status: "active" },
+  { id: "p-42", name: "Combo 12", category: "Combo", price: 55000, img: "images/menu/combo12.jpg", desc: "Trà Dâu + Bánh Tiramisu", isBestSeller: false, status: "active" },
+  { id: "p-43", name: "Trân châu đen", category: "Topping", price: 10000, img: "images/menu/tranchauden.jpg", desc: "Trân châu đen dẻo dai ngọt dịu", isBestSeller: false, status: "active" },
+  { id: "p-44", name: "Trân châu trắng", category: "Topping", price: 10000, img: "images/menu/tranchauduongden.jpg", desc: "Trân châu trắng giòn dai sần sật", isBestSeller: false, status: "active" },
+  { id: "p-45", name: "Thạch trái cây", category: "Topping", price: 10000, img: "images/menu/thachtraicay.jpg", desc: "Thạch dẻo thơm mát hương trái cây", isBestSeller: false, status: "active" },
+  { id: "p-46", name: "Thạch dừa", category: "Topping", price: 10000, img: "images/menu/thachdua.jpg", desc: "Thạch dừa non giòn ngọt tự nhiên", isBestSeller: false, status: "active" },
+  { id: "p-47", name: "Thạch matcha", category: "Topping", price: 15000, img: "images/menu/thachmatcha.jpg", desc: "Thạch matcha thơm nồng chuẩn vị Nhật", isBestSeller: false, status: "active" },
+  { id: "p-48", name: "Thạch củ năng", category: "Topping", price: 15000, img: "images/menu/thachcunang.jpg", desc: "Thạch củ năng giòn rụm bên trong", isBestSeller: false, status: "active" },
+  { id: "p-49", name: "Khoai môn bóng", category: "Topping", price: 15000, img: "images/menu/khoaimonbong.jpg", desc: "Khoai môn dẻo bùi thơm ngậy", isBestSeller: false, status: "active" },
+];
+
+function normalizeProduct(product) {
+  let img = product.img || "";
+  
+  // Nếu img rỗng hoặc là ảnh logo fallback, thử tìm ảnh gốc từ defaultProducts
+  if (!img || img === "images/logo/logo.jpg") {
+    const defaultP = defaultProducts.find(d => d.id === product.id || d.name === product.name);
+    if (defaultP && defaultP.img) {
+      img = defaultP.img;
+    } else {
+      img = "images/logo/logo.jpg";
+    }
+  }
+  
+  return {
+    id: product.id || `p-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    name: product.name || "",
+    category: product.category || "other",
+    price: Number(product.price) || 0,
+    img: img,
+    desc: product.desc || "",
+    isBestSeller: Boolean(product.isBestSeller),
+    status: product.status || "active"
+  };
+}
+
+const ProductManager = {
+  getProducts() {
+    let products = [];
+    try {
+      const raw = localStorage.getItem(ADMIN_PRODUCTS_KEY);
+      products = raw ? JSON.parse(raw) : [];
+    } catch(e) {
+      products = [];
+    }
+    if (!Array.isArray(products) || !products.length) {
+      products = defaultProducts;
+      localStorage.setItem(ADMIN_PRODUCTS_KEY, JSON.stringify(defaultProducts));
+    }
+    
+    // Khôi phục ảnh gốc cho sản phẩm mặc định bị ô nhiễm
+    let needSave = false;
+    products = products.filter(p => p !== null && p !== undefined).map(p => {
+      const normalized = normalizeProduct(p);
+      // Kiểm tra nếu ảnh đã bị đổi thành logo cho sản phẩm gốc
+      if (p.img !== normalized.img) {
+        needSave = true;
+      }
+      return normalized;
+    });
+    
+    // Lưu lại nếu có thay đổi ảnh
+    if (needSave) {
+      localStorage.setItem(ADMIN_PRODUCTS_KEY, JSON.stringify(products));
+    }
+    
+    return products;
+  },
+  saveProducts(products) {
+    const cleanProducts = (products || []).filter(p => p !== null && p !== undefined).map(normalizeProduct);
+    localStorage.setItem(ADMIN_PRODUCTS_KEY, JSON.stringify(cleanProducts));
+  }
+};
+
 const UserManager = {
+  ensureDefaultAdmin() {
+    const users = this.getUsers();
+    const adminExists = users.some(u => u && u.role === "admin" && u.id === "admin-001");
+    let changed = false;
+    
+    if (!adminExists) {
+      const adminUser = {
+        id: "admin-001",
+        username: "admin",
+        lastName: "Quản trị",
+        firstName: "Admin",
+        displayName: "Quản trị Admin",
+        email: "admin@giborcoffee.com",
+        phone: "0000000000",
+        password: "123",
+        role: "admin",
+        status: "active",
+        provider: "local",
+        permissions: ["*"],
+        createdAt: new Date().toISOString()
+      };
+      // Keep existing users if any, add admin
+      users.push(adminUser);
+      changed = true;
+    }
+
+    if (localStorage.getItem("gibor_branch_manager_seeded_v1") !== "true") {
+      const branchManagers = [
+        { branchId: "hcm1", username: "ql_hcm1", name: "Quan ly GIBOR Le Trong Tan", email: "ql-hcm1@giborcoffee.com", phone: "0901000001" },
+        { branchId: "hcm2", username: "ql_hcm2", name: "Quan ly GIBOR Nguyen Hue", email: "ql-hcm2@giborcoffee.com", phone: "0901000002" },
+        { branchId: "hcm3", username: "ql_hcm3", name: "Quan ly GIBOR Vo Van Tan", email: "ql-hcm3@giborcoffee.com", phone: "0901000003" },
+        { branchId: "hcm4", username: "ql_hcm4", name: "Quan ly GIBOR Xa Lo Ha Noi", email: "ql-hcm4@giborcoffee.com", phone: "0901000004" },
+        { branchId: "hcm5", username: "ql_hcm5", name: "Quan ly GIBOR Dien Bien Phu", email: "ql-hcm5@giborcoffee.com", phone: "0901000005" },
+        { branchId: "hn1", username: "ql_hn1", name: "Quan ly GIBOR Tran Duy Hung", email: "ql-hn1@giborcoffee.com", phone: "0902000001" },
+        { branchId: "hn2", username: "ql_hn2", name: "Quan ly GIBOR Lang Ha", email: "ql-hn2@giborcoffee.com", phone: "0902000002" },
+        { branchId: "hn3", username: "ql_hn3", name: "Quan ly GIBOR Bach Mai", email: "ql-hn3@giborcoffee.com", phone: "0902000003" },
+        { branchId: "hn4", username: "ql_hn4", name: "Quan ly GIBOR Hoang Hoa Tham", email: "ql-hn4@giborcoffee.com", phone: "0902000004" },
+        { branchId: "hn5", username: "ql_hn5", name: "Quan ly GIBOR Nguyen Van Cu", email: "ql-hn5@giborcoffee.com", phone: "0902000005" },
+        { branchId: "dn1", username: "ql_dn1", name: "Quan ly GIBOR Vo Nguyen Giap", email: "ql-dn1@giborcoffee.com", phone: "0903000001" },
+        { branchId: "dn2", username: "ql_dn2", name: "Quan ly GIBOR Bach Dang", email: "ql-dn2@giborcoffee.com", phone: "0903000002" },
+        { branchId: "dn3", username: "ql_dn3", name: "Quan ly GIBOR Nguyen Van Linh", email: "ql-dn3@giborcoffee.com", phone: "0903000003" },
+        { branchId: "dn4", username: "ql_dn4", name: "Quan ly GIBOR Ton Duc Thang", email: "ql-dn4@giborcoffee.com", phone: "0903000004" },
+        { branchId: "dn5", username: "ql_dn5", name: "Quan ly GIBOR Cach Mang Thang Tam", email: "ql-dn5@giborcoffee.com", phone: "0903000005" },
+      ];
+
+      branchManagers.forEach((manager) => {
+        const exists = users.some((user) =>
+          user &&
+          (String(user.id) === `branch-manager-${manager.branchId}` ||
+            String(user.username || "").toLowerCase() === manager.username ||
+            String(user.email || "").toLowerCase() === manager.email)
+        );
+
+        if (!exists) {
+          users.push({
+            id: `branch-manager-${manager.branchId}`,
+            username: manager.username,
+            lastName: "Quan ly",
+            firstName: manager.name.replace("Quan ly ", ""),
+            displayName: manager.name,
+            email: manager.email,
+            phone: manager.phone,
+            password: "123456",
+            role: "branch_manager",
+            branchId: manager.branchId,
+            status: "active",
+            provider: "email",
+            permissions: [`branch:${manager.branchId}`],
+            createdAt: new Date().toISOString()
+          });
+          changed = true;
+        }
+      });
+
+      localStorage.setItem("gibor_branch_manager_seeded_v1", "true");
+    }
+
+    if (changed) {
+      this.saveUsers(users);
+    }
+  },
+
   /**
    * Lấy danh sách tất cả người dùng từ localStorage
    * @returns {Array} Mảng các đối tượng user
    */
   getUsers() {
-    const users = localStorage.getItem("gibor_users");
-    return users ? JSON.parse(users) : [];
+    try {
+      const users = localStorage.getItem("gibor_users");
+      const parsed = users ? JSON.parse(users) : [];
+      return (Array.isArray(parsed) ? parsed : []).filter(u => u !== null && u !== undefined);
+    } catch (e) {
+      return [];
+    }
   },
 
   /**
@@ -23,7 +227,8 @@ const UserManager = {
    * @param {Array} users - Mảng người dùng
    */
   saveUsers(users) {
-    localStorage.setItem("gibor_users", JSON.stringify(users));
+    const cleanUsers = (users || []).filter(u => u !== null && u !== undefined);
+    localStorage.setItem("gibor_users", JSON.stringify(cleanUsers));
   },
 
   /**
@@ -71,12 +276,16 @@ const UserManager = {
 
     const newUser = {
       id: Date.now(),
+      username: email.split('@')[0], // Generate a default username from email
       lastName: lastName,
       firstName: firstName,
       displayName: (lastName + " " + firstName).trim(),
       email: email,
       phone: phone,
       password: password,
+      role: "user",
+      status: "active",
+      permissions: [],
       provider: "email", // Đánh dấu đăng ký bằng email/password
       createdAt: new Date().toISOString(),
     };
@@ -92,22 +301,36 @@ const UserManager = {
 
   /**
    * Đăng nhập
-   * @param {string} email
+   * @param {string} loginId
    * @param {string} password
    * @returns {Object} { success, message, user }
    */
-  login(email, password) {
+  login(loginId, password) {
     const users = this.getUsers();
+    // Allow login by email or username
     const user = users.find(
-      (u) => u.email === email && u.password === password,
+      (u) => (u.email === loginId || u.username === loginId) && u.password === password,
     );
 
     if (!user) {
       return {
         success: false,
-        message: "Email hoặc mật khẩu không đúng.",
+        message: "Thông tin đăng nhập hoặc mật khẩu không đúng.",
       };
     }
+    
+    // Check if locked
+    if (user.status === "locked") {
+      return {
+        success: false,
+        message: "Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên.",
+      };
+    }
+
+    // Normalize old users
+    if (!user.role) user.role = "user";
+    if (!user.status) user.status = "active";
+    if (!user.permissions) user.permissions = [];
 
     this.setCurrentUser(user);
     return {
@@ -129,6 +352,12 @@ const UserManager = {
       displayName: user.displayName,
       email: user.email,
       phone: user.phone,
+      username: user.username,
+      role: user.role || "user",
+      status: user.status || "active",
+      permissions: user.permissions || [],
+      provider: user.provider,
+      branchId: user.branchId || ""
     };
     localStorage.setItem("gibor_current_user", JSON.stringify(safeUser));
   },
@@ -140,6 +369,38 @@ const UserManager = {
   getCurrentUser() {
     const user = localStorage.getItem("gibor_current_user");
     return user ? JSON.parse(user) : null;
+  },
+
+  /**
+   * Kiểm tra quyền Admin
+   * @returns {boolean}
+   */
+  isAdmin() {
+    const user = this.getCurrentUser();
+    if (!user) return false;
+    
+    // Ràng buộc an toàn và tương thích ngược hoàn hảo
+    return user.role === "admin" && user.status !== "locked";
+  },
+  
+  /**
+   * Kiểm tra role
+   * @param {string} role
+   * @returns {boolean}
+   */
+  hasRole(role) {
+    const user = this.getCurrentUser();
+    return user && user.role === role;
+  },
+  
+  /**
+   * Chặn truy cập trang admin nếu không đủ quyền
+   */
+  requireAdmin() {
+    if (!this.isAdmin()) {
+      alert("Bạn không có quyền truy cập trang quản trị. Vui lòng đăng nhập bằng tài khoản admin và mật khẩu tương ứng.");
+      window.location.href = "login.html";
+    }
   },
 
   /**
@@ -497,10 +758,16 @@ const OrderManager = {
    * @returns {Array}
    */
   getOrders() {
-    const currentUser = UserManager.getCurrentUser();
-    if (!currentUser) return [];
-    const allOrders = JSON.parse(localStorage.getItem("gibor_orders") || "[]");
-    return allOrders.filter((o) => o.userId === currentUser.id);
+    try {
+      const currentUser = UserManager.getCurrentUser();
+      if (!currentUser) return [];
+      const allOrders = JSON.parse(localStorage.getItem("gibor_orders") || "[]");
+      return (Array.isArray(allOrders) ? allOrders : [])
+        .filter(o => o !== null && o !== undefined)
+        .filter((o) => o.userId === currentUser.id);
+    } catch (e) {
+      return [];
+    }
   },
 
   /**
@@ -508,19 +775,31 @@ const OrderManager = {
    * @param {Object} order - { code, items, total, payment, shipping, date }
    */
   saveOrder(order) {
-    const currentUser = UserManager.getCurrentUser();
-    if (!currentUser) return;
+    try {
+      const currentUser = UserManager.getCurrentUser();
+      if (!currentUser) return;
 
-    const allOrders = JSON.parse(localStorage.getItem("gibor_orders") || "[]");
-    allOrders.push({
-      ...order,
-      userId: currentUser.id,
-      userName: currentUser.displayName,
-      createdAt: new Date().toISOString(),
-    });
-    localStorage.setItem("gibor_orders", JSON.stringify(allOrders));
+      const allOrders = JSON.parse(localStorage.getItem("gibor_orders") || "[]");
+      const cleanOrders = (Array.isArray(allOrders) ? allOrders : []).filter(o => o !== null && o !== undefined);
+      
+      cleanOrders.push({
+        ...order,
+        userId: currentUser.id,
+        userName: currentUser.displayName,
+        createdAt: new Date().toISOString(),
+        status: order.status || "Đã ghi nhận", // Tự động gán trạng thái mặc định
+      });
+      localStorage.setItem("gibor_orders", JSON.stringify(cleanOrders));
+    } catch (e) {
+      console.error("Lỗi lưu đơn hàng:", e);
+    }
   },
 };
+
+// Initialize default admin
+if (typeof UserManager !== 'undefined') {
+  UserManager.ensureDefaultAdmin();
+}
 
 /* 
 ========================================================================================

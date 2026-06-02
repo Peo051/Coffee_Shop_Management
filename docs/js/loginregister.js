@@ -27,9 +27,25 @@ const $ = (id) => document.getElementById(id);
 
 /**
  * Chuyển hướng sau khi đăng nhập thành công (dùng popup thay vì alert)
+ * @param {Object} [user] 
  */
-function redirectAfterLogin() {
-  window.location.href = "index.html";
+function redirectAfterLogin(user) {
+  if (!user && UserManager.isLoggedIn()) {
+    user = UserManager.getCurrentUser();
+  }
+  
+  if (user && (user.role === "admin" || user.role === "branch_manager")) {
+    window.location.href = "admin.html";
+  } else {
+    window.location.href = "index.html";
+  }
+}
+
+// Cập nhật giao diện nếu đã đăng nhập từ trước
+if (UserManager.isLoggedIn()) {
+  // Nếu ở trang login, chuyển hướng về trang dựa trên role
+  const currentUser = UserManager.getCurrentUser();
+  redirectAfterLogin(currentUser);
 }
 
 /* =============================================================
@@ -62,8 +78,9 @@ if (loginForm) {
     submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang xử lý...';
 
     // BƯỚC 1: XÁC THỰC VỚI FIREBASE (Ưu tiên Firebase vì có link quên mật khẩu)
+    const isEmailFormat = email.includes("@");
     try {
-      if (typeof firebase !== "undefined" && firebase.auth) {
+      if (isEmailFormat && typeof firebase !== "undefined" && firebase.auth) {
         await firebase.auth().signInWithEmailAndPassword(email, password);
         // Đăng nhập Firebase THÀNH CÔNG -> Pass này là pass CHUẨN NHẤT
         // Đồng bộ pass về localStorage (lỡ user vừa reset pass qua email)
@@ -106,7 +123,7 @@ if (loginForm) {
           " quay trở lại GIBOR Coffee!",
         confirmText: "Tiếp tục",
         onConfirm: () => {
-          redirectAfterLogin();
+          redirectAfterLogin(result.user);
         },
       });
     } else {

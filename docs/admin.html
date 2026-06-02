@@ -1,0 +1,668 @@
+<!-- ========================================================================================
+
+                                    TRANG QUAN TRI - GIBOR COFFEE
+
+============================================================================================= -->
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="images/logo/logo.jpg" />
+    <title>Admin - GIBOR COFFEE</title>
+
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+    />
+    <link rel="stylesheet" href="css/style.css" />
+    <link rel="stylesheet" href="css/admin.css" />
+    <link rel="stylesheet" href="css/mobile-runtime.css" />
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&family=Playfair+Display:ital,wght@0,700;1,700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    />
+  </head>
+
+  <body>
+    <main class="admin-page">
+      <section class="admin-shell">
+        <aside class="admin-sidebar" aria-label="Điều hướng quản trị">
+          <div class="admin-brand-panel">
+            <img src="images/logo/logo.jpg" alt="GIBOR Coffee" />
+            <div>
+              <p>Admin Panel</p>
+              <h1>GIBOR COFFEE</h1>
+            </div>
+          </div>
+
+          <nav class="admin-menu" style="display: flex; flex-direction: column; height: calc(100% - 90px);">
+            <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
+              <button class="admin-nav-btn active" data-admin-tab="dashboard">
+                <i class="fas fa-chart-line"></i>
+                <span>Dashboard</span>
+              </button>
+              <button class="admin-nav-btn" data-admin-tab="accounts">
+                <i class="fas fa-users"></i>
+                <span>Quản lí tài khoản</span>
+              </button>
+              <button class="admin-nav-btn" data-admin-tab="products">
+                <i class="fas fa-mug-hot"></i>
+                <span>Quản lí sản phẩm</span>
+              </button>
+              <button class="admin-nav-btn" data-admin-tab="branches">
+                <i class="fas fa-store"></i>
+                <span>Quản lí chi nhánh</span>
+              </button>
+              <button class="admin-nav-btn" data-admin-tab="orders">
+                <i class="fas fa-receipt"></i>
+                <span>Quản lí đơn hàng</span>
+              </button>
+              <button class="admin-nav-btn" data-admin-tab="revenue">
+                <i class="fas fa-coins"></i>
+                <span>Báo cáo doanh thu</span>
+              </button>
+
+              <div class="admin-menu-divider" style="margin: 10px 0;"></div>
+
+              <button class="admin-nav-btn" onclick="window.location.href='index.html'">
+                <i class="fas fa-home"></i>
+                <span>Về Trang Chủ</span>
+              </button>
+            </div>
+            
+            <div style="margin-top: auto; display: flex; flex-direction: column; gap: 8px;">
+              <!-- Profile Panel inside Sidebar -->
+              <div class="admin-sidebar-profile" style="padding: 12px; background: rgba(95,61,36,0.08); border-radius: 12px; display: flex; align-items: center; gap: 10px; border: 1px solid rgba(95,61,36,0.12);">
+                <div style="width: 36px; height: 36px; border-radius: 50%; background: #4f311d; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem;" id="sidebarUserAvatar">A</div>
+                <div style="flex: 1; overflow: hidden;">
+                  <div style="font-size: 0.8rem; font-weight: 700; color: #4f311d; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" id="sidebarUserDisplayName">Admin</div>
+                  <div style="font-size: 0.72rem; color: #796454; font-weight: 600;" id="sidebarUserRole">Quản trị viên</div>
+                </div>
+              </div>
+
+              <button class="admin-nav-btn admin-nav-btn-logout" onclick="handleLogout()" style="width: 100%;">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Đăng Xuất</span>
+              </button>
+            </div>
+          </nav>
+        </aside>
+
+        <section class="admin-content">
+          <div class="admin-topbar">
+            <div>
+              <span class="admin-eyebrow">Bảng điều khiển</span>
+              <h2 id="adminPageTitle">Dashboard</h2>
+            </div>
+            <div class="admin-date">
+              <i class="fas fa-calendar-day"></i>
+              <span id="adminToday"></span>
+            </div>
+          </div>
+
+          <section class="admin-panel active" data-admin-panel="dashboard">
+            <div class="admin-stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 15px; margin-bottom: 20px;">
+              <article class="admin-stat-card">
+                <span class="stat-icon"><i class="fas fa-users"></i></span>
+                <div>
+                  <p>Tổng người dùng</p>
+                  <strong id="statUsers">0</strong>
+                </div>
+              </article>
+              <article class="admin-stat-card">
+                <span class="stat-icon"><i class="fas fa-mug-hot"></i></span>
+                <div>
+                  <p>Tổng sản phẩm</p>
+                  <strong id="statProducts">0</strong>
+                </div>
+              </article>
+              <article class="admin-stat-card">
+                <span class="stat-icon"><i class="fas fa-store"></i></span>
+                <div>
+                  <p>Tổng chi nhánh</p>
+                  <strong id="statBranches">0</strong>
+                </div>
+              </article>
+              <article class="admin-stat-card">
+                <span class="stat-icon"><i class="fas fa-receipt"></i></span>
+                <div>
+                  <p>Tổng đơn hàng</p>
+                  <strong id="statOrders">0</strong>
+                </div>
+              </article>
+              <article class="admin-stat-card revenue">
+                <span class="stat-icon"><i class="fas fa-coins"></i></span>
+                <div>
+                  <p>Doanh thu</p>
+                  <strong id="statRevenue">0đ</strong>
+                </div>
+              </article>
+            </div>
+
+            <!-- Bộ lọc trên Dashboard -->
+            <div class="admin-filter-bar" id="dashboardFilterBar" style="display: flex; gap: 15px; margin: 15px 0 25px 0; align-items: center; background: #fff8ef; padding: 12px 18px; border-radius: 12px; border: 1px solid rgba(95,61,36,0.15);">
+              <span style="font-weight: 700; color: #4f311d; font-size: 0.9rem;"><i class="fas fa-filter"></i> Chi nhánh hiển thị:</span>
+              <div style="width: 250px; margin: 0;">
+                <select id="dashboardBranchFilter" class="form-select" style="border: 1px solid rgba(95,61,36,0.25); border-radius: 8px; height: 38px; color: #4f311d; font-size: 0.85rem; cursor: pointer;">
+                  <option value="all">Toàn hệ thống</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="admin-grid-2">
+              <article class="admin-section">
+                <div class="admin-section-head">
+                  <div>
+                    <h3>Đơn hàng gần đây</h3>
+                    <p>Theo dữ liệu thanh toán trong trình duyệt.</p>
+                  </div>
+                </div>
+                <div class="admin-table-wrap">
+                  <table class="admin-table">
+                    <thead>
+                      <tr>
+                        <th>Mã đơn</th>
+                        <th>Khách hàng</th>
+                        <th>Tổng tiền</th>
+                        <th>Trạng thái</th>
+                      </tr>
+                    </thead>
+                    <tbody id="recentOrdersTable"></tbody>
+                  </table>
+                </div>
+              </article>
+
+              <article class="admin-section">
+                <div class="admin-section-head">
+                  <div>
+                    <h3>Báo cáo nhanh</h3>
+                    <p>Doanh thu 7 ngày gần nhất.</p>
+                  </div>
+                </div>
+                <div class="revenue-bars" id="dashboardRevenueBars"></div>
+              </article>
+            </div>
+
+            <!-- Cấu hình Cổng thanh toán payOS -->
+            <article class="admin-section" style="margin-top: 25px;">
+              <div class="admin-section-head">
+                <div>
+                  <h3><i class="fa-solid fa-credit-card" style="color: #00bbd6; margin-right: 6px;"></i> Cấu hình Cổng thanh toán payOS</h3>
+                  <p>Kết nối API Key để tự động tạo mã QR và đồng bộ trạng thái thanh toán đơn hàng.</p>
+                </div>
+              </div>
+              <form id="payosConfigForm" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; padding: 10px 0;">
+                <label style="color: #4f311d; font-weight: 600;">
+                  Client ID
+                  <input id="payosClientId" type="text" placeholder="Ví dụ: gbr-client-97435" style="border: 1px solid rgba(95,61,36,0.25); border-radius: 8px; height: 38px; padding: 0 12px; width: 100%; font-weight: normal; margin-top: 5px;" />
+                </label>
+                <label style="color: #4f311d; font-weight: 600;">
+                  API Key
+                  <input id="payosApiKey" type="password" placeholder="Nhập API Key từ payOS..." style="border: 1px solid rgba(95,61,36,0.25); border-radius: 8px; height: 38px; padding: 0 12px; width: 100%; font-weight: normal; margin-top: 5px;" />
+                </label>
+                <label style="grid-column: span 2; color: #4f311d; font-weight: 600;">
+                  Checksum Key
+                  <input id="payosChecksumKey" type="password" placeholder="Nhập Checksum Key từ payOS..." style="border: 1px solid rgba(95,61,36,0.25); border-radius: 8px; height: 38px; padding: 0 12px; width: 100%; font-weight: normal; margin-top: 5px;" />
+                </label>
+                <p style="grid-column: span 2; margin: 0; color: #796454; font-size: 0.86rem; line-height: 1.45;">
+                  Web tinh chi co the luu cau hinh tren trinh duyet hien tai, tao QR va polling trang thai payOS; khong gia lap webhook hay tu danh dau da thanh toan.
+                </p>
+                <div style="grid-column: span 2; display: flex; gap: 10px; margin-top: 5px;">
+                  <button class="admin-action primary" type="submit" style="background: #00bbd6; border-color: #00bbd6; color: #fff; font-weight: 700; border-radius: 8px; height: 40px; padding: 0 20px; cursor: pointer;">
+                    <i class="fas fa-save" style="margin-right: 6px;"></i> Lưu cấu hình payOS
+                  </button>
+                </div>
+              </form>
+            </article>
+          </section>
+
+          <section class="admin-panel" data-admin-panel="accounts">
+            <article class="admin-section">
+              <div class="admin-section-head">
+                <div>
+                  <h3>Quản lí tài khoản</h3>
+                  <p>Danh sách tài khoản đã đăng ký trên website.</p>
+                </div>
+                <form class="admin-product-form" id="accountForm">
+                    <input type="hidden" id="accountIndex" />
+                        <label>Họ tên
+                          <input id="accountName" type="text" required placeholder="Nhập họ tên" />
+                        </label>
+
+                        <label>
+                            Email
+                          <input id="accountEmail" type="email" required placeholder="Nhập email" />
+                        </label>
+
+                        <label>
+                          Số điện thoại
+                          <input id="accountPhone" type="text" required placeholder="Nhập số điện thoại" />
+                        </label>
+
+                        <label>
+                          Mật khẩu
+                          <input id="accountPassword" type="password" placeholder="Mật khẩu (bắt buộc khi thêm mới)" />
+                        </label>
+
+                        <label>
+                          Vai trò
+                          <select id="accountRole" style="width:100%; height:40px; padding:0 12px; border-radius:8px; border:1px solid rgba(95,61,36,0.25); color:#4f311d;">
+                            <option value="user">User (Khách hàng)</option>
+                            <option value="branch_manager">Branch Manager (Quản lý chi nhánh)</option>
+                            <option value="admin">Admin (Quản trị tối cao)</option>
+                          </select>
+                        </label>
+
+                        <label id="accountBranchGroup" style="display: none;">
+                          Chi nhánh quản lý
+                          <select id="accountBranchId" style="width:100%; height:40px; padding:0 12px; border-radius:8px; border:1px solid rgba(95,61,36,0.25); color:#4f311d;">
+                            <!-- Được load động qua JS -->
+                          </select>
+                        </label>
+
+                        <button class="admin-action primary" type="submit">
+                          <i class="fas fa-save"></i>
+                          <span id="accountSubmitText">Thêm tài khoản</span>
+                        </button>
+
+                        <button class="admin-action ghost" type="button" id="resetAccountForm">
+                          <i class="fas fa-rotate-left"></i>
+                        </button>
+                  </form> 
+              </div>
+              
+              <!-- Bộ lọc tài khoản -->
+              <div class="admin-filter-bar" style="display: flex; gap: 15px; margin: 20px 0; align-items: center; flex-wrap: wrap; background: #fff8ef; padding: 15px; border-radius: 12px; border: 1px solid rgba(95,61,36,0.15);">
+                <div style="flex: 1; min-width: 250px; position: relative; margin: 0;">
+                  <input type="text" id="searchAccount" placeholder="Tìm theo tên, email, SĐT..." class="form-control" style="padding-left: 35px; border: 1px solid rgba(95,61,36,0.25); border-radius: 8px; height: 40px;" />
+                  <i class="fas fa-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #796454;"></i>
+                </div>
+                <div style="width: 180px; margin: 0;">
+                  <select id="filterAccountRole" class="form-select" style="border: 1px solid rgba(95,61,36,0.25); border-radius: 8px; height: 40px; color: #4f311d;">
+                    <option value="">Tất cả vai trò</option>
+                    <option value="admin">Admin</option>
+                    <option value="branch_manager">Branch Manager</option>
+                    <option value="user">User</option>
+                  </select>
+                </div>
+                <div style="width: 180px; margin: 0;">
+                  <select id="filterAccountStatus" class="form-select" style="border: 1px solid rgba(95,61,36,0.25); border-radius: 8px; height: 40px; color: #4f311d;">
+                    <option value="">Tất cả trạng thái</option>
+                    <option value="active">Hoạt động</option>
+                    <option value="locked">Bị khóa</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="admin-table-wrap">
+                <table class="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Người dùng</th>
+                      <th>Email</th>
+                      <th>Số điện thoại</th>
+                      <th>Ngày tạo</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody id="accountsTable"></tbody>
+                </table>
+              </div>
+            </article>
+          </section>
+
+          <section class="admin-panel" data-admin-panel="products">
+            <article class="admin-section">
+              <div class="admin-section-head">
+                <div>
+                  <h3>Quản lí sản phẩm</h3>
+                  <p>Thêm, sửa nhanh và xoá sản phẩm trong trang quản trị.</p>
+                </div>
+              </div>
+
+              <form class="admin-product-form" id="productForm" style="gap: 15px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); display: grid;">
+                <input type="hidden" id="productId" />
+                <label>
+                  Tên sản phẩm
+                  <input id="productName" type="text" required placeholder="Ví dụ: Bạc xỉu" />
+                </label>
+                <label>
+                  Danh mục
+                  <select id="productCategory" required>
+                    <option value="Cà phê">Cà phê</option>
+                    <option value="Matcha">Matcha</option>
+                    <option value="Trà">Trà</option>
+                    <option value="Trà sữa">Trà sữa</option>
+                    <option value="Bánh ngọt">Bánh ngọt</option>
+                    <option value="Combo">Combo</option>
+                    <option value="Topping">Topping</option>
+                  </select>
+                </label>
+                <label>
+                  Giá
+                  <input id="productPrice" type="number" min="1000" step="1000" required />
+                </label>
+                <label>
+                  Đường dẫn ảnh
+                  <input id="productImg" type="text" required placeholder="Ví dụ: images/menu/capheden.jpg" />
+                </label>
+                <label style="grid-column: span 2;">
+                  Mô tả ngắn
+                  <input id="productDesc" type="text" placeholder="Mô tả hương vị..." />
+                </label>
+                <div style="display: flex; gap: 20px; align-items: center; grid-column: span 2;">
+                  <label class="checkbox-label" style="display:flex; align-items:center; gap:8px; cursor:pointer; margin: 0;">
+                    <input id="productBestSeller" type="checkbox" style="width:auto; min-height:auto; margin: 0;" />
+                    <span>Món bán chạy (Best Seller)</span>
+                  </label>
+                  <label class="checkbox-label" style="display:flex; align-items:center; gap:8px; cursor:pointer; margin: 0;">
+                    <input id="productStatus" type="checkbox" checked style="width:auto; min-height:auto; margin: 0;" />
+                    <span>Còn hàng (Active)</span>
+                  </label>
+                </div>
+                <div style="grid-column: span 2; display: flex; gap: 10px;">
+                  <button class="admin-action primary" type="submit" style="flex: 1;">
+                    <i class="fas fa-save"></i>
+                    <span id="productSubmitText">Thêm sản phẩm</span>
+                  </button>
+                  <button class="admin-action ghost" type="button" id="resetProductForm">
+                    <i class="fas fa-rotate-left"></i>
+                  </button>
+                </div>
+              </form>
+
+              <!-- Bộ lọc sản phẩm -->
+              <div class="admin-filter-bar" style="display: flex; gap: 15px; margin: 20px 0; align-items: center; flex-wrap: wrap; background: #fff8ef; padding: 15px; border-radius: 12px; border: 1px solid rgba(95,61,36,0.15);">
+                <div style="flex: 1; min-width: 200px; position: relative; margin: 0;">
+                  <input type="text" id="searchProduct" placeholder="Tìm sản phẩm theo tên..." class="form-control" style="padding-left: 35px; border: 1px solid rgba(95,61,36,0.25); border-radius: 8px; height: 40px;" />
+                  <i class="fas fa-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #796454;"></i>
+                </div>
+                <div style="width: 180px; margin: 0;">
+                  <select id="filterProductCategory" class="form-select" style="border: 1px solid rgba(95,61,36,0.25); border-radius: 8px; height: 40px; color: #4f311d;">
+                    <option value="">Tất cả danh mục</option>
+                    <option value="Cà phê">Cà phê</option>
+                    <option value="Matcha">Matcha</option>
+                    <option value="Trà">Trà</option>
+                    <option value="Trà sữa">Trà sữa</option>
+                    <option value="Bánh ngọt">Bánh ngọt</option>
+                    <option value="Combo">Combo</option>
+                    <option value="Topping">Topping</option>
+                  </select>
+                </div>
+                <div style="width: 180px; margin: 0;">
+                  <select id="filterProductStatus" class="form-select" style="border: 1px solid rgba(95,61,36,0.25); border-radius: 8px; height: 40px; color: #4f311d;">
+                    <option value="">Tất cả trạng thái</option>
+                    <option value="active">Còn hàng</option>
+                    <option value="out_of_stock">Hết hàng</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="admin-table-wrap">
+                <table class="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Ảnh</th>
+                      <th>Sản phẩm</th>
+                      <th>Danh mục</th>
+                      <th>Giá</th>
+                      <th>Trạng thái</th>
+                      <th>Hành động</th>
+                    </tr>
+                  </thead>
+                  <tbody id="productsTable"></tbody>
+                </table>
+              </div>
+            </article>
+          </section>
+
+          <section class="admin-panel" data-admin-panel="orders">
+            <article class="admin-section">
+              <div class="admin-section-head">
+                <div>
+                  <h3>Quản lí đơn hàng</h3>
+                  <p>Theo dõi thông tin đơn và cập nhật trạng thái xử lý.</p>
+                </div>
+              </div>
+              
+              <!-- Bộ lọc đơn hàng -->
+              <div class="admin-filter-bar" style="display: flex; gap: 15px; margin: 20px 0; align-items: center; flex-wrap: wrap; background: #fff8ef; padding: 15px; border-radius: 12px; border: 1px solid rgba(95,61,36,0.15);">
+                <div style="flex: 1; min-width: 200px; position: relative; margin: 0;">
+                  <input type="text" id="searchOrder" placeholder="Tìm mã đơn, tên khách, SĐT..." class="form-control" style="padding-left: 35px; border: 1px solid rgba(95,61,36,0.25); border-radius: 8px; height: 40px;" />
+                  <i class="fas fa-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #796454;"></i>
+                </div>
+                <div style="width: 180px; margin: 0;" id="orderBranchFilterContainer">
+                  <select id="filterOrderBranch" class="form-select" style="border: 1px solid rgba(95,61,36,0.25); border-radius: 8px; height: 40px; color: #4f311d;">
+                    <option value="">Tất cả chi nhánh</option>
+                  </select>
+                </div>
+                <div style="width: 180px; margin: 0;">
+                  <select id="filterOrderStatus" class="form-select" style="border: 1px solid rgba(95,61,36,0.25); border-radius: 8px; height: 40px; color: #4f311d;">
+                    <option value="">Tất cả trạng thái</option>
+                    <option value="Chờ thanh toán">Chờ thanh toán</option>
+                    <option value="Đã ghi nhận">Đã ghi nhận</option>
+                    <option value="Đang xử lý">Đang xử lý</option>
+                    <option value="Đang giao">Đang giao</option>
+                    <option value="Hoàn tất">Hoàn tất</option>
+                    <option value="Đã hủy">Đã hủy</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="admin-table-wrap">
+                <table class="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Mã đơn</th>
+                      <th>Khách hàng</th>
+                      <th>Sản phẩm</th>
+                      <th>Tổng tiền</th>
+                      <th>Thanh toán</th>
+                      <th>Chi nhánh xử lý</th>
+                      <th>Trạng thái</th>
+                    </tr>
+                  </thead>
+                  <tbody id="ordersTable"></tbody>
+                </table>
+              </div>
+            </article>
+          </section>
+
+          <section class="admin-panel" data-admin-panel="branches">
+            <article class="admin-section">
+              <div class="admin-section-head">
+                <div>
+                  <h3>Quản lí chi nhánh</h3>
+                  <p>Thêm, sửa và xoá các chi nhánh cửa hàng của GIBOR COFFEE.</p>
+                </div>
+              </div>
+
+              <form class="admin-product-form" id="branchForm" style="gap: 15px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); display: grid;">
+                <input type="hidden" id="branchId" />
+                <label>
+                  Tên chi nhánh
+                  <input id="branchName" type="text" required placeholder="Ví dụ: GIBOR Lê Lợi" />
+                </label>
+                <label>
+                  Thành phố
+                  <select id="branchCityCode" required>
+                    <option value="hcm">TP. Hồ Chí Minh</option>
+                    <option value="hn">Hà Nội</option>
+                    <option value="dn">Đà Nẵng</option>
+                  </select>
+                </label>
+                <label>
+                  Quận/Huyện
+                  <input id="branchDistrict" type="text" required placeholder="Ví dụ: Quận 1" />
+                </label>
+                <label>
+                  Điện thoại liên hệ
+                  <input id="branchPhone" type="text" required placeholder="Ví dụ: 0909 999 999" />
+                </label>
+                <label>
+                  Email chi nhánh
+                  <input id="branchEmail" type="email" required placeholder="Ví dụ: leloi@giborcoffee.com" />
+                </label>
+                <label>
+                  Đường dẫn ảnh chi nhánh
+                  <input id="branchImg" type="text" placeholder="Ví dụ: images/Branch/TPHCM1.jpg" />
+                </label>
+                <label style="grid-column: span 2;">
+                  Địa chỉ chi tiết
+                  <input id="branchAddress" type="text" required placeholder="Số 123 Lê Lợi, Phường Bến Thành, Quận 1..." />
+                </label>
+                <label style="grid-column: span 2;">
+                  Link nhúng bản đồ (Google Maps Embed Link)
+                  <input id="branchMapEmbedUrl" type="text" placeholder="Ví dụ: https://www.google.com/maps/embed?..." />
+                </label>
+                <label style="grid-column: span 2;">
+                  Mô tả ngắn
+                  <input id="branchShortDesc" type="text" placeholder="Không gian thoáng mát tại Quận 1..." />
+                </label>
+                <label style="grid-column: span 2;">
+                  Mô tả chi tiết
+                  <textarea id="branchFullDesc" rows="3" style="width: 100%; border-radius: 8px; border: 1px solid rgba(95,61,36,0.25); padding: 8px; color: #4f311d;" placeholder="Giới thiệu về chi nhánh..."></textarea>
+                </label>
+                <div style="grid-column: span 2; display: flex; gap: 10px;">
+                  <button class="admin-action primary" type="submit" style="flex: 1;">
+                    <i class="fas fa-save"></i>
+                    <span id="branchSubmitText">Thêm chi nhánh</span>
+                  </button>
+                  <button class="admin-action ghost" type="button" id="resetBranchForm">
+                    <i class="fas fa-rotate-left"></i>
+                  </button>
+                </div>
+              </form>
+
+              <!-- Bộ lọc chi nhánh -->
+              <div class="admin-filter-bar" style="display: flex; gap: 15px; margin: 20px 0; align-items: center; flex-wrap: wrap; background: #fff8ef; padding: 15px; border-radius: 12px; border: 1px solid rgba(95,61,36,0.15);">
+                <div style="flex: 1; min-width: 200px; position: relative; margin: 0;">
+                  <input type="text" id="searchBranch" placeholder="Tìm chi nhánh theo tên, địa chỉ..." class="form-control" style="padding-left: 35px; border: 1px solid rgba(95,61,36,0.25); border-radius: 8px; height: 40px;" />
+                  <i class="fas fa-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #796454;"></i>
+                </div>
+                <div style="width: 180px; margin: 0;">
+                  <select id="filterBranchCity" class="form-select" style="border: 1px solid rgba(95,61,36,0.25); border-radius: 8px; height: 40px; color: #4f311d;">
+                    <option value="">Tất cả thành phố</option>
+                    <option value="hcm">TP. Hồ Chí Minh</option>
+                    <option value="hn">Hà Nội</option>
+                    <option value="dn">Đà Nẵng</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="admin-table-wrap">
+                <table class="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Ảnh</th>
+                      <th>Tên chi nhánh</th>
+                      <th>Thành phố</th>
+                      <th>Quận/Huyện</th>
+                      <th>Địa chỉ</th>
+                      <th>Liên hệ</th>
+                      <th>Hành động</th>
+                    </tr>
+                  </thead>
+                  <tbody id="branchesTable"></tbody>
+                </table>
+              </div>
+            </article>
+          </section>
+
+          <section class="admin-panel" data-admin-panel="revenue">
+            <article class="admin-section">
+              <div class="admin-section-head" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 20px; border-bottom: none; padding-bottom: 0;">
+                <div>
+                  <h3>Báo cáo doanh thu</h3>
+                  <p>Tổng hợp doanh thu theo ngày và hiệu suất đơn hàng.</p>
+                </div>
+                <div style="width: 250px; margin: 0;" id="revenueBranchFilterContainer">
+                  <select id="filterRevenueBranch" class="form-select" style="border: 1px solid rgba(95,61,36,0.25); border-radius: 8px; height: 38px; color: #4f311d; font-size: 0.85rem; cursor: pointer;">
+                    <option value="">Toàn hệ thống</option>
+                  </select>
+                </div>
+              </div>
+              <div class="revenue-summary" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                <div>
+                  <span>Tổng doanh thu thực tế</span>
+                  <strong id="totalRevenueReal" style="color: #137333;">0đ</strong>
+                </div>
+                <div>
+                  <span>Doanh thu TB / đơn</span>
+                  <strong id="avgOrderValue">0đ</strong>
+                </div>
+                <div>
+                  <span>Đơn hoàn tất</span>
+                  <strong id="paidOrderCount">0</strong>
+                </div>
+                <div>
+                  <span>Đơn đã hủy</span>
+                  <strong id="canceledOrderCount" style="color: #c5221f;">0</strong>
+                </div>
+                <div>
+                  <span>Tỷ lệ hủy đơn</span>
+                  <strong id="cancelRate">0%</strong>
+                </div>
+                <div>
+                  <span>Ngày cao nhất</span>
+                  <strong id="bestRevenueDay">-</strong>
+                </div>
+              </div>
+              <div class="revenue-bars wide" id="revenueBars" style="margin-bottom: 30px;"></div>
+
+              <div class="admin-section-head" style="margin-top: 25px; border-top: 1px dashed rgba(95,61,36,0.2); padding-top: 20px;">
+                <div>
+                  <h3>Món bán chạy nhất (Best Sellers)</h3>
+                  <p>Xếp hạng sản phẩm dựa trên số lượng bán ra từ các đơn hoàn tất.</p>
+                </div>
+              </div>
+              <div class="admin-table-wrap">
+                <table class="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Sản phẩm</th>
+                      <th>Số lượng đã bán</th>
+                      <th>Doanh thu mang lại</th>
+                    </tr>
+                  </thead>
+                  <tbody id="bestSellersTable"></tbody>
+                </table>
+              </div>
+            </article>
+          </section>
+        </section>
+      </section>
+    </main>
+    
+    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+    <script>
+      const firebaseConfig = {
+        apiKey: "AIzaSyCnHG40t4WN230Alu4ia0cvzKhfndeBfpE",
+        authDomain: "coffee-a718c.firebaseapp.com",
+        projectId: "coffee-a718c",
+        storageBucket: "coffee-a718c.firebasestorage.app",
+        messagingSenderId: "37237991343",
+        appId: "1:37237991343:web:035a77871af9b41476315a",
+        measurementId: "G-YSS8HXMN6R",
+      };
+      if (typeof firebase !== "undefined" && !firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+      }
+    </script>
+
+    <script src="js/components.js?v=2.1.0"></script>
+    <script src="js/data.js?v=2.1.0"></script>
+    <script src="js/branches-data.js?v=2.1.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/main.js?v=2.1.0"></script>
+    <script src="js/admin.js?v=2.1.0" charset="UTF-8"></script>
+    <script src="js/mobile.js?v=2.1.0"></script>
+  </body>
+</html>

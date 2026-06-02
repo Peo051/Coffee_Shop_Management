@@ -200,6 +200,7 @@ const initApp = () => {
           "</div>" +
           "</div>" +
           '<ul class="user-dropdown-menu">' +
+          ((currentUser.role === "admin" || currentUser.role === "branch_manager") ? '<li><a href="admin.html" id="btnAdminPage"><i class="fas fa-user-shield"></i> Trang quản trị</a></li>' : '') +
           '<li><a href="#" id="btnMyAccount"><i class="fas fa-user"></i> Tài khoản của tôi</a></li>' +
           '<li><a href="#" id="btnOrderHistory"><i class="fas fa-shopping-bag"></i> Đơn hàng</a></li>' +
           '<li><button class="logout-btn" id="btnLogout"><i class="fas fa-sign-out-alt"></i> Đăng xuất</button></li>' +
