@@ -34,7 +34,7 @@ function redirectAfterLogin(user) {
     user = UserManager.getCurrentUser();
   }
   
-  if (user && user.role === "admin") {
+  if (user && (user.role === "admin" || user.role === "branch_manager")) {
     window.location.href = "admin.html";
   } else {
     window.location.href = "index.html";

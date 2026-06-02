@@ -642,6 +642,7 @@ body.dark .admin-nav-btn-logout:hover {
   }
 
   .admin-content {
+    margin-left: 0;
     margin-right: 0;
   }
 }

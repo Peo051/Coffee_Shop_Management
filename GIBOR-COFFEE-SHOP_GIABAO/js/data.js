@@ -53,22 +53,34 @@ const defaultProducts = [
   { id: "p-40", name: "Combo 10", category: "Combo", price: 48000, img: "images/menu/combo10.jpg", desc: "Trà Lựu Hibiscus + Bánh Red Velvet", isBestSeller: true, status: "active" },
   { id: "p-41", name: "Combo 11", category: "Combo", price: 52000, img: "images/menu/combo11.jpg", desc: "Trà Đào + Bánh Bông Lan Kem Tươi", isBestSeller: false, status: "active" },
   { id: "p-42", name: "Combo 12", category: "Combo", price: 55000, img: "images/menu/combo12.jpg", desc: "Trà Dâu + Bánh Tiramisu", isBestSeller: false, status: "active" },
-  { id: "p-43", name: "Trân châu đen", category: "Topping", price: 10000, img: "images/menu/capheden.jpg", desc: "Trân châu đen dẻo dai ngọt dịu", isBestSeller: false, status: "active" },
-  { id: "p-44", name: "Trân châu trắng", category: "Topping", price: 10000, img: "images/menu/caphesua.jpg", desc: "Trân châu trắng giòn dai sần sật", isBestSeller: false, status: "active" },
-  { id: "p-45", name: "Thạch trái cây", category: "Topping", price: 10000, img: "images/menu/caphemuoi.jpg", desc: "Thạch dẻo thơm mát hương trái cây", isBestSeller: false, status: "active" },
-  { id: "p-46", name: "Thạch dừa", category: "Topping", price: 10000, img: "images/menu/matchalatte.jpg", desc: "Thạch dừa non giòn ngọt tự nhiên", isBestSeller: false, status: "active" },
-  { id: "p-47", name: "Thạch matcha", category: "Topping", price: 15000, img: "images/menu/matchadua.jpg", desc: "Thạch matcha thơm nồng chuẩn vị Nhật", isBestSeller: false, status: "active" },
-  { id: "p-48", name: "Thạch củ năng", category: "Topping", price: 15000, img: "images/menu/matchadau.jpg", desc: "Thạch củ năng giòn rụm bên trong", isBestSeller: false, status: "active" },
-  { id: "p-49", name: "Khoai môn bóng", category: "Topping", price: 15000, img: "images/menu/matchaxoai.jpg", desc: "Khoai môn dẻo bùi thơm ngậy", isBestSeller: false, status: "active" },
+  { id: "p-43", name: "Trân châu đen", category: "Topping", price: 10000, img: "images/menu/tranchauden.jpg", desc: "Trân châu đen dẻo dai ngọt dịu", isBestSeller: false, status: "active" },
+  { id: "p-44", name: "Trân châu trắng", category: "Topping", price: 10000, img: "images/menu/tranchauduongden.jpg", desc: "Trân châu trắng giòn dai sần sật", isBestSeller: false, status: "active" },
+  { id: "p-45", name: "Thạch trái cây", category: "Topping", price: 10000, img: "images/menu/thachtraicay.jpg", desc: "Thạch dẻo thơm mát hương trái cây", isBestSeller: false, status: "active" },
+  { id: "p-46", name: "Thạch dừa", category: "Topping", price: 10000, img: "images/menu/thachdua.jpg", desc: "Thạch dừa non giòn ngọt tự nhiên", isBestSeller: false, status: "active" },
+  { id: "p-47", name: "Thạch matcha", category: "Topping", price: 15000, img: "images/menu/thachmatcha.jpg", desc: "Thạch matcha thơm nồng chuẩn vị Nhật", isBestSeller: false, status: "active" },
+  { id: "p-48", name: "Thạch củ năng", category: "Topping", price: 15000, img: "images/menu/thachcunang.jpg", desc: "Thạch củ năng giòn rụm bên trong", isBestSeller: false, status: "active" },
+  { id: "p-49", name: "Khoai môn bóng", category: "Topping", price: 15000, img: "images/menu/khoaimonbong.jpg", desc: "Khoai môn dẻo bùi thơm ngậy", isBestSeller: false, status: "active" },
 ];
 
 function normalizeProduct(product) {
+  let img = product.img || "";
+  
+  // Nếu img rỗng hoặc là ảnh logo fallback, thử tìm ảnh gốc từ defaultProducts
+  if (!img || img === "images/logo/logo.jpg") {
+    const defaultP = defaultProducts.find(d => d.id === product.id || d.name === product.name);
+    if (defaultP && defaultP.img) {
+      img = defaultP.img;
+    } else {
+      img = "images/logo/logo.jpg";
+    }
+  }
+  
   return {
     id: product.id || `p-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
     name: product.name || "",
     category: product.category || "other",
     price: Number(product.price) || 0,
-    img: product.img || "images/logo/logo.jpg",
+    img: img,
     desc: product.desc || "",
     isBestSeller: Boolean(product.isBestSeller),
     status: product.status || "active"
@@ -88,17 +100,36 @@ const ProductManager = {
       products = defaultProducts;
       localStorage.setItem(ADMIN_PRODUCTS_KEY, JSON.stringify(defaultProducts));
     }
-    return products.map(normalizeProduct);
+    
+    // Khôi phục ảnh gốc cho sản phẩm mặc định bị ô nhiễm
+    let needSave = false;
+    products = products.filter(p => p !== null && p !== undefined).map(p => {
+      const normalized = normalizeProduct(p);
+      // Kiểm tra nếu ảnh đã bị đổi thành logo cho sản phẩm gốc
+      if (p.img !== normalized.img) {
+        needSave = true;
+      }
+      return normalized;
+    });
+    
+    // Lưu lại nếu có thay đổi ảnh
+    if (needSave) {
+      localStorage.setItem(ADMIN_PRODUCTS_KEY, JSON.stringify(products));
+    }
+    
+    return products;
   },
   saveProducts(products) {
-    localStorage.setItem(ADMIN_PRODUCTS_KEY, JSON.stringify(products.map(normalizeProduct)));
+    const cleanProducts = (products || []).filter(p => p !== null && p !== undefined).map(normalizeProduct);
+    localStorage.setItem(ADMIN_PRODUCTS_KEY, JSON.stringify(cleanProducts));
   }
 };
 
 const UserManager = {
   ensureDefaultAdmin() {
     const users = this.getUsers();
-    const adminExists = users.some(u => u.role === "admin" && u.id === "admin-001");
+    const adminExists = users.some(u => u && u.role === "admin" && u.id === "admin-001");
+    let changed = false;
     
     if (!adminExists) {
       const adminUser = {
@@ -118,6 +149,61 @@ const UserManager = {
       };
       // Keep existing users if any, add admin
       users.push(adminUser);
+      changed = true;
+    }
+
+    if (localStorage.getItem("gibor_branch_manager_seeded_v1") !== "true") {
+      const branchManagers = [
+        { branchId: "hcm1", username: "ql_hcm1", name: "Quan ly GIBOR Le Trong Tan", email: "ql-hcm1@giborcoffee.com", phone: "0901000001" },
+        { branchId: "hcm2", username: "ql_hcm2", name: "Quan ly GIBOR Nguyen Hue", email: "ql-hcm2@giborcoffee.com", phone: "0901000002" },
+        { branchId: "hcm3", username: "ql_hcm3", name: "Quan ly GIBOR Vo Van Tan", email: "ql-hcm3@giborcoffee.com", phone: "0901000003" },
+        { branchId: "hcm4", username: "ql_hcm4", name: "Quan ly GIBOR Xa Lo Ha Noi", email: "ql-hcm4@giborcoffee.com", phone: "0901000004" },
+        { branchId: "hcm5", username: "ql_hcm5", name: "Quan ly GIBOR Dien Bien Phu", email: "ql-hcm5@giborcoffee.com", phone: "0901000005" },
+        { branchId: "hn1", username: "ql_hn1", name: "Quan ly GIBOR Tran Duy Hung", email: "ql-hn1@giborcoffee.com", phone: "0902000001" },
+        { branchId: "hn2", username: "ql_hn2", name: "Quan ly GIBOR Lang Ha", email: "ql-hn2@giborcoffee.com", phone: "0902000002" },
+        { branchId: "hn3", username: "ql_hn3", name: "Quan ly GIBOR Bach Mai", email: "ql-hn3@giborcoffee.com", phone: "0902000003" },
+        { branchId: "hn4", username: "ql_hn4", name: "Quan ly GIBOR Hoang Hoa Tham", email: "ql-hn4@giborcoffee.com", phone: "0902000004" },
+        { branchId: "hn5", username: "ql_hn5", name: "Quan ly GIBOR Nguyen Van Cu", email: "ql-hn5@giborcoffee.com", phone: "0902000005" },
+        { branchId: "dn1", username: "ql_dn1", name: "Quan ly GIBOR Vo Nguyen Giap", email: "ql-dn1@giborcoffee.com", phone: "0903000001" },
+        { branchId: "dn2", username: "ql_dn2", name: "Quan ly GIBOR Bach Dang", email: "ql-dn2@giborcoffee.com", phone: "0903000002" },
+        { branchId: "dn3", username: "ql_dn3", name: "Quan ly GIBOR Nguyen Van Linh", email: "ql-dn3@giborcoffee.com", phone: "0903000003" },
+        { branchId: "dn4", username: "ql_dn4", name: "Quan ly GIBOR Ton Duc Thang", email: "ql-dn4@giborcoffee.com", phone: "0903000004" },
+        { branchId: "dn5", username: "ql_dn5", name: "Quan ly GIBOR Cach Mang Thang Tam", email: "ql-dn5@giborcoffee.com", phone: "0903000005" },
+      ];
+
+      branchManagers.forEach((manager) => {
+        const exists = users.some((user) =>
+          user &&
+          (String(user.id) === `branch-manager-${manager.branchId}` ||
+            String(user.username || "").toLowerCase() === manager.username ||
+            String(user.email || "").toLowerCase() === manager.email)
+        );
+
+        if (!exists) {
+          users.push({
+            id: `branch-manager-${manager.branchId}`,
+            username: manager.username,
+            lastName: "Quan ly",
+            firstName: manager.name.replace("Quan ly ", ""),
+            displayName: manager.name,
+            email: manager.email,
+            phone: manager.phone,
+            password: "123456",
+            role: "branch_manager",
+            branchId: manager.branchId,
+            status: "active",
+            provider: "email",
+            permissions: [`branch:${manager.branchId}`],
+            createdAt: new Date().toISOString()
+          });
+          changed = true;
+        }
+      });
+
+      localStorage.setItem("gibor_branch_manager_seeded_v1", "true");
+    }
+
+    if (changed) {
       this.saveUsers(users);
     }
   },
@@ -127,8 +213,13 @@ const UserManager = {
    * @returns {Array} Mảng các đối tượng user
    */
   getUsers() {
-    const users = localStorage.getItem("gibor_users");
-    return users ? JSON.parse(users) : [];
+    try {
+      const users = localStorage.getItem("gibor_users");
+      const parsed = users ? JSON.parse(users) : [];
+      return (Array.isArray(parsed) ? parsed : []).filter(u => u !== null && u !== undefined);
+    } catch (e) {
+      return [];
+    }
   },
 
   /**
@@ -136,7 +227,8 @@ const UserManager = {
    * @param {Array} users - Mảng người dùng
    */
   saveUsers(users) {
-    localStorage.setItem("gibor_users", JSON.stringify(users));
+    const cleanUsers = (users || []).filter(u => u !== null && u !== undefined);
+    localStorage.setItem("gibor_users", JSON.stringify(cleanUsers));
   },
 
   /**
@@ -264,7 +356,8 @@ const UserManager = {
       role: user.role || "user",
       status: user.status || "active",
       permissions: user.permissions || [],
-      provider: user.provider
+      provider: user.provider,
+      branchId: user.branchId || ""
     };
     localStorage.setItem("gibor_current_user", JSON.stringify(safeUser));
   },
@@ -284,7 +377,10 @@ const UserManager = {
    */
   isAdmin() {
     const user = this.getCurrentUser();
-    return user && user.role === "admin";
+    if (!user) return false;
+    
+    // Ràng buộc an toàn và tương thích ngược hoàn hảo
+    return user.role === "admin" && user.status !== "locked";
   },
   
   /**
@@ -302,7 +398,7 @@ const UserManager = {
    */
   requireAdmin() {
     if (!this.isAdmin()) {
-      alert("Bạn không có quyền truy cập trang quản trị.");
+      alert("Bạn không có quyền truy cập trang quản trị. Vui lòng đăng nhập bằng tài khoản admin và mật khẩu tương ứng.");
       window.location.href = "login.html";
     }
   },
@@ -662,10 +758,16 @@ const OrderManager = {
    * @returns {Array}
    */
   getOrders() {
-    const currentUser = UserManager.getCurrentUser();
-    if (!currentUser) return [];
-    const allOrders = JSON.parse(localStorage.getItem("gibor_orders") || "[]");
-    return allOrders.filter((o) => o.userId === currentUser.id);
+    try {
+      const currentUser = UserManager.getCurrentUser();
+      if (!currentUser) return [];
+      const allOrders = JSON.parse(localStorage.getItem("gibor_orders") || "[]");
+      return (Array.isArray(allOrders) ? allOrders : [])
+        .filter(o => o !== null && o !== undefined)
+        .filter((o) => o.userId === currentUser.id);
+    } catch (e) {
+      return [];
+    }
   },
 
   /**
@@ -673,18 +775,24 @@ const OrderManager = {
    * @param {Object} order - { code, items, total, payment, shipping, date }
    */
   saveOrder(order) {
-    const currentUser = UserManager.getCurrentUser();
-    if (!currentUser) return;
+    try {
+      const currentUser = UserManager.getCurrentUser();
+      if (!currentUser) return;
 
-    const allOrders = JSON.parse(localStorage.getItem("gibor_orders") || "[]");
-    allOrders.push({
-      ...order,
-      userId: currentUser.id,
-      userName: currentUser.displayName,
-      createdAt: new Date().toISOString(),
-      status: order.status || "Đã ghi nhận", // Tự động gán trạng thái mặc định
-    });
-    localStorage.setItem("gibor_orders", JSON.stringify(allOrders));
+      const allOrders = JSON.parse(localStorage.getItem("gibor_orders") || "[]");
+      const cleanOrders = (Array.isArray(allOrders) ? allOrders : []).filter(o => o !== null && o !== undefined);
+      
+      cleanOrders.push({
+        ...order,
+        userId: currentUser.id,
+        userName: currentUser.displayName,
+        createdAt: new Date().toISOString(),
+        status: order.status || "Đã ghi nhận", // Tự động gán trạng thái mặc định
+      });
+      localStorage.setItem("gibor_orders", JSON.stringify(cleanOrders));
+    } catch (e) {
+      console.error("Lỗi lưu đơn hàng:", e);
+    }
   },
 };
 

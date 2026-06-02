@@ -12,7 +12,7 @@ const NAV_ITEMS = [
   { href: "branches.html", label: "Chi nhánh" },
   { href: "about.html", label: "Giới thiệu" },
   { href: "contact.html", label: "Liên hệ" },
-  { href: "admin.html", label: "Admin" },
+  { href: "admin.html", label: "Admin", adminOnly: true },
 ];
 
 const TOP_BANNER_ITEMS = [
@@ -100,9 +100,26 @@ function getCurrentPage() {
   return (path.split("/").pop() || "index.html").toLowerCase();
 }
 
+function canShowAdminLink() {
+  try {
+    const rawUser = localStorage.getItem("gibor_current_user");
+    if (!rawUser) return false;
+
+    const user = JSON.parse(rawUser);
+    return (
+      user &&
+      user.status !== "locked" &&
+      (user.role === "admin" || user.role === "branch_manager")
+    );
+  } catch (error) {
+    return false;
+  }
+}
+
 function renderHeaderComponent() {
   const currentPage = getCurrentPage();
-  const navLinks = NAV_ITEMS.map(({ href, label }) => {
+  const showAdminLink = canShowAdminLink();
+  const navLinks = NAV_ITEMS.filter((item) => !item.adminOnly || showAdminLink).map(({ href, label }) => {
     const active = currentPage === href.toLowerCase();
     const activeAttrs = active ? ' class="is-active" aria-current="page"' : "";
     return `<li><a href="${href}"${activeAttrs}>${label}</a></li>`;
@@ -128,7 +145,7 @@ function renderHeaderComponent() {
         </a>
 
         <nav class="nav" aria-label="Điều hướng chính">
-          <ul class="nav-links list-unstyled mb-0">
+          <ul class="nav-links ${showAdminLink ? "has-admin-link" : "no-admin-link"} list-unstyled mb-0">
             ${navLinks}
           </ul>
         </nav>
@@ -181,7 +198,7 @@ const FooterComponent = `
           <ul class="footer-links">
             <li><a href="index.html">Trang chủ</a></li>
             <li><a href="menu.html">Menu</a></li>
-            <li><a href="admin.html">Admin</a></li>
+            ${canShowAdminLink() ? '<li><a href="admin.html">Admin</a></li>' : ''}
             <li><a href="branches.html">Chi nhánh</a></li>
             <li><a href="about.html">Giới thiệu</a></li>
             <li><a href="contact.html">Liên hệ</a></li>

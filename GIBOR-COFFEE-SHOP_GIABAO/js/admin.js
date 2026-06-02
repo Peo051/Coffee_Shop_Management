@@ -24,9 +24,10 @@ window.addEventListener("error", function (event) {
   document.body.appendChild(errorDiv);
 });
 
-const ADMIN_PRODUCTS_KEY = "gibor_admin_products";
-const ADMIN_ORDERS_KEY = "gibor_orders";
-const ADMIN_USERS_KEY = "gibor_users";
+// Không khai báo lại ADMIN_PRODUCTS_KEY vì đã có trong data.js
+// Dùng biến cục bộ cho các key khác
+var _ORDERS_KEY = "gibor_orders";
+var _USERS_KEY = "gibor_users";
 
 function parseJSON(key, fallback) {
   try {
@@ -55,15 +56,42 @@ function saveProducts(products) {
 
 function getUsers() {
   if (typeof UserManager !== "undefined") return UserManager.getUsers();
-  return parseJSON(ADMIN_USERS_KEY, []);
+  return parseJSON(_USERS_KEY, []);
+}
+
+function saveUsers(users) {
+  if (typeof UserManager !== "undefined") {
+    UserManager.saveUsers(users);
+    return;
+  }
+  localStorage.setItem(_USERS_KEY, JSON.stringify(users));
+}
+
+function getCurrentAdminUser() {
+  if (typeof UserManager !== "undefined") return UserManager.getCurrentUser();
+  return parseJSON("gibor_current_user", null);
+}
+
+function normalizeText(value) {
+  return String(value || "").trim();
+}
+
+function isProtectedAdminUser(user) {
+  return user && (String(user.id) === "admin-001" || String(user.username || "").toLowerCase() === "admin");
+}
+
+function isEmailUsedByAnotherUser(users, email, userId = "") {
+  const normalizedEmail = normalizeText(email).toLowerCase();
+  return users.some((user) => user && String(user.id) !== String(userId) && String(user.email || "").toLowerCase() === normalizedEmail);
 }
 
 function getOrders() {
-  return parseJSON(ADMIN_ORDERS_KEY, []);
+  const orders = parseJSON(_ORDERS_KEY, []);
+  return (Array.isArray(orders) ? orders : []).filter(o => o !== null && o !== undefined);
 }
 
 function saveOrders(orders) {
-  localStorage.setItem(ADMIN_ORDERS_KEY, JSON.stringify(orders));
+  localStorage.setItem(_ORDERS_KEY, JSON.stringify(orders));
 }
 
 function formatMoney(value) {
@@ -117,7 +145,7 @@ function getOrderItemsText(order) {
     .join(", ");
 }
 
-  function getRevenueByDay(days = 7) {
+  function getRevenueByDay(days = 7, branchId = "") {
     const orders = (getOrders() || []).filter(o => o !== null && o !== undefined);
     const today = new Date();
     const labels = [];
@@ -138,6 +166,9 @@ function getOrderItemsText(order) {
       // Chỉ tính các đơn hàng "Hoàn tất"
       if (order.status !== "Hoàn tất") return;
 
+      // Lọc theo chi nhánh nếu có yêu cầu
+      if (branchId && (!order.branch || order.branch.id !== branchId)) return;
+
       const date = new Date(getOrderDate(order));
       if (Number.isNaN(date.getTime())) return;
       const key = date.toISOString().slice(0, 10);
@@ -148,11 +179,11 @@ function getOrderItemsText(order) {
     return labels;
   }
 
-function renderRevenueBars(targetId) {
+function renderRevenueBars(targetId, branchId = "") {
   const target = document.getElementById(targetId);
   if (!target) return;
 
-  const data = getRevenueByDay(7);
+  const data = getRevenueByDay(7, branchId);
   const max = Math.max(...data.map((item) => item.value), 1);
 
   target.innerHTML = data
@@ -177,7 +208,26 @@ function renderDashboard() {
     const products = getProducts() || [];
     const orders = (getOrders() || []).filter(o => o !== null && o !== undefined);
     
-    const completedOrders = orders.filter(o => o && o.status === "Hoàn tất");
+    // Xác định chi nhánh cần lọc
+    let activeBranchId = "";
+    const currentUser = typeof UserManager !== 'undefined' ? UserManager.getCurrentUser() : null;
+    if (currentUser) {
+      if (currentUser.role === "branch_manager") {
+        activeBranchId = currentUser.branchId;
+      } else if (currentUser.role === "admin") {
+        const dbBranchFilter = document.getElementById("dashboardBranchFilter");
+        if (dbBranchFilter && dbBranchFilter.value !== "all") {
+          activeBranchId = dbBranchFilter.value;
+        }
+      }
+    }
+
+    // Lọc đơn hàng theo chi nhánh
+    const filteredOrders = activeBranchId 
+      ? orders.filter(o => o && o.branch && o.branch.id === activeBranchId)
+      : orders;
+
+    const completedOrders = filteredOrders.filter(o => o && o.status === "Hoàn tất");
     const revenue = completedOrders.reduce((sum, order) => sum + getOrderTotal(order), 0);
 
     const statUsers = document.getElementById("statUsers");
@@ -187,12 +237,12 @@ function renderDashboard() {
 
     if (statUsers) statUsers.textContent = users.length;
     if (statProducts) statProducts.textContent = products.length;
-    if (statOrders) statOrders.textContent = orders.length;
+    if (statOrders) statOrders.textContent = filteredOrders.length;
     if (statRevenue) statRevenue.textContent = formatMoney(revenue);
 
     const recentTable = document.getElementById("recentOrdersTable");
     if (recentTable) {
-      const recentOrders = [...orders]
+      const recentOrders = [...filteredOrders]
         .sort((a, b) => new Date(getOrderDate(b)) - new Date(getOrderDate(a)))
         .slice(0, 5);
 
@@ -212,10 +262,16 @@ function renderDashboard() {
         : `<tr><td class="admin-empty" colspan="4">Chưa có đơn hàng nào.</td></tr>`;
     }
 
-    renderRevenueBars("dashboardRevenueBars");
+    renderRevenueBars("dashboardRevenueBars", activeBranchId);
   } catch (error) {
     console.error("Error rendering dashboard:", error);
   }
+}
+
+function getBranchNameById(branchId) {
+  if (!branchId || typeof window.GIBOR_BRANCH_UTILS === 'undefined') return "Chi nhánh";
+  const b = window.GIBOR_BRANCH_UTILS.getById(branchId);
+  return b ? b.name : "Chi nhánh";
 }
 
 function renderAccounts() {
@@ -252,6 +308,14 @@ function renderAccounts() {
           .map(
             (user) => {
               if (!user) return "";
+              
+              let roleBadge = '<span class="category-badge">User</span>';
+              if (user.role === 'admin') {
+                roleBadge = '<span class="status-badge" style="background:#5c00e6;">Admin</span>';
+              } else if (user.role === 'branch_manager') {
+                roleBadge = `<span class="status-badge" style="background:#e28743;">QL: ${escapeHTML(getBranchNameById(user.branchId))}</span>`;
+              }
+
               return `
                 <tr>
                   <td>
@@ -259,8 +323,8 @@ function renderAccounts() {
                       <span class="admin-avatar">${escapeHTML(getInitials(user))}</span>
                       <div>
                         <strong>${escapeHTML(user.displayName || `${user.lastName || ""} ${user.firstName || ""}`.trim() || "Người dùng")}</strong>
-                        <div class="admin-muted">
-                          ${user.role === 'admin' ? '<span class="status-badge" style="background:#5c00e6;">Admin</span>' : '<span class="category-badge">User</span>'}
+                        <div class="admin-muted" style="margin-top: 4px;">
+                          ${roleBadge}
                           ${user.status === 'locked' ? '<span class="status-badge" style="background:#d93025;">Khóa</span>' : '<span class="status-badge">Hoạt động</span>'}
                         </div>
                       </div>
@@ -301,7 +365,32 @@ function renderProducts() {
     const table = document.getElementById("productsTable");
     if (!table) return;
 
-    const products = (getProducts() || []).filter(p => p !== null && p !== undefined);
+    let products = (getProducts() || []).filter(p => p !== null && p !== undefined);
+
+    // Áp dụng bộ lọc tìm kiếm
+    const searchQuery = document.getElementById("searchProduct") ? document.getElementById("searchProduct").value.toLowerCase().trim() : "";
+    const filterCat = document.getElementById("filterProductCategory") ? document.getElementById("filterProductCategory").value : "";
+    const filterStat = document.getElementById("filterProductStatus") ? document.getElementById("filterProductStatus").value : "";
+
+    if (searchQuery) {
+      products = products.filter(p => {
+        if (!p) return false;
+        const name = (p.name || "").toLowerCase();
+        const desc = (p.desc || "").toLowerCase();
+        return name.includes(searchQuery) || desc.includes(searchQuery);
+      });
+    }
+    if (filterCat) {
+      products = products.filter(p => p && p.category === filterCat);
+    }
+    if (filterStat) {
+      products = products.filter(p => {
+        if (!p) return false;
+        if (filterStat === "active") return p.status !== "out_of_stock";
+        if (filterStat === "out_of_stock") return p.status === "out_of_stock";
+        return true;
+      });
+    }
 
     table.innerHTML = products.length
       ? products
@@ -359,6 +448,24 @@ function renderOrders() {
 
     let orders = (getOrders() || []).filter(o => o !== null && o !== undefined);
 
+    // Xác định phân quyền và lọc theo chi nhánh của người đăng nhập
+    let activeBranchId = "";
+    const currentUser = typeof UserManager !== 'undefined' ? UserManager.getCurrentUser() : null;
+    if (currentUser) {
+      if (currentUser.role === "branch_manager") {
+        activeBranchId = currentUser.branchId;
+      } else if (currentUser.role === "admin") {
+        const branchFilter = document.getElementById("filterOrderBranch");
+        if (branchFilter && branchFilter.value) {
+          activeBranchId = branchFilter.value;
+        }
+      }
+    }
+
+    if (activeBranchId) {
+      orders = orders.filter(o => o && o.branch && o.branch.id === activeBranchId);
+    }
+
     // Áp dụng bộ lọc tìm kiếm
     const searchQuery = document.getElementById("searchOrder") ? document.getElementById("searchOrder").value.toLowerCase().trim() : "";
     const filterStat = document.getElementById("filterOrderStatus") ? document.getElementById("filterOrderStatus").value : "";
@@ -376,12 +483,35 @@ function renderOrders() {
       orders = orders.filter(o => o && (o.status || "Đã ghi nhận") === filterStat);
     }
 
+    const branchesList = typeof window.GIBOR_BRANCH_UTILS !== 'undefined' ? window.GIBOR_BRANCH_UTILS.all() : [];
+
     table.innerHTML = orders.length
       ? orders
           .map(
             (order, index) => {
               if (!order) return "";
               const orderCode = order.code || order.id || `DH-${index + 1}`;
+              
+              // Chi nhánh xử lý: Hiển thị tĩnh đồng bộ từ đơn đặt hàng
+              const branchCellHtml = `<span style="font-weight:700; color:#5f3d24; font-size:0.85rem;"><i class="fas fa-store" style="color:#e28743;"></i> ${order.branch ? escapeHTML(order.branch.name) : "Giao hàng tận nơi"}</span>`;
+
+              // Hình thức thanh toán: Badge phương thức tĩnh + Dropdown trạng thái thanh toán
+              const paymentVal = order.payment || "Thanh toán khi nhận hàng";
+              const isBanking = paymentVal === "Chuyển khoản" || paymentVal.toLowerCase().includes("chuyển") || paymentVal.toLowerCase().includes("bank");
+              const paymentMethodBadge = `<span style="display:inline-block; font-size:0.72rem; font-weight:700; padding:2px 6px; border-radius:4px; margin-bottom:4px; color:${isBanking ? '#137333' : '#b06000'}; background:${isBanking ? '#e6f4ea' : '#fdf4e7'}; border: 1px solid ${isBanking ? 'rgba(19,115,51,0.2)' : 'rgba(176,96,0,0.2)'};">${isBanking ? 'Chuyển khoản' : 'Tiền mặt (COD)'}</span>`;
+
+              const payStat = order.paymentStatus || "Chưa thanh toán";
+              const isPaid = payStat === "Đã thanh toán";
+              const paymentCellHtml = `
+                <div style="display:flex; flex-direction:column; align-items:flex-start; gap: 2px;">
+                  ${paymentMethodBadge}
+                  <select class="admin-payment-status-select" data-order-code-paystat="${escapeHTML(orderCode)}" style="border: 1px solid rgba(95,61,36,0.25); border-radius: 6px; padding: 3px 6px; color:${isPaid ? '#137333' : '#c5221f'}; font-size: 0.78rem; cursor:pointer; font-weight:700; background: ${isPaid ? '#e6f4ea' : '#fce8e6'};">
+                    <option value="Chưa thanh toán" ${!isPaid ? "selected" : ""}>Chưa thanh toán</option>
+                    <option value="Đã thanh toán" ${isPaid ? "selected" : ""}>Đã thanh toán</option>
+                  </select>
+                </div>
+              `;
+
               return `
                 <tr>
                   <td>
@@ -394,9 +524,11 @@ function renderOrders() {
                   </td>
                   <td>${escapeHTML(getOrderItemsText(order))}</td>
                   <td><strong style="color: #5f3d24;">${formatMoney(getOrderTotal(order))}</strong></td>
+                  <td>${paymentCellHtml}</td>
+                  <td>${branchCellHtml}</td>
                   <td>
                     <select class="admin-status-select" data-order-code="${escapeHTML(orderCode)}" style="border: 1px solid rgba(95,61,36,0.25); border-radius: 6px; padding: 4px 8px; color:#4f311d; font-weight:600; cursor:pointer;">
-                      ${["Đã ghi nhận", "Đang xử lý", "Đang giao", "Hoàn tất", "Đã hủy"]
+                      ${["Chờ thanh toán", "Đã ghi nhận", "Đang xử lý", "Đang giao", "Hoàn tất", "Đã hủy"]
                         .map(
                           (status) =>
                             `<option value="${status}" ${status === (order.status || "Đã ghi nhận") ? "selected" : ""}>${status}</option>`,
@@ -409,7 +541,7 @@ function renderOrders() {
             }
           )
           .join("")
-      : `<tr><td class="admin-empty" colspan="5">Không tìm thấy đơn hàng phù hợp.</td></tr>`;
+      : `<tr><td class="admin-empty" colspan="7">Không tìm thấy đơn hàng phù hợp.</td></tr>`;
   } catch (error) {
     console.error("Error rendering orders:", error);
   }
@@ -418,15 +550,35 @@ function renderOrders() {
 function renderRevenueReport() {
   try {
     const orders = (getOrders() || []).filter(o => o !== null && o !== undefined);
-    const completedOrders = orders.filter(o => o && o.status === "Hoàn tất");
-    const canceledOrders = orders.filter(o => o && o.status === "Đã hủy");
+    
+    // Xác định chi nhánh cần lọc
+    let activeBranchId = "";
+    const currentUser = typeof UserManager !== 'undefined' ? UserManager.getCurrentUser() : null;
+    if (currentUser) {
+      if (currentUser.role === "branch_manager") {
+        activeBranchId = currentUser.branchId;
+      } else if (currentUser.role === "admin") {
+        const revBranchFilter = document.getElementById("filterRevenueBranch");
+        if (revBranchFilter && revBranchFilter.value) {
+          activeBranchId = revBranchFilter.value;
+        }
+      }
+    }
+
+    // Lọc đơn hàng theo chi nhánh
+    const filteredOrders = activeBranchId
+      ? orders.filter(o => o && o.branch && o.branch.id === activeBranchId)
+      : orders;
+
+    const completedOrders = filteredOrders.filter(o => o && o.status === "Hoàn tất");
+    const canceledOrders = filteredOrders.filter(o => o && o.status === "Đã hủy");
     
     const revenue = completedOrders.reduce((sum, order) => sum + getOrderTotal(order), 0);
     const avg = completedOrders.length ? revenue / completedOrders.length : 0;
     
-    const cancelRateValue = orders.length ? (canceledOrders.length / orders.length) * 100 : 0;
+    const cancelRateValue = filteredOrders.length ? (canceledOrders.length / filteredOrders.length) * 100 : 0;
 
-    const data = getRevenueByDay(7);
+    const data = getRevenueByDay(7, activeBranchId);
     const best = data.reduce((top, item) => (item.value > top.value ? item : top), data[0]);
 
     // Hiển thị chỉ số báo cáo
@@ -439,8 +591,8 @@ function renderRevenueReport() {
       document.getElementById("bestRevenueDay").textContent = best && best.value ? `${best.label} (${formatMoney(best.value)})` : "-";
     }
 
-    renderRevenueBars("revenueBars");
-    renderBestSellersReport(orders); // Gọi thêm báo cáo bán chạy nhất
+    renderRevenueBars("revenueBars", activeBranchId);
+    renderBestSellersReport(filteredOrders); // Gọi thêm báo cáo bán chạy nhất
   } catch (error) {
     console.error("Error rendering revenue report:", error);
   }
@@ -493,9 +645,11 @@ function renderBestSellersReport(orders) {
 }
 
 function renderAll() {
+  syncBranchDropdowns();
   renderDashboard();
   renderAccounts();
   renderProducts();
+  renderBranches();
   renderOrders();
   renderRevenueReport();
 }
@@ -630,6 +784,10 @@ function bindTableActions() {
       const users = getUsers();
       const user = users.find((u) => String(u.id) === String(resetPasswordUserId));
       if (!user) return;
+      if (isProtectedAdminUser(user)) {
+        alert("Không reset mật khẩu tài khoản admin chính từ bảng này.");
+        return;
+      }
 
       const newPass = prompt(`Nhập mật khẩu mới cho ${user.email || user.username}:`, "123456");
       if (newPass) {
@@ -638,11 +796,7 @@ function bindTableActions() {
           return;
         }
         user.password = newPass;
-        if(typeof UserManager !== 'undefined') {
-          UserManager.saveUsers(users);
-        } else {
-          localStorage.setItem(ADMIN_USERS_KEY, JSON.stringify(users));
-        }
+        saveUsers(users);
         alert("Đã reset mật khẩu thành công.");
       }
     }
@@ -662,11 +816,7 @@ function bindTableActions() {
       const user = users.find((u) => String(u.id) === String(lockUserId));
       if (user) {
         user.status = user.status === "locked" ? "active" : "locked";
-        if(typeof UserManager !== 'undefined') {
-          UserManager.saveUsers(users);
-        } else {
-          localStorage.setItem(ADMIN_USERS_KEY, JSON.stringify(users));
-        }
+        saveUsers(users);
         renderAll();
       }
     }
@@ -678,7 +828,65 @@ function bindTableActions() {
       if (document.getElementById("accountName")) document.getElementById("accountName").value = user.displayName || user.firstName || "";
       if (document.getElementById("accountEmail")) document.getElementById("accountEmail").value = user.email || "";
       if (document.getElementById("accountPhone")) document.getElementById("accountPhone").value = user.phone || "";
+      if (document.getElementById("accountRole")) {
+        document.getElementById("accountRole").value = user.role || "user";
+        if (document.getElementById("accountBranchGroup")) {
+          document.getElementById("accountBranchGroup").style.display = user.role === "branch_manager" ? "block" : "none";
+        }
+      }
+      if (document.getElementById("accountBranchId") && user.branchId) {
+        document.getElementById("accountBranchId").value = user.branchId;
+      }
       if (document.getElementById("accountSubmitText")) document.getElementById("accountSubmitText").textContent = "Cập nhật tài khoản";
+      
+      const form = document.getElementById("accountForm");
+      if (form) form.scrollIntoView({ behavior: "smooth" });
+    }
+
+    // Xử lý sự kiện click trên chi nhánh
+    const editBranchId = event.target.closest("[data-edit-branch]")?.dataset.editBranch;
+    const deleteBranchId = event.target.closest("[data-delete-branch]")?.dataset.deleteBranch;
+
+    if (editBranchId) {
+      if (typeof window.GIBOR_BRANCH_UTILS === "undefined") return;
+      const b = window.GIBOR_BRANCH_UTILS.getById(editBranchId);
+      if (!b) return;
+
+      document.getElementById("branchId").value = b.id;
+      document.getElementById("branchName").value = b.name;
+      document.getElementById("branchCityCode").value = b.cityCode;
+      document.getElementById("branchDistrict").value = b.district;
+      document.getElementById("branchPhone").value = b.contactPhone;
+      document.getElementById("branchEmail").value = b.contactEmail;
+      document.getElementById("branchImg").value = b.image || "";
+      document.getElementById("branchAddress").value = b.address;
+      document.getElementById("branchMapEmbedUrl").value = b.mapEmbedUrl || "";
+      document.getElementById("branchShortDesc").value = b.shortDescription || "";
+      document.getElementById("branchFullDesc").value = b.fullDescription || "";
+
+      document.getElementById("branchSubmitText").textContent = "Cập nhật chi nhánh";
+      
+      const form = document.getElementById("branchForm");
+      if (form) form.scrollIntoView({ behavior: "smooth" });
+    }
+
+    if (deleteBranchId) {
+      if (typeof window.GIBOR_BRANCH_UTILS === "undefined") return;
+      const b = window.GIBOR_BRANCH_UTILS.getById(deleteBranchId);
+      if (!b) return;
+
+      // Cảnh báo nếu có đơn hàng hoạt động chưa hoàn thành được gán cho chi nhánh này
+      const orders = getOrders();
+      const activeBranchOrders = orders.filter(o => o && o.branch && (o.branch.id === b.id || o.branch.name === b.name) && o.status !== "Hoàn tất" && o.status !== "Đã hủy");
+      if (activeBranchOrders.length > 0) {
+        alert(`Không thể xóa chi nhánh vì hiện đang có ${activeBranchOrders.length} đơn hàng chưa hoàn thành do chi nhánh này xử lý.`);
+        return;
+      }
+
+      if (confirm(`Bạn có chắc muốn xoá chi nhánh "${b.name}"?`)) {
+        window.GIBOR_BRANCH_UTILS.delete(deleteBranchId);
+        renderAll();
+      }
     }
 
     if (editProductId) {
@@ -715,24 +923,52 @@ function bindTableActions() {
       }
       
       const users = getUsers().filter((user) => String(user.id) !== String(deleteUserId));
-      if(typeof UserManager !== 'undefined') {
-        UserManager.saveUsers(users);
-      } else {
-        localStorage.setItem(ADMIN_USERS_KEY, JSON.stringify(users));
-      }
+      saveUsers(users);
       renderAll();
     }
   });
 
   document.addEventListener("change", (event) => {
-    if (!event.target.matches("[data-order-code]")) return;
-    const orders = getOrders();
-    const code = event.target.dataset.orderCode;
-    const orderIdx = orders.findIndex(o => (o.code || o.id) === code);
-    if (orderIdx === -1) return;
-    orders[orderIdx].status = event.target.value;
-    saveOrders(orders);
-    renderAll();
+    // 1. Cập nhật Trạng thái đơn hàng
+    if (event.target.matches("[data-order-code]")) {
+      const orders = getOrders();
+      const code = event.target.dataset.orderCode;
+      const orderIdx = orders.findIndex(o => (o.code || o.id) === code);
+      if (orderIdx === -1) return;
+      
+      const newStatus = event.target.value;
+      orders[orderIdx].status = newStatus;
+      
+      // TỰ ĐỘNG ĐỒNG BỘ: Nếu đơn hàng "Hoàn tất" thì tự động cập nhật Trạng thái thanh toán là "Đã thanh toán"
+      if (newStatus === "Hoàn tất") {
+        orders[orderIdx].paymentStatus = "Đã thanh toán";
+      } else if (newStatus === "Đã hủy") {
+        orders[orderIdx].paymentStatus = "Chưa thanh toán";
+      }
+
+      saveOrders(orders);
+      renderAll();
+    }
+
+    // 2. Cập nhật Trạng thái thanh toán
+    if (event.target.matches("[data-order-code-paystat]")) {
+      const orders = getOrders();
+      const code = event.target.dataset.orderCodePaystat;
+      const orderIdx = orders.findIndex(o => (o.code || o.id) === code);
+      if (orderIdx === -1) return;
+      
+      orders[orderIdx].paymentStatus = event.target.value;
+      saveOrders(orders);
+      renderAll();
+    }
+  });
+
+  // Tự động đồng bộ giao diện Admin khi có đơn hàng mới được tạo từ trang thanh toán ở tab khác
+  window.addEventListener("storage", (e) => {
+    if (e.key === _ORDERS_KEY || e.key === "gibor_orders") {
+      console.log("Phát hiện dữ liệu đơn hàng mới từ tab khác. Tự động đồng bộ thời gian thực...");
+      renderAll();
+    }
   });
 }
 
@@ -748,6 +984,20 @@ function handleLogout() {
 }
 
 function bindFilters() {
+  // Bộ lọc Dashboard
+  const dbBranchFilter = document.getElementById("dashboardBranchFilter");
+  if (dbBranchFilter) {
+    dbBranchFilter.addEventListener("change", () => {
+      renderDashboard();
+      // Đồng bộ bộ lọc doanh thu theo chi nhánh tương ứng
+      const revBranchFilter = document.getElementById("filterRevenueBranch");
+      if (revBranchFilter) {
+        revBranchFilter.value = dbBranchFilter.value === "all" ? "" : dbBranchFilter.value;
+      }
+      renderRevenueReport();
+    });
+  }
+
   // Bộ lọc sản phẩm
   const searchProduct = document.getElementById("searchProduct");
   const filterProductCat = document.getElementById("filterProductCategory");
@@ -758,8 +1008,10 @@ function bindFilters() {
 
   // Bộ lọc đơn hàng
   const searchOrder = document.getElementById("searchOrder");
+  const filterOrderBranch = document.getElementById("filterOrderBranch");
   const filterOrderStatus = document.getElementById("filterOrderStatus");
   if (searchOrder) searchOrder.addEventListener("input", renderOrders);
+  if (filterOrderBranch) filterOrderBranch.addEventListener("change", renderOrders);
   if (filterOrderStatus) filterOrderStatus.addEventListener("change", renderOrders);
 
   // Bộ lọc tài khoản
@@ -769,17 +1021,122 @@ function bindFilters() {
   if (searchAccount) searchAccount.addEventListener("input", renderAccounts);
   if (filterAccountRole) filterAccountRole.addEventListener("change", renderAccounts);
   if (filterAccountStatus) filterAccountStatus.addEventListener("change", renderAccounts);
+
+  // Bộ lọc chi nhánh
+  const searchBranch = document.getElementById("searchBranch");
+  const filterBranchCity = document.getElementById("filterBranchCity");
+  if (searchBranch) searchBranch.addEventListener("input", renderBranches);
+  if (filterBranchCity) filterBranchCity.addEventListener("change", renderBranches);
+
+  // Bộ lọc doanh thu
+  const revBranchFilter = document.getElementById("filterRevenueBranch");
+  if (revBranchFilter) {
+    revBranchFilter.addEventListener("change", () => {
+      // Đồng bộ bộ lọc dashboard theo chi nhánh tương ứng
+      const dbBranchFilter = document.getElementById("dashboardBranchFilter");
+      if (dbBranchFilter) {
+        dbBranchFilter.value = revBranchFilter.value === "" ? "all" : revBranchFilter.value;
+      }
+      renderDashboard();
+      renderRevenueReport();
+    });
+  }
+}
+
+function applyRolePermissions(user) {
+  const isBranchManager = user.role === "branch_manager";
+  
+  const sidebarAvatar = document.getElementById("sidebarUserAvatar");
+  const sidebarName = document.getElementById("sidebarUserDisplayName");
+  const sidebarRole = document.getElementById("sidebarUserRole");
+  
+  if (sidebarAvatar) {
+    const initials = (user.displayName || user.username || "A").split(" ").filter(Boolean).slice(-2).map(p => p.charAt(0)).join("").toUpperCase();
+    sidebarAvatar.textContent = initials || "A";
+  }
+  if (sidebarName) {
+    sidebarName.textContent = user.displayName || user.firstName || user.username || "Quản lý";
+  }
+  
+  if (isBranchManager) {
+    const branch = window.GIBOR_BRANCH_UTILS ? window.GIBOR_BRANCH_UTILS.getById(user.branchId) : null;
+    const branchName = branch ? branch.name : "Chi nhánh";
+    if (sidebarRole) sidebarRole.textContent = `QL: ${branchName}`;
+    
+    // Ẩn các nút điều hướng sidebar đến accounts, products (giữ lại branches để xem tất cả chi nhánh)
+    const forbiddenTabs = ["accounts", "products"];
+    document.querySelectorAll(".admin-nav-btn").forEach(btn => {
+      const tab = btn.dataset.adminTab;
+      if (forbiddenTabs.includes(tab)) {
+        btn.style.display = "none";
+      }
+    });
+
+    // Đổi tên tab branches đối với branch_manager
+    const branchesBtn = document.querySelector('.admin-nav-btn[data-admin-tab="branches"]');
+    if (branchesBtn) {
+      const textSpan = branchesBtn.querySelector("span");
+      if (textSpan) textSpan.textContent = "Danh sách chi nhánh";
+    }
+    
+    // Ẩn hoặc khóa select box bộ lọc chi nhánh
+    const dbFilter = document.getElementById("dashboardFilterBar");
+    if (dbFilter) dbFilter.style.display = "none";
+    
+    const orderBranchFilter = document.getElementById("orderBranchFilterContainer");
+    if (orderBranchFilter) orderBranchFilter.style.display = "none";
+    
+    const revBranchFilter = document.getElementById("revenueBranchFilterContainer");
+    if (revBranchFilter) revBranchFilter.style.display = "none";
+  } else {
+    if (sidebarRole) sidebarRole.textContent = "Quản trị tối cao";
+  }
 }
 
 function initAdminPage() {
+  // Tự động chuẩn hóa (migration) thông tin tài khoản admin cũ trong localStorage nếu có thiếu sót
   try {
-    // BẢO VỆ TRANG ADMIN
-    if (typeof UserManager !== 'undefined') {
-      UserManager.requireAdmin();
+    const rawUser = localStorage.getItem("gibor_current_user");
+    if (rawUser) {
+      const currentUser = JSON.parse(rawUser);
+      if (currentUser && currentUser.role === "admin") {
+        let changed = false;
+        if (!currentUser.username) { currentUser.username = "admin"; changed = true; }
+        if (!currentUser.email) { currentUser.email = "admin@giborcoffee.com"; changed = true; }
+        if (!currentUser.id) { currentUser.id = "admin-001"; changed = true; }
+        if (changed) {
+          localStorage.setItem("gibor_current_user", JSON.stringify(currentUser));
+          console.log("Đã tự động chuẩn hóa thông tin tài khoản Admin cũ.");
+        }
+      }
     }
-  } catch (error) {
-    console.error("Lỗi xác thực Admin:", error);
+  } catch (e) {
+    console.error("Lỗi tự động chuẩn hóa Admin:", e);
   }
+
+  // BẢO VỆ TRANG ADMIN - Hỗ trợ cả Admin và Branch Manager
+  let isAuthorized = false;
+  let currentUser = null;
+  
+  if (typeof UserManager !== 'undefined') {
+    currentUser = UserManager.getCurrentUser();
+    if (currentUser) {
+      if (UserManager.isAdmin() || currentUser.role === "branch_manager") {
+        isAuthorized = true;
+      }
+    }
+  }
+
+  if (!isAuthorized) {
+    alert("Bạn không có quyền truy cập trang quản trị. Vui lòng đăng nhập bằng tài khoản quản lý hoặc admin.");
+    window.location.href = "login.html";
+    return; // CHẶN HOÀN TOÀN
+  }
+
+  console.log("✅ Xác thực quyền Admin/Manager thành công, tiến hành khởi tạo...");
+
+  // Đồng bộ giao diện phân quyền
+  applyRolePermissions(currentUser);
 
   const todayEl = document.getElementById("adminToday");
   if (todayEl) {
@@ -795,19 +1152,25 @@ function initAdminPage() {
   const initSteps = [
     { name: "bindNavigation", fn: bindNavigation },
     { name: "bindProductForm", fn: bindProductForm },
+    { name: "bindBranchForm", fn: bindBranchForm },
     { name: "bindTableActions", fn: bindTableActions },
     { name: "bindAccountForm", fn: bindAccountForm },
     { name: "bindFilters", fn: bindFilters },
+    { name: "bindPayosForm", fn: bindPayosForm },
     { name: "renderAll", fn: renderAll }
   ];
 
   initSteps.forEach((step) => {
     try {
+      console.log(`▶ Đang chạy: ${step.name}`);
       step.fn();
+      console.log(`✅ Hoàn thành: ${step.name}`);
     } catch (error) {
-      console.error(`Lỗi trong bước khởi tạo ${step.name}:`, error);
+      console.error(`❌ Lỗi trong bước khởi tạo ${step.name}:`, error);
     }
   });
+
+  console.log("✅ Trang Admin đã khởi tạo hoàn tất.");
 }
 
 if (document.readyState === "loading") {
@@ -823,10 +1186,22 @@ function bindAccountForm() {
   const accountEmail = document.getElementById("accountEmail");
   const accountPhone = document.getElementById("accountPhone");
   const accountPassword = document.getElementById("accountPassword"); 
+  const accountRole = document.getElementById("accountRole");
+  const accountBranchGroup = document.getElementById("accountBranchGroup");
+  const accountBranchId = document.getElementById("accountBranchId");
   const accountSubmitText = document.getElementById("accountSubmitText");
   const resetAccountForm = document.getElementById("resetAccountForm");
   
   if (!accountForm) return;
+
+  // Lắng nghe sự kiện thay đổi vai trò để ẩn/hiện chọn chi nhánh
+  if (accountRole) {
+    accountRole.addEventListener("change", function() {
+      if (accountBranchGroup) {
+        accountBranchGroup.style.display = accountRole.value === "branch_manager" ? "block" : "none";
+      }
+    });
+  }
 
   function resetAccount() {
     if(accountIndex) accountIndex.value = "";
@@ -834,6 +1209,11 @@ function bindAccountForm() {
     if(accountEmail) accountEmail.value = "";
     if(accountPhone) accountPhone.value = "";
     if(accountPassword) accountPassword.value = ""; 
+    if(accountRole) {
+      accountRole.value = "user";
+      if (accountBranchGroup) accountBranchGroup.style.display = "none";
+    }
+    if(accountBranchId) accountBranchId.selectedIndex = 0;
     if(accountSubmitText) accountSubmitText.textContent = "Thêm tài khoản";
   }
 
@@ -846,9 +1226,37 @@ function bindAccountForm() {
     const email = accountEmail.value.trim();
     const phone = accountPhone.value.trim();
     const password = accountPassword ? accountPassword.value.trim() : "";
+    const roleVal = accountRole ? accountRole.value : "user";
+    const branchVal = roleVal === "branch_manager" && accountBranchId ? accountBranchId.value : "";
 
     if (!firstName || !email || !phone) {
       alert("Vui lòng điền đầy đủ họ tên, email và số điện thoại.");
+      return;
+    }
+
+    if (!email.includes("@")) {
+      alert("Email không hợp lệ.");
+      return;
+    }
+
+    if (isEmailUsedByAnotherUser(users, email, idStr)) {
+      alert("Email này đã được sử dụng bởi tài khoản khác.");
+      return;
+    }
+
+    if (roleVal === "branch_manager" && !branchVal) {
+      alert("Vui lòng chọn chi nhánh cho tài khoản Branch Manager.");
+      return;
+    }
+
+    const currentUser = getCurrentAdminUser();
+    const targetUser = idStr === "" ? null : users.find(u => String(u.id) === String(idStr));
+    if (targetUser && isProtectedAdminUser(targetUser) && roleVal !== "admin") {
+      alert("Không thể hạ quyền tài khoản admin chính.");
+      return;
+    }
+    if (targetUser && currentUser && String(currentUser.id) === String(targetUser.id) && roleVal !== "admin") {
+      alert("Không thể tự hạ quyền tài khoản đang đăng nhập.");
       return;
     }
 
@@ -867,10 +1275,11 @@ function bindAccountForm() {
         email: email,
         phone: phone,
         password: password,
-        role: "user",
+        role: roleVal,
+        branchId: branchVal,
         status: "active",
-        permissions: [],
-        provider: "local",
+        permissions: roleVal === "admin" ? ["*"] : [],
+        provider: "email",
         createdAt: new Date().toISOString(),
       };
       users.push(newUser);
@@ -883,6 +1292,9 @@ function bindAccountForm() {
         users[index].displayName = firstName;
         users[index].email = email;
         users[index].phone = phone;
+        users[index].role = roleVal;
+        users[index].branchId = branchVal;
+        users[index].permissions = roleVal === "admin" ? ["*"] : [];
         if (password) {
           if (password.length < 6) {
             alert("Mật khẩu mới phải có ít nhất 6 ký tự.");
@@ -894,10 +1306,11 @@ function bindAccountForm() {
       }
     }
 
-    if(typeof UserManager !== 'undefined') {
-      UserManager.saveUsers(users);
-    } else {
-      localStorage.setItem(ADMIN_USERS_KEY, JSON.stringify(users));
+    saveUsers(users);
+
+    if (currentUser && idStr !== "" && String(currentUser.id) === String(idStr) && typeof UserManager !== "undefined") {
+      const updatedSelf = users.find(u => String(u.id) === String(idStr));
+      if (updatedSelf) UserManager.setCurrentUser(updatedSelf);
     }
     
     renderAll();
@@ -907,4 +1320,237 @@ function bindAccountForm() {
   if (resetAccountForm) {
     resetAccountForm.addEventListener("click", resetAccount);
   }
+}
+
+function syncBranchDropdowns() {
+  if (typeof window.GIBOR_BRANCH_UTILS === "undefined") return;
+  const branches = window.GIBOR_BRANCH_UTILS.all();
+  
+  // 1. Dropdown chi nhánh trong Form tài khoản (Accounts)
+  const accountBranchSelect = document.getElementById("accountBranchId");
+  if (accountBranchSelect) {
+    const prevVal = accountBranchSelect.value;
+    accountBranchSelect.innerHTML = '<option value="">Chọn chi nhánh</option>' + branches.map(b => `<option value="${b.id}">${b.name}</option>`).join("");
+    if (prevVal) accountBranchSelect.value = prevVal;
+  }
+  
+  // 2. Dropdown bộ lọc chi nhánh ở Dashboard
+  const dbBranchFilter = document.getElementById("dashboardBranchFilter");
+  if (dbBranchFilter) {
+    const prevVal = dbBranchFilter.value;
+    dbBranchFilter.innerHTML = '<option value="all">Toàn hệ thống</option>' + 
+      branches.map(b => `<option value="${b.id}">${b.name}</option>`).join("");
+    if (prevVal) dbBranchFilter.value = prevVal;
+  }
+  
+  // 3. Dropdown bộ lọc chi nhánh ở Orders
+  const orderBranchFilter = document.getElementById("filterOrderBranch");
+  if (orderBranchFilter) {
+    const prevVal = orderBranchFilter.value;
+    orderBranchFilter.innerHTML = '<option value="">Tất cả chi nhánh</option>' + 
+      branches.map(b => `<option value="${b.id}">${b.name}</option>`).join("");
+    if (prevVal) orderBranchFilter.value = prevVal;
+  }
+  
+  // 4. Dropdown bộ lọc chi nhánh ở Revenue
+  const revBranchFilter = document.getElementById("filterRevenueBranch");
+  if (revBranchFilter) {
+    const prevVal = revBranchFilter.value;
+    revBranchFilter.innerHTML = '<option value="">Toàn hệ thống</option>' + 
+      branches.map(b => `<option value="${b.id}">${b.name}</option>`).join("");
+    if (prevVal) revBranchFilter.value = prevVal;
+  }
+}
+
+function renderBranches() {
+  try {
+    const table = document.getElementById("branchesTable");
+    if (!table) return;
+
+    if (typeof window.GIBOR_BRANCH_UTILS === "undefined") return;
+    let list = window.GIBOR_BRANCH_UTILS.all();
+
+    // Xác định phân quyền hiển thị đối với Branch Manager
+    const currentUser = typeof UserManager !== 'undefined' ? UserManager.getCurrentUser() : null;
+    const isBranchManager = currentUser && currentUser.role === "branch_manager";
+
+    // Ẩn/hiện form chi nhánh dựa trên phân quyền
+    const branchForm = document.getElementById("branchForm");
+    if (branchForm) {
+      branchForm.style.display = isBranchManager ? "none" : "grid";
+    }
+
+    // Ẩn/hiện cột header Hành động
+    const tableHeader = table.closest("table")?.querySelector("thead th:last-child");
+    if (tableHeader) {
+      tableHeader.style.display = isBranchManager ? "none" : "";
+    }
+
+    // Áp dụng bộ lọc và tìm kiếm
+    const searchVal = document.getElementById("searchBranch") ? document.getElementById("searchBranch").value.toLowerCase().trim() : "";
+    const filterCity = document.getElementById("filterBranchCity") ? document.getElementById("filterBranchCity").value : "";
+
+    if (searchVal) {
+      list = list.filter(b => {
+        const name = b.name.toLowerCase();
+        const addr = b.address.toLowerCase();
+        return name.includes(searchVal) || addr.includes(searchVal);
+      });
+    }
+
+    if (filterCity) {
+      list = list.filter(b => b.cityCode === filterCity);
+    }
+
+    table.innerHTML = list.length
+      ? list.map(b => {
+          let actionCellHtml = "";
+          if (!isBranchManager) {
+            actionCellHtml = `
+              <td>
+                <div class="admin-actions">
+                  <button class="admin-action ghost" data-edit-branch="${escapeHTML(b.id)}" title="Sửa">
+                    <i class="fas fa-pen"></i>
+                  </button>
+                  <button class="admin-action danger" data-delete-branch="${escapeHTML(b.id)}" title="Xóa">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </div>
+              </td>
+            `;
+          }
+
+          return `
+            <tr>
+              <td>
+                <img src="${escapeHTML(b.image)}" alt="${escapeHTML(b.name)}" style="width: 65px; height: 45px; object-fit: cover; border-radius: 8px; border: 1px solid rgba(0,0,0,0.1);" onerror="this.src='images/logo/logo.jpg'" />
+              </td>
+              <td><strong style="color: #4f311d; font-size: 0.9rem;">${escapeHTML(b.name)}</strong></td>
+              <td><span class="category-badge">${escapeHTML(b.cityName)}</span></td>
+              <td>${escapeHTML(b.district)}</td>
+              <td>
+                <div style="font-size: 0.8rem; max-width: 250px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHTML(b.address)}">
+                  ${escapeHTML(b.address)}
+                </div>
+              </td>
+              <td>
+                <div style="font-size: 0.75rem; color: #796454;">
+                  <div><i class="fa-solid fa-phone" style="width:14px;"></i> ${escapeHTML(b.contactPhone)}</div>
+                  <div><i class="fa-solid fa-envelope" style="width:14px;"></i> ${escapeHTML(b.contactEmail)}</div>
+                </div>
+              </td>
+              ${actionCellHtml}
+            </tr>
+          `;
+        }).join("")
+      : `<tr><td class="admin-empty" colspan="${isBranchManager ? 6 : 7}">Không tìm thấy chi nhánh phù hợp.</td></tr>`;
+
+    // Cập nhật thẻ thống kê chi nhánh ở Dashboard
+    const statBranches = document.getElementById("statBranches");
+    if (statBranches) {
+      statBranches.textContent = list.length;
+    }
+  } catch (e) {
+    console.error("Lỗi renderBranches:", e);
+  }
+}
+
+function resetBranchForm() {
+  document.getElementById("branchId").value = "";
+  const form = document.getElementById("branchForm");
+  if (form) form.reset();
+  document.getElementById("branchSubmitText").textContent = "Thêm chi nhánh";
+}
+
+function bindBranchForm() {
+  const form = document.getElementById("branchForm");
+  if (form) {
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      
+      if (typeof window.GIBOR_BRANCH_UTILS === "undefined") return;
+
+      const id = document.getElementById("branchId").value;
+      const name = document.getElementById("branchName").value.trim();
+      const cityCode = document.getElementById("branchCityCode").value;
+      const district = document.getElementById("branchDistrict").value.trim();
+      const phone = document.getElementById("branchPhone").value.trim();
+      const email = document.getElementById("branchEmail").value.trim();
+      const img = document.getElementById("branchImg").value.trim();
+      const address = document.getElementById("branchAddress").value.trim();
+      const mapEmbedUrl = document.getElementById("branchMapEmbedUrl").value.trim();
+      const shortDescription = document.getElementById("branchShortDesc").value.trim();
+      const fullDescription = document.getElementById("branchFullDesc").value.trim();
+
+      if (!name || !district || !phone || !email || !address) {
+        alert("Vui lòng nhập đầy đủ các thông tin bắt buộc.");
+        return;
+      }
+
+      const branchData = {
+        name,
+        cityCode,
+        district,
+        contactPhone: phone,
+        contactEmail: email,
+        image: img || "images/logo/logo.jpg",
+        address,
+        mapEmbedUrl,
+        shortDescription,
+        fullDescription
+      };
+
+      if (id) {
+        const success = window.GIBOR_BRANCH_UTILS.update(id, branchData);
+        if (success) {
+          alert("Cập nhật chi nhánh thành công!");
+        } else {
+          alert("Cập nhật thất bại.");
+        }
+      } else {
+        window.GIBOR_BRANCH_UTILS.add(branchData);
+        alert("Thêm chi nhánh mới thành công!");
+      }
+
+      resetBranchForm();
+      renderAll();
+    });
+  }
+
+  const resetBtn = document.getElementById("resetBranchForm");
+  if (resetBtn) {
+    resetBtn.addEventListener("click", resetBranchForm);
+  }
+}
+
+function bindPayosForm() {
+  const form = document.getElementById("payosConfigForm");
+  if (!form) return;
+
+  const clientIdInput = document.getElementById("payosClientId");
+  const apiKeyInput = document.getElementById("payosApiKey");
+  const checksumKeyInput = document.getElementById("payosChecksumKey");
+
+  if (clientIdInput) clientIdInput.value = localStorage.getItem("gibor_payos_client_id") || "";
+  if (apiKeyInput) apiKeyInput.value = localStorage.getItem("gibor_payos_api_key") || "";
+  if (checksumKeyInput) checksumKeyInput.value = localStorage.getItem("gibor_payos_checksum_key") || "";
+
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+
+    const clientId = clientIdInput ? clientIdInput.value.trim() : "";
+    const apiKey = apiKeyInput ? apiKeyInput.value.trim() : "";
+    const checksumKey = checksumKeyInput ? checksumKeyInput.value.trim() : "";
+
+    if (!clientId || !apiKey || !checksumKey) {
+      alert("Vui long dien day du Client ID, API Key va Checksum Key payOS.");
+      return;
+    }
+
+    localStorage.setItem("gibor_payos_client_id", clientId);
+    localStorage.setItem("gibor_payos_api_key", apiKey);
+    localStorage.setItem("gibor_payos_checksum_key", checksumKey);
+
+    alert("Da luu cau hinh payOS. Website tinh se goi truc tiep API payOS tu trinh duyet.");
+  });
 }
