@@ -1614,6 +1614,22 @@ var payosPaymentSuccess = false; // Biến đánh dấu đã thanh toán thành 
 
 // Hàm phát âm thanh thông báo thành công (Web Audio API)
 function getPayosConfig() {
+  const branchId = selectedBranch ? selectedBranch.id : "";
+  if (branchId) {
+    const clientId = localStorage.getItem("gibor_payos_client_id_" + branchId);
+    const apiKey = localStorage.getItem("gibor_payos_api_key_" + branchId);
+    const checksumKey = localStorage.getItem("gibor_payos_checksum_key_" + branchId);
+    
+    if (clientId && apiKey && checksumKey) {
+      return {
+        clientId: clientId.trim(),
+        apiKey: apiKey.trim(),
+        checksumKey: checksumKey.trim(),
+      };
+    }
+  }
+
+  // Fallback về cấu hình mặc định (Toàn hệ thống)
   return {
     clientId: (localStorage.getItem("gibor_payos_client_id") || "").trim(),
     apiKey: (localStorage.getItem("gibor_payos_api_key") || "").trim(),

@@ -128,11 +128,12 @@ const ProductManager = {
 const UserManager = {
   ensureDefaultAdmin() {
     const users = this.getUsers();
-    const adminExists = users.some(u => u && u.role === "admin" && u.id === "admin-001");
     let changed = false;
-    
-    if (!adminExists) {
-      const adminUser = {
+
+    // 1. Quản lý tài khoản Admin tối cao
+    let adminUser = users.find(u => u && u.id === "admin-001");
+    if (!adminUser) {
+      adminUser = {
         id: "admin-001",
         username: "admin",
         lastName: "Quản trị",
@@ -147,64 +148,81 @@ const UserManager = {
         permissions: ["*"],
         createdAt: new Date().toISOString()
       };
-      // Keep existing users if any, add admin
       users.push(adminUser);
       changed = true;
+    } else {
+      // Đảm bảo mật khẩu admin là 123 và hoạt động
+      if (adminUser.password !== "123" || adminUser.role !== "admin" || adminUser.status !== "active") {
+        adminUser.password = "123";
+        adminUser.role = "admin";
+        adminUser.status = "active";
+        changed = true;
+      }
     }
 
-    if (localStorage.getItem("gibor_branch_manager_seeded_v1") !== "true") {
-      const branchManagers = [
-        { branchId: "hcm1", username: "ql_hcm1", name: "Quan ly GIBOR Le Trong Tan", email: "ql-hcm1@giborcoffee.com", phone: "0901000001" },
-        { branchId: "hcm2", username: "ql_hcm2", name: "Quan ly GIBOR Nguyen Hue", email: "ql-hcm2@giborcoffee.com", phone: "0901000002" },
-        { branchId: "hcm3", username: "ql_hcm3", name: "Quan ly GIBOR Vo Van Tan", email: "ql-hcm3@giborcoffee.com", phone: "0901000003" },
-        { branchId: "hcm4", username: "ql_hcm4", name: "Quan ly GIBOR Xa Lo Ha Noi", email: "ql-hcm4@giborcoffee.com", phone: "0901000004" },
-        { branchId: "hcm5", username: "ql_hcm5", name: "Quan ly GIBOR Dien Bien Phu", email: "ql-hcm5@giborcoffee.com", phone: "0901000005" },
-        { branchId: "hn1", username: "ql_hn1", name: "Quan ly GIBOR Tran Duy Hung", email: "ql-hn1@giborcoffee.com", phone: "0902000001" },
-        { branchId: "hn2", username: "ql_hn2", name: "Quan ly GIBOR Lang Ha", email: "ql-hn2@giborcoffee.com", phone: "0902000002" },
-        { branchId: "hn3", username: "ql_hn3", name: "Quan ly GIBOR Bach Mai", email: "ql-hn3@giborcoffee.com", phone: "0902000003" },
-        { branchId: "hn4", username: "ql_hn4", name: "Quan ly GIBOR Hoang Hoa Tham", email: "ql-hn4@giborcoffee.com", phone: "0902000004" },
-        { branchId: "hn5", username: "ql_hn5", name: "Quan ly GIBOR Nguyen Van Cu", email: "ql-hn5@giborcoffee.com", phone: "0902000005" },
-        { branchId: "dn1", username: "ql_dn1", name: "Quan ly GIBOR Vo Nguyen Giap", email: "ql-dn1@giborcoffee.com", phone: "0903000001" },
-        { branchId: "dn2", username: "ql_dn2", name: "Quan ly GIBOR Bach Dang", email: "ql-dn2@giborcoffee.com", phone: "0903000002" },
-        { branchId: "dn3", username: "ql_dn3", name: "Quan ly GIBOR Nguyen Van Linh", email: "ql-dn3@giborcoffee.com", phone: "0903000003" },
-        { branchId: "dn4", username: "ql_dn4", name: "Quan ly GIBOR Ton Duc Thang", email: "ql-dn4@giborcoffee.com", phone: "0903000004" },
-        { branchId: "dn5", username: "ql_dn5", name: "Quan ly GIBOR Cach Mang Thang Tam", email: "ql-dn5@giborcoffee.com", phone: "0903000005" },
-      ];
+    // 2. Danh sách 15 quản lý chi nhánh
+    const branchManagersDef = [
+      { branchId: "hcm1", username: "ql_hcm1", name: "GIBOR Lê Trọng Tấn", email: "ql-hcm1@giborcoffee.com", phone: "0901000001", password: "GiborHCM1@2026" },
+      { branchId: "hcm2", username: "ql_hcm2", name: "GIBOR Nguyễn Huệ", email: "ql-hcm2@giborcoffee.com", phone: "0901000002", password: "GiborHCM2@2026" },
+      { branchId: "hcm3", username: "ql_hcm3", name: "GIBOR Võ Văn Tần", email: "ql-hcm3@giborcoffee.com", phone: "0901000003", password: "GiborHCM3@2026" },
+      { branchId: "hcm4", username: "ql_hcm4", name: "GIBOR Xa lộ Hà Nội", email: "ql-hcm4@giborcoffee.com", phone: "0901000004", password: "GiborHCM4@2026" },
+      { branchId: "hcm5", username: "ql_hcm5", name: "GIBOR Điện Biên Phủ", email: "ql-hcm5@giborcoffee.com", phone: "0901000005", password: "GiborHCM5@2026" },
+      { branchId: "hn1", username: "ql_hn1", name: "GIBOR Trần Duy Hưng", email: "ql-hn1@giborcoffee.com", phone: "0902000001", password: "GiborHN1@2026" },
+      { branchId: "hn2", username: "ql_hn2", name: "GIBOR Láng Hạ", email: "ql-hn2@giborcoffee.com", phone: "0902000002", password: "GiborHN2@2026" },
+      { branchId: "hn3", username: "ql_hn3", name: "GIBOR Bạch Mai", email: "ql-hn3@giborcoffee.com", phone: "0902000003", password: "GiborHN3@2026" },
+      { branchId: "hn4", username: "ql_hn4", name: "GIBOR Hoàng Hoa Thám", email: "ql-hn4@giborcoffee.com", phone: "0902000004", password: "GiborHN4@2026" },
+      { branchId: "hn5", username: "ql_hn5", name: "GIBOR Nguyễn Văn Cừ", email: "ql-hn5@giborcoffee.com", phone: "0902000005", password: "GiborHN5@2026" },
+      { branchId: "dn1", username: "ql_dn1", name: "GIBOR Võ Nguyên Giáp", email: "ql-dn1@giborcoffee.com", phone: "0903000001", password: "GiborDN1@2026" },
+      { branchId: "dn2", username: "ql_dn2", name: "GIBOR Bạch Đằng", email: "ql-dn2@giborcoffee.com", phone: "0903000002", password: "GiborDN2@2026" },
+      { branchId: "dn3", username: "ql_dn3", name: "GIBOR Nguyễn Văn Linh", email: "ql-dn3@giborcoffee.com", phone: "0903000003", password: "GiborDN3@2026" },
+      { branchId: "dn4", username: "ql_dn4", name: "GIBOR Tôn Đức Thắng", email: "ql-dn4@giborcoffee.com", phone: "0903000004", password: "GiborDN4@2026" },
+      { branchId: "dn5", username: "ql_dn5", name: "GIBOR Cách Mạng Tháng Tám", email: "ql-dn5@giborcoffee.com", phone: "0903000005", password: "GiborDN5@2026" },
+    ];
 
-      branchManagers.forEach((manager) => {
-        const exists = users.some((user) =>
-          user &&
-          (String(user.id) === `branch-manager-${manager.branchId}` ||
-            String(user.username || "").toLowerCase() === manager.username ||
-            String(user.email || "").toLowerCase() === manager.email)
-        );
+    branchManagersDef.forEach(manager => {
+      const managerId = `branch-manager-${manager.branchId}`;
+      let existingManager = users.find(u => u && (u.id === managerId || u.username === manager.username));
 
-        if (!exists) {
-          users.push({
-            id: `branch-manager-${manager.branchId}`,
-            username: manager.username,
-            lastName: "Quan ly",
-            firstName: manager.name.replace("Quan ly ", ""),
-            displayName: manager.name,
-            email: manager.email,
-            phone: manager.phone,
-            password: "123456",
-            role: "branch_manager",
-            branchId: manager.branchId,
-            status: "active",
-            provider: "email",
-            permissions: [`branch:${manager.branchId}`],
-            createdAt: new Date().toISOString()
-          });
+      if (!existingManager) {
+        // Nếu chưa có, thêm mới tài khoản
+        const newManager = {
+          id: managerId,
+          username: manager.username,
+          lastName: "Quản lý",
+          firstName: manager.name,
+          displayName: `Quản lý ${manager.name}`,
+          email: manager.email,
+          phone: manager.phone,
+          password: manager.password,
+          role: "branch_manager",
+          branchId: manager.branchId,
+          status: "active",
+          provider: "email",
+          permissions: [`branch:${manager.branchId}`],
+          createdAt: new Date().toISOString()
+        };
+        users.push(newManager);
+        changed = true;
+      } else {
+        // Nếu đã có, kiểm tra và cập nhật lại mật khẩu và thông tin cho khớp tuyệt đối
+        let itemChanged = false;
+        if (existingManager.password !== manager.password) { existingManager.password = manager.password; itemChanged = true; }
+        if (existingManager.email !== manager.email) { existingManager.email = manager.email; itemChanged = true; }
+        if (existingManager.role !== "branch_manager") { existingManager.role = "branch_manager"; itemChanged = true; }
+        if (existingManager.branchId !== manager.branchId) { existingManager.branchId = manager.branchId; itemChanged = true; }
+        if (existingManager.status !== "active") { existingManager.status = "active"; itemChanged = true; }
+        if (existingManager.firstName !== manager.name) { existingManager.firstName = manager.name; itemChanged = true; }
+        if (existingManager.displayName !== `Quản lý ${manager.name}`) { existingManager.displayName = `Quản lý ${manager.name}`; itemChanged = true; }
+
+        if (itemChanged) {
           changed = true;
         }
-      });
-
-      localStorage.setItem("gibor_branch_manager_seeded_v1", "true");
-    }
+      }
+    });
 
     if (changed) {
       this.saveUsers(users);
+      console.log("Đã đồng bộ hóa dữ liệu tài khoản quản trị và chi nhánh mặc định.");
     }
   },
 
