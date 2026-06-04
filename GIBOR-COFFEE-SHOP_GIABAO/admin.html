@@ -85,11 +85,11 @@
             
             <div style="margin-top: auto; display: flex; flex-direction: column; gap: 8px;">
               <!-- Profile Panel inside Sidebar -->
-              <div class="admin-sidebar-profile" style="padding: 12px; background: rgba(95,61,36,0.08); border-radius: 12px; display: flex; align-items: center; gap: 10px; border: 1px solid rgba(95,61,36,0.12);">
-                <div style="width: 36px; height: 36px; border-radius: 50%; background: #4f311d; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem;" id="sidebarUserAvatar">A</div>
+              <div class="admin-sidebar-profile">
+                <div id="sidebarUserAvatar">A</div>
                 <div class="profile-info" style="flex: 1; overflow: hidden;">
-                  <div style="font-size: 0.8rem; font-weight: 700; color: #4f311d; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" id="sidebarUserDisplayName">Admin</div>
-                  <div style="font-size: 0.72rem; color: #796454; font-weight: 600;" id="sidebarUserRole">Quản trị viên</div>
+                  <div class="sidebar-user-name" id="sidebarUserDisplayName">Admin</div>
+                  <div class="sidebar-user-role" id="sidebarUserRole">Quản trị viên</div>
                 </div>
               </div>
 
@@ -390,6 +390,7 @@
                     <tbody id="accountsTable"></tbody>
                   </table>
                 </div>
+                <div class="admin-pagination" id="accountsPagination"></div>
               </div>
             </div>
           </section>
@@ -452,6 +453,7 @@
                     </tbody>
                   </table>
                 </div>
+                <div class="admin-pagination" id="customersPagination"></div>
               </div>
             </div>
           </section>
@@ -567,6 +569,7 @@
                     <tbody id="productsTable"></tbody>
                   </table>
                 </div>
+                <div class="admin-pagination" id="productsPagination"></div>
               </div>
             </div>
           </section>
@@ -620,6 +623,7 @@
                     <tbody id="ordersTable"></tbody>
                   </table>
                 </div>
+                <div class="admin-pagination" id="ordersPagination"></div>
               </div>
             </div>
           </section>
@@ -730,6 +734,7 @@
                     <tbody id="branchesTable"></tbody>
                   </table>
                 </div>
+                <div class="admin-pagination" id="branchesPagination"></div>
               </div>
             </div>
           </section>
@@ -959,6 +964,13 @@
               body.dark #customerDetailModal .btn-close {
                 filter: invert(1) grayscale(1) brightness(2) !important;
               }
+              body.dark #customerDetailModal .table-bordered {
+                border-color: rgba(255, 255, 255, 0.1) !important;
+              }
+              body.dark #customerDetailModal .table-bordered td,
+              body.dark #customerDetailModal .table-bordered th {
+                border-color: rgba(255, 255, 255, 0.1) !important;
+              }
             </style>
 
             <div class="modal-header border-0 bg-light py-3 px-4" style="border-top-left-radius: 16px; border-top-right-radius: 16px;">
@@ -978,7 +990,7 @@
                     <h4 id="detCustomerName" class="fw-bold m-0">Nguyễn Văn A</h4>
                     <span id="detCustomerVIPBadge"></span>
                   </div>
-                  <p id="detCustomerRole" class="small m-0 mt-1">Khách hàng thành viên</p>
+                  <div id="detCustomerRankBadge" class="mt-1"></div>
                 </div>
                 <div class="col-12 col-md-auto text-md-end border-start border-md-0 ps-md-4 mt-3 mt-md-0" style="border-color: #dee2e6 !important;">
                   <div class="small info-box-title">Điểm tích lũy</div>
@@ -1088,6 +1100,44 @@
                   </table>
                 </div>
               </div>
+
+              <!-- Chú giải tiêu chí phân hạng thành viên -->
+              <div class="mt-4 border-top pt-3">
+                <h6 class="fw-bold mb-2" style="font-size: 0.85rem;"><i class="fas fa-info-circle text-info me-1"></i>Bảng tiêu chí phân hạng thành viên GIBOR</h6>
+                <div class="table-responsive">
+                  <table class="table table-bordered table-sm align-middle mb-0" style="font-size: 0.75rem;">
+                    <thead class="table-light">
+                      <tr>
+                        <th>Hạng</th>
+                        <th>Tiêu chí xét duyệt (Chi tiêu HOẶC Số đơn mua)</th>
+                        <th>Mô tả quyền lợi</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td><span class="rank-badge rank-vip"><i class="fas fa-crown text-warning me-1"></i>VIP 👑</span></td>
+                        <td>Chi tiêu từ <strong>3.000.000đ</strong> hoặc trên <strong>10 đơn hoàn tất</strong></td>
+                        <td class="text-muted">Ưu đãi giảm giá 10% cho mọi đơn hàng tiếp theo.</td>
+                      </tr>
+                      <tr>
+                        <td><span class="rank-badge rank-loyal"><i class="fas fa-handshake text-success me-1"></i>Thân thiết 🤝</span></td>
+                        <td>Chi tiêu từ <strong>1.500.000đ</strong> đến dưới <strong>3.000.000đ</strong> hoặc từ <strong>6 đến 10 đơn</strong></td>
+                        <td class="text-muted">Tích lũy điểm x1.2 và nhận quà tặng sinh nhật.</td>
+                      </tr>
+                      <tr>
+                        <td><span class="rank-badge rank-potential"><i class="fas fa-bolt text-primary me-1"></i>Tiềm năng ⚡</span></td>
+                        <td>Chi tiêu từ <strong>500.000đ</strong> đến dưới <strong>1.500.000đ</strong> hoặc từ <strong>3 đến 5 đơn</strong></td>
+                        <td class="text-muted">Tích lũy điểm x1.1 và nhận voucher ưu đãi tháng.</td>
+                      </tr>
+                      <tr>
+                        <td><span class="rank-badge rank-new"><i class="fas fa-seedling text-secondary me-1"></i>Mới 🌱</span></td>
+                        <td>Chi tiêu dưới <strong>500.000đ</strong> và dưới <strong>3 đơn hoàn tất</strong></td>
+                        <td class="text-muted">Thành viên mới đăng ký, tích lũy điểm tiêu chuẩn.</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
             <div class="modal-footer border-0 bg-light py-2 px-4" style="border-bottom-left-radius: 16px; border-bottom-right-radius: 16px;">
               <button type="button" class="btn btn-secondary px-4 btn-sm" style="border-radius: 8px;" data-bs-dismiss="modal">Đóng</button>
@@ -1096,6 +1146,9 @@
         </div>
       </div>
     </main>
+
+    <!-- Toast Notification Container -->
+    <div id="gibor-toast-container" class="gibor-toast-container"></div>
     
     <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>

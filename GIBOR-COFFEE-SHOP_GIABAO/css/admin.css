@@ -889,3 +889,423 @@ body.dark .toggle-password-btn:hover {
   background-color: #2e2e36 !important;
   color: #fff !important;
 }
+
+/* ========================================================================================
+   Customer Rank Badges & Sidebar Profile Anpassung (Dark/Light adaptiv)
+============================================================================================= */
+
+.rank-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 5px 12px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  white-space: nowrap;
+  gap: 5px;
+  transition: all 0.22s ease;
+}
+
+.rank-vip {
+  background: #fdf5e6;
+  color: #b8860b;
+  border: 1px solid #ecc97b;
+}
+
+.rank-loyal {
+  background: #eef6e9;
+  color: #39703c;
+  border: 1px solid #b8dfb9;
+}
+
+.rank-potential {
+  background: #e8f0fe;
+  color: #1a73e8;
+  border: 1px solid #b2cffc;
+}
+
+.rank-new {
+  background: #f1f3f4;
+  color: #5f6368;
+  border: 1px solid #dadce0;
+}
+
+/* Dark Mode Rank Badges */
+body.dark .rank-vip {
+  background: #3c2a12;
+  color: #f7ca6d;
+  border-color: #5c4320;
+}
+
+body.dark .rank-loyal {
+  background: #192f1d;
+  color: #8ed495;
+  border-color: #27472d;
+}
+
+body.dark .rank-potential {
+  background: #16243d;
+  color: #8ab4f8;
+  border-color: #243a5d;
+}
+
+body.dark .rank-new {
+  background: #2b2b35;
+  color: #c7baad;
+  border-color: #404050;
+}
+
+/* Sidebar Profile adaptation */
+.admin-sidebar-profile {
+  padding: 12px;
+  background: rgba(95, 61, 36, 0.08);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid rgba(95, 61, 36, 0.12);
+  transition: all 0.22s ease;
+}
+
+#sidebarUserAvatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #4f311d;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.85rem;
+  transition: all 0.22s ease;
+}
+
+.sidebar-user-name {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--gibor-primary-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: color 0.22s ease;
+}
+
+.sidebar-user-role {
+  font-size: 0.72rem;
+  color: var(--gibor-muted-text);
+  font-weight: 600;
+  transition: color 0.22s ease;
+}
+
+/* Dark Mode Sidebar Profile */
+body.dark .admin-sidebar-profile {
+  background: rgba(230, 193, 160, 0.08);
+  border-color: rgba(230, 193, 160, 0.16);
+}
+
+body.dark #sidebarUserAvatar {
+  background: #e6c1a0;
+  color: #1e1e24;
+}
+
+/* ========================================================================================
+   PAGINATION
+============================================================================================= */
+
+.admin-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 12px 4px 4px;
+  font-size: 0.82rem;
+  color: #796454;
+}
+
+.admin-pagination-info {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.admin-pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.admin-pagination-controls button {
+  min-width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(75, 44, 32, 0.15);
+  border-radius: 8px;
+  background: #fff;
+  color: #4f311d;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.admin-pagination-controls button:hover:not(:disabled):not(.active) {
+  background: #f3ebe4;
+  border-color: rgba(75, 44, 32, 0.3);
+  transform: translateY(-1px);
+}
+
+.admin-pagination-controls button.active {
+  background: linear-gradient(120deg, #4b2c20, #8f5d37);
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 4px 12px rgba(75, 44, 32, 0.25);
+}
+
+.admin-pagination-controls button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.admin-pagination-controls .pagination-ellipsis {
+  min-width: 30px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: #796454;
+  border: none;
+  background: none;
+  cursor: default;
+}
+
+body.dark .admin-pagination {
+  color: #c7baad;
+}
+
+body.dark .admin-pagination-controls button {
+  background: #24242b;
+  color: #f0ece6;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+body.dark .admin-pagination-controls button:hover:not(:disabled):not(.active) {
+  background: #2e2e36;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+body.dark .admin-pagination-controls button.active {
+  background: linear-gradient(120deg, #8f5d37, #b8895f);
+}
+
+body.dark .admin-pagination-controls .pagination-ellipsis {
+  color: #c7baad;
+}
+
+/* ========================================================================================
+   TOAST NOTIFICATION SYSTEM
+============================================================================================= */
+
+.gibor-toast-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 99999;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 420px;
+  pointer-events: none;
+}
+
+.gibor-toast {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 18px;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.06);
+  border-left: 4px solid #6c757d;
+  pointer-events: auto;
+  animation: gibor-toast-in 0.35s cubic-bezier(0.21, 1.02, 0.73, 1) forwards;
+  position: relative;
+  overflow: hidden;
+  min-width: 300px;
+}
+
+.gibor-toast.removing {
+  animation: gibor-toast-out 0.3s ease forwards;
+}
+
+.gibor-toast-icon {
+  font-size: 1.15rem;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.gibor-toast-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.gibor-toast-title {
+  font-weight: 800;
+  font-size: 0.82rem;
+  margin-bottom: 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.gibor-toast-message {
+  font-size: 0.84rem;
+  font-weight: 500;
+  line-height: 1.45;
+  color: #3d3d3d;
+  word-break: break-word;
+}
+
+.gibor-toast-close {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  background: none;
+  border: none;
+  font-size: 1rem;
+  cursor: pointer;
+  color: #aaa;
+  padding: 2px 6px;
+  border-radius: 6px;
+  transition: all 0.15s ease;
+  line-height: 1;
+}
+
+.gibor-toast-close:hover {
+  background: rgba(0, 0, 0, 0.06);
+  color: #555;
+}
+
+.gibor-toast-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  border-radius: 0 0 0 12px;
+  animation: gibor-toast-progress 3.5s linear forwards;
+}
+
+/* Toast Types */
+.gibor-toast.success {
+  border-left-color: #2e7d32;
+}
+.gibor-toast.success .gibor-toast-icon { color: #2e7d32; }
+.gibor-toast.success .gibor-toast-title { color: #1b5e20; }
+.gibor-toast.success .gibor-toast-progress { background: #2e7d32; }
+
+.gibor-toast.error {
+  border-left-color: #c62828;
+}
+.gibor-toast.error .gibor-toast-icon { color: #c62828; }
+.gibor-toast.error .gibor-toast-title { color: #b71c1c; }
+.gibor-toast.error .gibor-toast-progress { background: #c62828; }
+
+.gibor-toast.warning {
+  border-left-color: #ef6c00;
+}
+.gibor-toast.warning .gibor-toast-icon { color: #ef6c00; }
+.gibor-toast.warning .gibor-toast-title { color: #e65100; }
+.gibor-toast.warning .gibor-toast-progress { background: #ef6c00; }
+
+.gibor-toast.info {
+  border-left-color: #1565c0;
+}
+.gibor-toast.info .gibor-toast-icon { color: #1565c0; }
+.gibor-toast.info .gibor-toast-title { color: #0d47a1; }
+.gibor-toast.info .gibor-toast-progress { background: #1565c0; }
+
+/* Dark Mode Toasts */
+body.dark .gibor-toast {
+  background: #1e1e24;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+body.dark .gibor-toast-message {
+  color: #e0dcd6;
+}
+
+body.dark .gibor-toast-close {
+  color: #888;
+}
+
+body.dark .gibor-toast-close:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ccc;
+}
+
+body.dark .gibor-toast.success .gibor-toast-icon { color: #66bb6a; }
+body.dark .gibor-toast.success .gibor-toast-title { color: #81c784; }
+body.dark .gibor-toast.error .gibor-toast-icon { color: #ef5350; }
+body.dark .gibor-toast.error .gibor-toast-title { color: #e57373; }
+body.dark .gibor-toast.warning .gibor-toast-icon { color: #ffa726; }
+body.dark .gibor-toast.warning .gibor-toast-title { color: #ffb74d; }
+body.dark .gibor-toast.info .gibor-toast-icon { color: #42a5f5; }
+body.dark .gibor-toast.info .gibor-toast-title { color: #64b5f6; }
+
+/* Toast Animations */
+@keyframes gibor-toast-in {
+  from {
+    opacity: 0;
+    transform: translateX(100%) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes gibor-toast-out {
+  to {
+    opacity: 0;
+    transform: translateX(100%) scale(0.9);
+  }
+}
+
+@keyframes gibor-toast-progress {
+  from { width: 100%; }
+  to { width: 0%; }
+}
+
+/* ========================================================================================
+   SIDEBAR COLLAPSED FIXES
+============================================================================================= */
+
+body.sidebar-collapsed .admin-sidebar {
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+body.sidebar-collapsed .admin-brand-panel img {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+}
+
+body.sidebar-collapsed .admin-sidebar-toggle {
+  position: static;
+  margin: 4px auto 0;
+}
+
+body.sidebar-collapsed .admin-nav-btn-logout {
+  justify-content: center;
+  padding: 12px 0;
+  gap: 0;
+}
+
+body.sidebar-collapsed .admin-nav-btn-logout span {
+  display: none;
+}
+

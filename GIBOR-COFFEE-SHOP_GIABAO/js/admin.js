@@ -1881,7 +1881,7 @@ function bindPayosForm() {
               <td><strong>${item.label}</strong></td>
               <td><strong style="color:#137333;">${item.completedCount}</strong></td>
               <td><strong style="color:#c5221f;">${item.canceledCount}</strong></td>
-              <td><strong style="color:#5f3d24;">${formatMoney(item.revenue)}</strong></td>
+              <td><strong style="color:var(--gibor-secondary-text);">${formatMoney(item.revenue)}</strong></td>
             </tr>
           `;
         }).join("")
@@ -1962,6 +1962,18 @@ function bindPayosForm() {
     window.renderRevenueReport();
   });
 })();
+
+function getCustomerRank(spent, orderCount) {
+  if (spent >= 3000000 || orderCount > 10) {
+    return { key: "vip", label: "VIP 👑", class: "rank-vip" };
+  } else if (spent >= 1500000 || orderCount >= 6) {
+    return { key: "loyal", label: "Thân thiết 🤝", class: "rank-loyal" };
+  } else if (spent >= 500000 || orderCount >= 3) {
+    return { key: "potential", label: "Tiềm năng ⚡", class: "rank-potential" };
+  } else {
+    return { key: "new", label: "Mới 🌱", class: "rank-new" };
+  }
+}
 
 function renderCustomers() {
   try {
@@ -2121,6 +2133,11 @@ function renderCustomers() {
             vipBadge = `<span class="badge text-white ms-2" style="font-size: 0.75rem; background-color: #cd7f32;"><i class="fas fa-medal me-1"></i>Top 3</span>`;
           }
 
+          const totalLifetimeSpent = c.completedUserOrders.reduce((sum, order) => sum + getOrderTotal(order), 0);
+          const lifetimeOrderCount = c.completedUserOrders.length;
+          const rank = getCustomerRank(totalLifetimeSpent, lifetimeOrderCount);
+          const rankBadge = `<span class="rank-badge ${rank.class} ms-2">${rank.label}</span>`;
+
           let favBranchText = `<div class="text-muted small mt-1"><i class="fas fa-store-alt text-secondary me-1"></i>Chưa có giao dịch</div>`;
           if (c.favBranch) {
             favBranchText = `<div class="text-muted small mt-1" style="font-size: 0.8rem;"><i class="fas fa-store text-danger me-1"></i>Thường mua tại: <strong class="text-dark">${escapeHTML(c.favBranch.name)}</strong> (${c.favBranch.count} đơn)</div>`;
@@ -2135,6 +2152,7 @@ function renderCustomers() {
                     <div class="d-flex align-items-center flex-wrap">
                       <strong class="text-dark">${escapeHTML(c.displayName)}</strong>
                       ${vipBadge}
+                      ${rankBadge}
                     </div>
                     ${favBranchText}
                   </div>
@@ -2188,6 +2206,15 @@ function showCustomerDetail(customerId) {
     const avatarEl = document.getElementById("detCustomerAvatar");
     if (avatarEl) {
       avatarEl.textContent = getInitials(customer.user);
+    }
+
+    // Hạng thành viên động
+    const totalLifetimeSpent = customer.completedUserOrders.reduce((sum, order) => sum + getOrderTotal(order), 0);
+    const lifetimeOrderCount = customer.completedUserOrders.length;
+    const rank = getCustomerRank(totalLifetimeSpent, lifetimeOrderCount);
+    const rankBadgeEl = document.getElementById("detCustomerRankBadge");
+    if (rankBadgeEl) {
+      rankBadgeEl.innerHTML = `<span class="rank-badge ${rank.class}">${rank.label}</span>`;
     }
 
     // VIP Badge trong modal
