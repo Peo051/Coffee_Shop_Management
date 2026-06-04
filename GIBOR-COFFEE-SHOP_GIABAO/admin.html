@@ -97,15 +97,21 @@
         <section class="admin-content">
           <div class="admin-topbar">
             <div>
-              <span class="admin-eyebrow">Bảng điều khiển</span>
-              <h2 id="adminPageTitle">Dashboard</h2>
+                <span class="admin-eyebrow">Bảng điều khiển</span>
+                <h2 id="adminPageTitle">Dashboard</h2>
             </div>
-            <div class="admin-date">
-              <i class="fas fa-calendar-day"></i>
-              <span id="adminToday"></span>
+
+            <div class="admin-topbar-actions">
+              <button class="theme-toggle admin-theme-toggle" id="themeToggle" aria-label="Đổi giao diện">
+                🌙
+              </button>
+
+              <div class="admin-date">
+                <i class="fas fa-calendar-day"></i>
+                <span id="adminToday"></span>
+              </div>
             </div>
           </div>
-
           <section class="admin-panel active" data-admin-panel="dashboard">
             <div class="admin-stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 15px; margin-bottom: 20px;">
               <article class="admin-stat-card">
@@ -577,17 +583,29 @@
 
           <section class="admin-panel" data-admin-panel="revenue">
             <article class="admin-section">
-              <div class="admin-section-head" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 20px; border-bottom: none; padding-bottom: 0;">
-                <div>
-                  <h3>Báo cáo doanh thu</h3>
-                  <p>Tổng hợp doanh thu theo ngày và hiệu suất đơn hàng.</p>
+                <div class="admin-section-head" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 20px; border-bottom: none; padding-bottom: 0;">
+                  <div>
+                    <h3>Báo cáo doanh thu</h3>
+                    <p id="revenueReportDesc">Tổng hợp doanh thu theo ngày, tuần, tháng và quý.</p>
+                  </div>
+
+                  <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+                    <div style="width: 180px; margin: 0;">
+                      <select id="filterRevenuePeriod" class="form-select" style="border: 1px solid rgba(95,61,36,0.25); border-radius: 8px; height: 38px; color: #4f311d; font-size: 0.85rem; cursor: pointer;">
+                        <option value="day">Theo ngày</option>
+                        <option value="week">Theo tuần</option>
+                        <option value="month">Theo tháng</option>
+                        <option value="quarter">Theo quý</option>
+                      </select>
+                    </div>
+
+                      <div style="width: 250px; margin: 0;" id="revenueBranchFilterContainer">
+                        <select id="filterRevenueBranch" class="form-select" style="border: 1px solid rgba(95,61,36,0.25); border-radius: 8px; height: 38px; color: #4f311d; font-size: 0.85rem; cursor: pointer;">
+                          <option value="">Toàn hệ thống</option>
+                        </select>
+                      </div>
+                  </div>
                 </div>
-                <div style="width: 250px; margin: 0;" id="revenueBranchFilterContainer">
-                  <select id="filterRevenueBranch" class="form-select" style="border: 1px solid rgba(95,61,36,0.25); border-radius: 8px; height: 38px; color: #4f311d; font-size: 0.85rem; cursor: pointer;">
-                    <option value="">Toàn hệ thống</option>
-                  </select>
-                </div>
-              </div>
               <div class="revenue-summary" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 20px;">
                 <div>
                   <span>Tổng doanh thu thực tế</span>
@@ -615,6 +633,19 @@
                 </div>
               </div>
               <div class="revenue-bars wide" id="revenueBars" style="margin-bottom: 30px;"></div>
+                <div class="admin-table-wrap" style="margin-bottom: 25px;">
+                  <table class="admin-table">
+                    <thead>
+                      <tr>
+                        <th>Kỳ báo cáo</th>
+                        <th>Số đơn hoàn tất</th>
+                        <th>Số đơn đã hủy</th>
+                        <th>Doanh thu</th>
+                      </tr>
+                    </thead>
+                    <tbody id="revenuePeriodTable"></tbody>
+                  </table>
+                </div>
 
               <div class="admin-section-head" style="margin-top: 25px; border-top: 1px dashed rgba(95,61,36,0.2); padding-top: 20px;">
                 <div>

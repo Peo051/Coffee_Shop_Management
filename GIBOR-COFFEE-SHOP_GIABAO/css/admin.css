@@ -682,3 +682,9 @@ body.dark .admin-nav-btn-logout:hover {
     min-height: 44px;
   }
 }
+body.dark #filterRevenuePeriod,
+body.dark #filterRevenueBranch {
+  background-color: #121217 !important;
+  color: #f3f0ea !important;
+  border-color: rgba(255, 255, 255, 0.16) !important;
+}

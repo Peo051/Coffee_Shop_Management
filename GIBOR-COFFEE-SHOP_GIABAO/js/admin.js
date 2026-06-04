@@ -1554,3 +1554,250 @@ function bindPayosForm() {
     alert("Da luu cau hinh payOS. Website tinh se goi truc tiep API payOS tu trinh duyet.");
   });
 }
+// ===================== BÁO CÁO DOANH THU =====================
+(function () {
+  function isCompletedOrder(order) {
+    return ["Hoàn tất", "Đã hoàn tất", "Completed"].includes(order && order.status);
+  }
+
+  function isCanceledOrder(order) {
+    return ["Đã hủy", "Đã huỷ", "Canceled", "Cancelled"].includes(order && order.status);
+  }
+
+  function getActiveRevenueBranchId() {
+    let activeBranchId = "";
+    const currentUser = typeof UserManager !== "undefined" ? UserManager.getCurrentUser() : null;
+
+    if (currentUser && currentUser.role === "branch_manager") {
+      activeBranchId = currentUser.branchId || "";
+    } else {
+      const revBranchFilter = document.getElementById("filterRevenueBranch");
+      activeBranchId = revBranchFilter ? revBranchFilter.value : "";
+    }
+
+    return activeBranchId;
+  }
+
+  function startOfWeek(date) {
+    const d = new Date(date);
+    const day = d.getDay() || 7;
+    d.setHours(0, 0, 0, 0);
+    d.setDate(d.getDate() - day + 1);
+    return d;
+  }
+
+  function getQuarter(date) {
+    return Math.floor(date.getMonth() / 3) + 1;
+  }
+
+  function getPeriodConfig(period) {
+    if (period === "week") return { count: 8, title: "Doanh thu 8 tuần gần nhất" };
+    if (period === "month") return { count: 12, title: "Doanh thu 12 tháng gần nhất" };
+    if (period === "quarter") return { count: 4, title: "Doanh thu 4 quý gần nhất" };
+    return { count: 14, title: "Doanh thu 14 ngày gần nhất" };
+  }
+
+  function buildRevenuePeriods(period, branchId) {
+    const orders = (getOrders() || []).filter(Boolean);
+    const today = new Date();
+    const config = getPeriodConfig(period);
+    const periods = [];
+
+    for (let i = config.count - 1; i >= 0; i--) {
+      const date = new Date(today);
+      let key = "";
+      let label = "";
+      let start = null;
+      let end = null;
+
+      if (period === "week") {
+        date.setDate(today.getDate() - i * 7);
+        start = startOfWeek(date);
+        end = new Date(start);
+        end.setDate(start.getDate() + 6);
+        end.setHours(23, 59, 59, 999);
+
+        const year = start.getFullYear();
+        const oneJan = new Date(year, 0, 1);
+        const weekNo = Math.ceil((((start - oneJan) / 86400000) + oneJan.getDay() + 1) / 7);
+
+        key = `${year}-W${String(weekNo).padStart(2, "0")}`;
+        label = `Tuần ${weekNo}/${year}`;
+      } else if (period === "month") {
+        date.setMonth(today.getMonth() - i);
+        start = new Date(date.getFullYear(), date.getMonth(), 1);
+        end = new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59, 999);
+
+        key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+        label = `Tháng ${date.getMonth() + 1}/${date.getFullYear()}`;
+      } else if (period === "quarter") {
+        const currentQuarterIndex = today.getFullYear() * 4 + getQuarter(today) - 1 - i;
+        const year = Math.floor(currentQuarterIndex / 4);
+        const quarter = currentQuarterIndex % 4 + 1;
+        const startMonth = (quarter - 1) * 3;
+
+        start = new Date(year, startMonth, 1);
+        end = new Date(year, startMonth + 3, 0, 23, 59, 59, 999);
+
+        key = `${year}-Q${quarter}`;
+        label = `Quý ${quarter}/${year}`;
+      } else {
+        date.setDate(today.getDate() - i);
+        start = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+        end = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59, 999);
+
+        key = start.toISOString().slice(0, 10);
+        label = start.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" });
+      }
+
+      periods.push({
+        key,
+        label,
+        start,
+        end,
+        revenue: 0,
+        completedCount: 0,
+        canceledCount: 0
+      });
+    }
+
+    orders.forEach(function (order) {
+      if (branchId && (!order.branch || order.branch.id !== branchId)) return;
+
+      const date = new Date(getOrderDate(order));
+      if (Number.isNaN(date.getTime())) return;
+
+      const target = periods.find(function (item) {
+        return date >= item.start && date <= item.end;
+      });
+
+      if (!target) return;
+
+      if (isCompletedOrder(order)) {
+        target.completedCount += 1;
+        target.revenue += getOrderTotal(order);
+      }
+
+      if (isCanceledOrder(order)) {
+        target.canceledCount += 1;
+      }
+    });
+
+    return periods;
+  }
+
+  function renderRevenuePeriodBars(data) {
+    const target = document.getElementById("revenueBars");
+    if (!target) return;
+
+    const max = Math.max.apply(null, data.map(function (item) {
+      return item.revenue;
+    }).concat([1]));
+
+    target.innerHTML = data.map(function (item) {
+      const height = Math.max(14, Math.round((item.revenue / max) * 260));
+
+      return `
+        <div class="revenue-bar-item">
+          <div class="revenue-bar" style="height:${height}px" title="${formatMoney(item.revenue)}"></div>
+          <div class="revenue-bar-label">
+            <span>${item.label}</span>
+            <span>${formatMoney(item.revenue)}</span>
+          </div>
+        </div>
+      `;
+    }).join("");
+  }
+
+  function renderRevenuePeriodTable(data) {
+    const table = document.getElementById("revenuePeriodTable");
+    if (!table) return;
+
+    table.innerHTML = data.length
+      ? data.map(function (item) {
+          return `
+            <tr>
+              <td><strong>${item.label}</strong></td>
+              <td><strong style="color:#137333;">${item.completedCount}</strong></td>
+              <td><strong style="color:#c5221f;">${item.canceledCount}</strong></td>
+              <td><strong style="color:#5f3d24;">${formatMoney(item.revenue)}</strong></td>
+            </tr>
+          `;
+        }).join("")
+      : `<tr><td class="admin-empty" colspan="4">Chưa có dữ liệu doanh thu.</td></tr>`;
+  }
+
+  window.renderRevenueReport = function () {
+    try {
+      const orders = (getOrders() || []).filter(Boolean);
+      const activeBranchId = getActiveRevenueBranchId();
+      const period = document.getElementById("filterRevenuePeriod")?.value || "day";
+      const config = getPeriodConfig(period);
+
+      const filteredOrders = activeBranchId
+        ? orders.filter(function (order) {
+            return order.branch && order.branch.id === activeBranchId;
+          })
+        : orders;
+
+      const completedOrders = filteredOrders.filter(isCompletedOrder);
+      const canceledOrders = filteredOrders.filter(isCanceledOrder);
+
+      const data = buildRevenuePeriods(period, activeBranchId);
+      const periodRevenue = data.reduce(function (sum, item) {
+        return sum + item.revenue;
+      }, 0);
+      const periodCompleted = data.reduce(function (sum, item) {
+        return sum + item.completedCount;
+      }, 0);
+      const avg = periodCompleted ? periodRevenue / periodCompleted : 0;
+      const cancelRateValue = filteredOrders.length ? (canceledOrders.length / filteredOrders.length) * 100 : 0;
+      const best = data.reduce(function (top, item) {
+        return item.revenue > top.revenue ? item : top;
+      }, data[0] || { revenue: 0, label: "-" });
+
+      const desc = document.getElementById("revenueReportDesc");
+      if (desc) desc.textContent = config.title + ".";
+
+      if (document.getElementById("totalRevenueReal")) {
+        document.getElementById("totalRevenueReal").textContent = formatMoney(periodRevenue);
+      }
+
+      if (document.getElementById("avgOrderValue")) {
+        document.getElementById("avgOrderValue").textContent = formatMoney(avg);
+      }
+
+      if (document.getElementById("paidOrderCount")) {
+        document.getElementById("paidOrderCount").textContent = periodCompleted;
+      }
+
+      if (document.getElementById("canceledOrderCount")) {
+        document.getElementById("canceledOrderCount").textContent = canceledOrders.length;
+      }
+
+      if (document.getElementById("cancelRate")) {
+        document.getElementById("cancelRate").textContent = cancelRateValue.toFixed(1) + "%";
+      }
+
+      if (document.getElementById("bestRevenueDay")) {
+        document.getElementById("bestRevenueDay").textContent =
+          best && best.revenue ? `${best.label} (${formatMoney(best.revenue)})` : "-";
+      }
+
+      renderRevenuePeriodBars(data);
+      renderRevenuePeriodTable(data);
+      renderBestSellersReport(filteredOrders);
+    } catch (error) {
+      console.error("Error rendering custom revenue report:", error);
+    }
+  };
+
+  document.addEventListener("DOMContentLoaded", function () {
+    const periodFilter = document.getElementById("filterRevenuePeriod");
+    if (periodFilter) {
+      periodFilter.addEventListener("change", window.renderRevenueReport);
+    }
+
+    window.renderRevenueReport();
+  });
+})();
