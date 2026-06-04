@@ -157,9 +157,19 @@ const initApp = () => {
   if (authLink && typeof UserManager !== "undefined") {
     const currentUser = UserManager.getCurrentUser();
     if (currentUser) {
-      // Đã đăng nhập → hiển thị tên người dùng (Họ + Tên)
+      // Đã đăng nhập → hiển thị tên người dùng rút gọn để tránh tràn layout
+      let displayBtnName = currentUser.displayName;
+      if (currentUser.role === "admin") {
+        displayBtnName = "Admin";
+      } else if (currentUser.role === "branch_manager") {
+        displayBtnName = "Quản lý";
+      } else {
+        // Khách hàng hoặc người dùng thường: hiển thị Tên (firstName) cho gọn gàng
+        displayBtnName = currentUser.firstName || currentUser.displayName;
+      }
+
       authLink.innerHTML =
-        '<i class="fas fa-user-circle"></i> ' + currentUser.displayName;
+        '<i class="fas fa-user-circle"></i> <span>' + displayBtnName + '</span>';
       authLink.href = "#";
       authLink.classList.add("logged-in");
       authLink.title = "Tài khoản của bạn";
@@ -194,9 +204,10 @@ const initApp = () => {
           '<div class="user-dropdown-email">' +
           currentUser.email +
           "</div>" +
+          ((currentUser.role !== "admin" && currentUser.role !== "branch_manager") ?
           '<div class="user-dropdown-points"><i class="fas fa-coins"></i> ' +
           userPoints.toLocaleString("vi-VN") +
-          " điểm</div>" +
+          " điểm</div>" : "") +
           "</div>" +
           "</div>" +
           '<ul class="user-dropdown-menu">' +

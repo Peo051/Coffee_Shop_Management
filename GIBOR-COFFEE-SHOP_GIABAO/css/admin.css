@@ -4,6 +4,18 @@
 
 ============================================================================================= */
 
+:root {
+  --gibor-primary-text: #4f311d;
+  --gibor-secondary-text: #5f3d24;
+  --gibor-muted-text: #796454;
+}
+
+body.dark {
+  --gibor-primary-text: #f3f0ea;
+  --gibor-secondary-text: #e6c1a0;
+  --gibor-muted-text: #c7baad;
+}
+
 .admin-page {
   min-height: calc(100vh - 160px);
   padding: 0;
@@ -687,4 +699,193 @@ body.dark #filterRevenueBranch {
   background-color: #121217 !important;
   color: #f3f0ea !important;
   border-color: rgba(255, 255, 255, 0.16) !important;
+}
+
+/* Đồng bộ Dark Mode cho Bootstrap 5 */
+body.dark .card,
+body.dark .admin-section-card {
+  background-color: #1a1a1f !important;
+  color: #f3f0ea !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+body.dark .card-title,
+body.dark .card-header,
+body.dark .form-label {
+  color: #f3f0ea !important;
+}
+
+body.dark .form-control,
+body.dark .form-select {
+  background-color: #121217 !important;
+  color: #f3f0ea !important;
+  border-color: rgba(255, 255, 255, 0.16) !important;
+}
+
+body.dark .form-control:focus,
+body.dark .form-select:focus {
+  background-color: #121217 !important;
+  color: #f3f0ea !important;
+  border-color: #d4a373 !important;
+  box-shadow: 0 0 0 0.25rem rgba(212, 163, 115, 0.25) !important;
+}
+
+body.dark .form-control::placeholder {
+  color: #796454 !important;
+}
+
+body.dark .table {
+  color: #f0ece6 !important;
+  --bs-table-bg: transparent !important;
+}
+
+body.dark .table-light {
+  --bs-table-bg: #24242b !important;
+  --bs-table-color: #bfae9d !important;
+}
+
+body.dark .table td {
+  color: #f0ece6 !important;
+  border-bottom-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+body.dark .bg-light {
+  background-color: #24242b !important;
+}
+
+body.dark .text-dark {
+  color: #f3f0ea !important;
+}
+
+body.dark .text-muted {
+  color: #c7baad !important;
+}
+
+body.dark .input-group-text {
+  background-color: #24242b !important;
+  color: #c7baad !important;
+  border-color: rgba(255, 255, 255, 0.16) !important;
+}
+
+body.dark .border-dashed {
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+body.dark .admin-stat-card {
+  background-color: #1a1a1f !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+body.dark .admin-stat-card:not(.revenue) strong {
+  color: #f3f0ea !important;
+}
+
+/* ==================== SIDEBAR COLLAPSED ==================== */
+.admin-sidebar, .admin-content {
+  transition: all 0.3s ease-in-out;
+}
+
+.admin-sidebar-toggle {
+  background: transparent;
+  border: 0;
+  color: #8c5d39;
+  font-size: 1.15rem;
+  cursor: pointer;
+  padding: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  margin-left: auto;
+  transition: all 0.2s ease;
+}
+
+.admin-sidebar-toggle:hover {
+  background: rgba(75, 44, 32, 0.08);
+  color: #4b2c20;
+}
+
+body.dark .admin-sidebar-toggle {
+  color: #bfae9d;
+}
+body.dark .admin-sidebar-toggle:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+/* Khi sidebar co lại */
+body.sidebar-collapsed .admin-sidebar {
+  width: 80px;
+  padding: 15px 10px;
+}
+
+body.sidebar-collapsed .admin-content {
+  margin-left: 80px;
+}
+
+body.sidebar-collapsed .admin-brand-panel {
+  justify-content: center;
+  padding: 10px 0 16px;
+}
+
+body.sidebar-collapsed .admin-brand-panel .brand-text {
+  display: none;
+}
+
+body.sidebar-collapsed .admin-sidebar-profile {
+  justify-content: center;
+  padding: 10px 0;
+  gap: 0 !important;
+}
+
+body.sidebar-collapsed .admin-sidebar-profile .profile-info {
+  display: none;
+}
+
+body.sidebar-collapsed .admin-nav-btn {
+  justify-content: center;
+  padding: 12px 0;
+  gap: 0;
+}
+
+body.sidebar-collapsed .admin-nav-btn span {
+  display: none;
+}
+
+body.sidebar-collapsed .admin-nav-btn i {
+  width: auto;
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+body.sidebar-collapsed .admin-menu-divider {
+  margin: 8px 0;
+}
+
+body.sidebar-collapsed .admin-sidebar-toggle i {
+  transform: rotate(180deg);
+}
+
+/* Cổng thanh toán payOS password toggle button styling */
+.toggle-password-btn {
+  border-color: #ced4da;
+  border-top-right-radius: 8px;
+  border-bottom-right-radius: 8px;
+  background-color: #fff;
+  color: #6c757d;
+  transition: all 0.2s ease;
+}
+.toggle-password-btn:hover {
+  background-color: #f8f9fa;
+  color: #495057;
+  border-color: #ced4da;
+}
+body.dark .toggle-password-btn {
+  background-color: #24242b !important;
+  color: #c7baad !important;
+  border-color: rgba(255, 255, 255, 0.16) !important;
+}
+body.dark .toggle-password-btn:hover {
+  background-color: #2e2e36 !important;
+  color: #fff !important;
 }
