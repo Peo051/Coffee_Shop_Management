@@ -350,14 +350,14 @@
       // Tính subtotal
       const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
+      // Tất cả đơn hàng (bao gồm cả Giao hàng trực tuyến) đều được xử lý và tính doanh thu cho 1 chi nhánh cụ thể
+      const branch = randItem(BRANCHES);
+
       // Phương thức giao hàng
       const shippingMethod = randItem(SHIPPING_METHODS);
       let shipping = 0;
-      let branch = null;
 
       if (shippingMethod === "Uống tại quán") {
-        // Chọn chi nhánh ngẫu nhiên
-        branch = randItem(BRANCHES);
         shipping = 0;
       } else {
         // Giao hàng: phí 30k, miễn phí nếu >= 200k
@@ -420,11 +420,11 @@
 
       // Thông tin khách hàng
       let customerAddress;
-      const branchCityCode = branch ? branch.id.substring(0, 2) : "";
+      const branchCityCode = branch.id.substring(0, 2);
       if (shippingMethod === "Giao hàng") {
         customerAddress = randItem([...STREETS_HCM, ...STREETS_HN, ...STREETS_DN]);
       } else {
-        customerAddress = branch ? branch.address : "";
+        customerAddress = branch.address;
       }
 
       // Ngày đặt: trải đều từ 01/01/2026 đến 05/06/2026
@@ -441,7 +441,7 @@
           email: user.email,
           address: customerAddress,
         },
-        branch: branch ? { id: branch.id, name: branch.name, address: branch.address } : null,
+        branch: { id: branch.id, name: branch.name, address: branch.address },
         subtotal: subtotal,
         shipping: shipping,
         discount: discount,
