@@ -834,12 +834,8 @@ async function placeOrder() {
   const orderCodeEl = document.getElementById("orderCode");
   if (orderCodeEl) orderCodeEl.textContent = code;
 
-  // Lưu đơn hàng vào lịch sử (nếu đã đăng nhập)
-  if (
-    typeof OrderManager !== "undefined" &&
-    typeof UserManager !== "undefined" &&
-    UserManager.isLoggedIn()
-  ) {
+  // Lưu đơn hàng vào lịch sử (Cho cả khách hàng vãng lai chưa đăng nhập và khách đã đăng nhập)
+  if (typeof OrderManager !== "undefined") {
     const subtotal = cart.reduce((s, i) => s + i.price * i.quantity, 0);
     // Lấy thông tin người đặt hàng từ form
     const ckNameEl = document.getElementById("ckName");
@@ -882,6 +878,7 @@ async function placeOrder() {
 
     const grandTotal = getCurrentCheckoutAmount();
 
+    // Lưu vào lịch sử đơn hàng chung (để trang quản lý Admin/Nhân viên đọc được)
     OrderManager.saveOrder({
       code: code,
       customer: {
@@ -922,8 +919,12 @@ async function placeOrder() {
       paymentStatus: (typeof payosPaymentSuccess !== "undefined" && payosPaymentSuccess) ? "Đã thanh toán" : "Chưa thanh toán",
     });
 
-    // Xử lý điểm tích lũy
-    if (typeof PointsManager !== "undefined") {
+    // Chỉ thực hiện xử lý điểm tích lũy khi khách hàng ĐÃ ĐĂNG NHẬP
+    if (
+      typeof UserManager !== "undefined" &&
+      UserManager.isLoggedIn() &&
+      typeof PointsManager !== "undefined"
+    ) {
       // Trừ điểm đã dùng
       if (usedPoints > 0) {
         PointsManager.usePoints(usedPoints);
@@ -1570,6 +1571,20 @@ document.addEventListener("DOMContentLoaded", () => {
     branchCity.addEventListener("change", () => {
       renderBranches(branchCity.value);
     });
+  }
+
+  // Tự động tích sẵn chi nhánh dựa trên chi nhánh khách đã chọn từ thực đơn (menu.html)
+  const menuSelectedBranchId = localStorage.getItem("gibor_selected_menu_branch") || "all";
+  if (menuSelectedBranchId !== "all" && typeof window.GIBOR_BRANCH_UTILS !== "undefined") {
+    const activeBranch = window.GIBOR_BRANCH_UTILS.getById(menuSelectedBranchId);
+    if (activeBranch && branchCity) {
+      // Set khu vực
+      branchCity.value = activeBranch.cityCode;
+      // Render chi nhánh khu vực đó
+      renderBranches(activeBranch.cityCode);
+      // Tích sẵn chi nhánh này
+      selectBranch(activeBranch.id, activeBranch.cityCode);
+    }
   }
 
   // Chọn tỉnh/thành phố - cập nhật phường/xã

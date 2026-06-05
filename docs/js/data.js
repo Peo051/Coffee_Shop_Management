@@ -54,7 +54,7 @@ const defaultProducts = [
   { id: "p-41", name: "Combo 11", category: "Combo", price: 52000, img: "images/menu/combo11.jpg", desc: "Trà Đào + Bánh Bông Lan Kem Tươi", isBestSeller: false, status: "active" },
   { id: "p-42", name: "Combo 12", category: "Combo", price: 55000, img: "images/menu/combo12.jpg", desc: "Trà Dâu + Bánh Tiramisu", isBestSeller: false, status: "active" },
   { id: "p-43", name: "Trân châu đen", category: "Topping", price: 10000, img: "images/menu/tranchauden.jpg", desc: "Trân châu đen dẻo dai ngọt dịu", isBestSeller: false, status: "active" },
-  { id: "p-44", name: "Trân châu trắng", category: "Topping", price: 10000, img: "images/menu/tranchauduongden.jpg", desc: "Trân châu trắng giòn dai sần sật", isBestSeller: false, status: "active" },
+  { id: "p-44", name: "Trân châu trắng", category: "Topping", price: 10000, img: "images/menu/3Q.jpg", desc: "Trân châu trắng giòn dai sần sật", isBestSeller: false, status: "active" },
   { id: "p-45", name: "Thạch trái cây", category: "Topping", price: 10000, img: "images/menu/thachtraicay.jpg", desc: "Thạch dẻo thơm mát hương trái cây", isBestSeller: false, status: "active" },
   { id: "p-46", name: "Thạch dừa", category: "Topping", price: 10000, img: "images/menu/thachdua.jpg", desc: "Thạch dừa non giòn ngọt tự nhiên", isBestSeller: false, status: "active" },
   { id: "p-47", name: "Thạch matcha", category: "Topping", price: 15000, img: "images/menu/thachmatcha.jpg", desc: "Thạch matcha thơm nồng chuẩn vị Nhật", isBestSeller: false, status: "active" },
@@ -62,8 +62,16 @@ const defaultProducts = [
   { id: "p-49", name: "Khoai môn bóng", category: "Topping", price: 15000, img: "images/menu/khoaimonbong.jpg", desc: "Khoai môn dẻo bùi thơm ngậy", isBestSeller: false, status: "active" },
 ];
 
+const PRODUCT_IMAGE_OVERRIDES = {
+  "p-44": "images/menu/3Q.jpg",
+};
+
 function normalizeProduct(product) {
   let img = product.img || "";
+  const overrideImg = PRODUCT_IMAGE_OVERRIDES[product.id];
+  if (overrideImg) {
+    img = overrideImg;
+  }
   
   // Nếu img rỗng hoặc là ảnh logo fallback, thử tìm ảnh gốc từ defaultProducts
   if (!img || img === "images/logo/logo.jpg") {
@@ -795,15 +803,13 @@ const OrderManager = {
   saveOrder(order) {
     try {
       const currentUser = UserManager.getCurrentUser();
-      if (!currentUser) return;
-
       const allOrders = JSON.parse(localStorage.getItem("gibor_orders") || "[]");
       const cleanOrders = (Array.isArray(allOrders) ? allOrders : []).filter(o => o !== null && o !== undefined);
       
       cleanOrders.push({
         ...order,
-        userId: currentUser.id,
-        userName: currentUser.displayName,
+        userId: currentUser ? currentUser.id : "guest",
+        userName: currentUser ? currentUser.displayName : (order.customer ? order.customer.name : "Khách vãng lai"),
         createdAt: new Date().toISOString(),
         status: order.status || "Đã ghi nhận", // Tự động gán trạng thái mặc định
       });

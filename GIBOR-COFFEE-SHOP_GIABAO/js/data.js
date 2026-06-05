@@ -62,8 +62,16 @@ const defaultProducts = [
   { id: "p-49", name: "Khoai môn bóng", category: "Topping", price: 15000, img: "images/menu/khoaimonbong.jpg", desc: "Khoai môn dẻo bùi thơm ngậy", isBestSeller: false, status: "active" },
 ];
 
+const PRODUCT_IMAGE_OVERRIDES = {
+  "p-44": "images/menu/3Q.jpg",
+};
+
 function normalizeProduct(product) {
   let img = product.img || "";
+  const overrideImg = PRODUCT_IMAGE_OVERRIDES[product.id];
+  if (overrideImg) {
+    img = overrideImg;
+  }
   
   // Nếu img rỗng hoặc là ảnh logo fallback, thử tìm ảnh gốc từ defaultProducts
   if (!img || img === "images/logo/logo.jpg") {

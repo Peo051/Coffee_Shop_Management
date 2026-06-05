@@ -134,6 +134,48 @@
       <!-- Trần Gia Bảo kết thúc chỉnh sửa -->
 
       <h2 class="menu-title text-center mb-4 mb-md-5">MENU GIBOR COFFEE</h2>
+      
+      <!-- Lựa chọn chi nhánh dưới dạng nút nhấn thiết kế chuyên nghiệp giống The Coffee House -->
+      <div class="menu-branch-selector-wrap mb-5 p-4 rounded-4 shadow-sm">
+        <label class="form-label fw-bold d-flex align-items-center justify-content-center gap-2 mb-3 menu-branch-label" style="font-size: 1.05rem;">
+          <i class="fas fa-store" style="color: #d4a373;"></i> Bạn muốn xem thực đơn của chi nhánh nào?
+        </label>
+        <button id="menuBranchSelectBtn" class="btn w-100 rounded-pill py-2.5 px-4 fw-semibold d-flex align-items-center justify-content-between menu-branch-button" style="font-size: 0.95rem; transition: all 0.25s ease;">
+          <span id="menuBranchSelectLabel"><i class="fa-solid fa-location-dot me-2" style="color: #d4a373;"></i>Đang tải chi nhánh...</span>
+          <i class="fa-solid fa-chevron-right ms-2" style="font-size: 0.8rem; opacity: 0.7;"></i>
+        </button>
+      </div>
+
+      <!-- POPUP / MODAL CHỌN CỬA HÀNG PHONG CÁCH THE COFFEE HOUSE -->
+      <div id="branchModalOverlay" class="branch-modal-overlay">
+        <div class="branch-modal-box">
+          <!-- Header -->
+          <div class="branch-modal-header">
+            <button class="branch-modal-back-btn" id="branchModalCloseBtn">
+              <i class="fa-solid fa-chevron-left"></i>
+            </button>
+            <h3 class="branch-modal-title">Chọn cửa hàng</h3>
+            <div style="width: 32px;"></div> <!-- Spacer để cân bằng icon back -->
+          </div>
+
+          <!-- Search Box -->
+          <div class="branch-modal-search-wrap">
+            <div class="branch-modal-search-box">
+              <i class="fa-solid fa-magnifying-glass search-icon"></i>
+              <input type="text" id="branchSearchInput" placeholder="Tìm kiếm theo tên hoặc địa chỉ..." />
+              <button id="branchSearchClearBtn" class="clear-btn" style="display: none;">
+                <i class="fa-solid fa-circle-xmark"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Branch List Container -->
+          <div class="branch-modal-list-container" id="branchModalList">
+            <!-- Render danh sách chi nhánh động bằng Javascript -->
+          </div>
+        </div>
+      </div>
+
       <!-- COFFEE -->
       <section class="menu-section">
         <h3 class="section-title">☕ CÀ PHÊ</h3>
@@ -1176,6 +1218,7 @@
     <!-- Phần JS CHUNG -->
     <script src="js/components.js?v=2.1.0"></script>
     <script src="js/data.js?v=2.1.0"></script>
+    <script src="js/branches-data.js?v=2.1.0"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="js/main.js?v=2.1.0"></script>
     <script src="js/mobile.js?v=2.1.0"></script>

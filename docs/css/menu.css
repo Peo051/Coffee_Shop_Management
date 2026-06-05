@@ -543,7 +543,7 @@ body.dark .menu-container {
   width: 100%;
   height: 100%;
   display: block;
-  object-fit: contain;
+  object-fit: cover;
   object-position: center;
   background: #2d1b13;
 }
@@ -586,6 +586,56 @@ body.dark .menu-card p {
   font-size: clamp(1.5rem, 3vw, 2rem);
   color: #5a2d1a;
   letter-spacing: 2px;
+}
+
+/* LỰA CHỌN CHI NHÁNH */
+.menu-branch-selector-wrap {
+  background: rgba(95, 61, 36, 0.03);
+  border: 1px solid rgba(95, 61, 36, 0.1);
+  box-shadow: 0 10px 30px rgba(75, 44, 32, 0.05);
+  transition: all 0.3s ease;
+  backdrop-filter: blur(8px);
+}
+
+.menu-branch-selector-wrap:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 15px 35px rgba(75, 44, 32, 0.08);
+  border-color: rgba(95, 61, 36, 0.2);
+}
+
+#menuBranchSelector {
+  border: 1px solid rgba(95, 61, 36, 0.25);
+  background-color: #ffffff;
+  color: #4b2c20;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02);
+  transition: all 0.25s ease;
+}
+
+#menuBranchSelector:focus {
+  border-color: #d4a373;
+  box-shadow: 0 0 0 0.25rem rgba(212, 163, 115, 0.2);
+  outline: 0;
+}
+
+body.dark .menu-branch-selector-wrap {
+  background: rgba(26, 26, 31, 0.8);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+body.dark .menu-branch-selector-wrap label {
+  color: #f3f0ea !important;
+}
+
+body.dark #menuBranchSelector {
+  background-color: #24242b;
+  color: #f3f0ea;
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+body.dark #menuBranchSelector:focus {
+  border-color: #b8895f;
+  box-shadow: 0 0 0 0.25rem rgba(184, 137, 95, 0.25);
 }
 
 /* =========================================

@@ -26,6 +26,16 @@
     if (typeof onConfirm === "function") onConfirm();
   }
 
+  function escapeHTML(str) {
+    if (!str) return "";
+    return str
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
   function notifyError(title, message) {
     if (typeof showGiborPopup === "function") {
       showGiborPopup({
@@ -397,7 +407,11 @@
     root.hidden = false;
   }
 
-  document.addEventListener("DOMContentLoaded", init);
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init);
+  } else {
+    init();
+  }
 })();
 /* 
 ========================================================================================

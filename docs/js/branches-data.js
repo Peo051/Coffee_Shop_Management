@@ -9,7 +9,7 @@
 (function () {
   "use strict";
 
-  // Danh sách gốc 15 chi nhánh.
+  // Danh sách gốc 15 chi nhánh với tọa độ GPS thực tế.
   const BRANCH_BASE_LIST = [
     {
       id: "hcm1",
@@ -19,6 +19,8 @@
       name: "GIBOR Lê Trọng Tấn",
       address: "140 Lê Trọng Tấn, Tây Thạnh, Tân Phú, TP. Hồ Chí Minh",
       image: "images/Branch/TPHCM2.jpg",
+      lat: 10.812239,
+      lng: 106.627685
     },
     {
       id: "hcm2",
@@ -28,6 +30,8 @@
       name: "GIBOR Nguyễn Huệ",
       address: "263 Nguyễn Huệ, Bến Nghé, Quận 1, TP. Hồ Chí Minh",
       image: "images/Branch/TPHCM1.jpg",
+      lat: 10.774163,
+      lng: 106.703774
     },
     {
       id: "hcm3",
@@ -37,6 +41,8 @@
       name: "GIBOR Võ Văn Tần",
       address: "123 Võ Văn Tần, Phường 6, Quận 3, TP. Hồ Chí Minh",
       image: "images/Branch/TPHCM3.jpg",
+      lat: 10.777937,
+      lng: 106.690827
     },
     {
       id: "hcm4",
@@ -46,6 +52,8 @@
       name: "GIBOR Xa lộ Hà Nội",
       address: "77 Xa lộ Hà Nội, Thảo Điền, TP. Thủ Đức, TP. Hồ Chí Minh",
       image: "images/Branch/TPHCM4.jpg",
+      lat: 10.803738,
+      lng: 106.732381
     },
     {
       id: "hcm5",
@@ -55,6 +63,8 @@
       name: "GIBOR Điện Biên Phủ",
       address: "23 Điện Biên Phủ, Phường 15, Bình Thạnh, TP. Hồ Chí Minh",
       image: "images/Branch/TPHCM5.jpg",
+      lat: 10.800312,
+      lng: 106.708892
     },
     {
       id: "hn1",
@@ -64,6 +74,8 @@
       name: "GIBOR Trần Duy Hưng",
       address: "81 Trần Duy Hưng, Trung Hòa, Cầu Giấy, Hà Nội",
       image: "images/Branch/HANOI1.jpg",
+      lat: 21.010415,
+      lng: 105.800109
     },
     {
       id: "hn2",
@@ -73,6 +85,8 @@
       name: "GIBOR Láng Hạ",
       address: "66 Láng Hạ, Láng Hạ, Đống Đa, Hà Nội",
       image: "images/Branch/HANOI2.jpg",
+      lat: 21.015705,
+      lng: 105.814529
     },
     {
       id: "hn3",
@@ -82,6 +96,8 @@
       name: "GIBOR Bạch Mai",
       address: "115 Bạch Mai, Bạch Mai, Hai Bà Trưng, Hà Nội",
       image: "images/Branch/HANOI3.jpg",
+      lat: 20.999676,
+      lng: 105.849646
     },
     {
       id: "hn4",
@@ -91,6 +107,8 @@
       name: "GIBOR Hoàng Hoa Thám",
       address: "632 Hoàng Hoa Thám, Vĩnh Phúc, Ba Đình, Hà Nội",
       image: "images/Branch/HANOI4.jpg",
+      lat: 21.041678,
+      lng: 105.808298
     },
     {
       id: "hn5",
@@ -100,6 +118,8 @@
       name: "GIBOR Nguyễn Văn Cừ",
       address: "334 Nguyễn Văn Cừ, Bồ Đề, Long Biên, Hà Nội",
       image: "images/Branch/HANOI5.jpg",
+      lat: 21.048592,
+      lng: 105.877864
     },
     {
       id: "dn1",
@@ -109,6 +129,8 @@
       name: "GIBOR Võ Nguyên Giáp",
       address: "567 Võ Nguyên Giáp, Mỹ An, Ngũ Hành Sơn, Đà Nẵng",
       image: "images/Branch/DANANG2.jpg",
+      lat: 16.052601,
+      lng: 108.245842
     },
     {
       id: "dn2",
@@ -118,6 +140,8 @@
       name: "GIBOR Bạch Đằng",
       address: "453 Bạch Đằng, Thạch Thang, Hải Châu, Đà Nẵng",
       image: "images/Branch/DANANG1.jpg",
+      lat: 16.074321,
+      lng: 108.223847
     },
     {
       id: "dn3",
@@ -127,6 +151,8 @@
       name: "GIBOR Nguyễn Văn Linh",
       address: "638 Nguyễn Văn Linh, Nam Dương, Hải Châu, Đà Nẵng",
       image: "images/Branch/DANANG3.jpg",
+      lat: 16.059495,
+      lng: 108.213264
     },
     {
       id: "dn4",
@@ -136,6 +162,8 @@
       name: "GIBOR Tôn Đức Thắng",
       address: "53 Tôn Đức Thắng, Hòa Khánh Bắc, Liên Chiểu, Đà Nẵng",
       image: "images/Branch/DANANG4.jpg",
+      lat: 16.071537,
+      lng: 108.156475
     },
     {
       id: "dn5",
@@ -145,6 +173,8 @@
       name: "GIBOR Cách Mạng Tháng Tám",
       address: "55 Cách Mạng Tháng Tám, Khuê Trung, Cẩm Lệ, Đà Nẵng",
       image: "images/Branch/DANANG5.jpg",
+      lat: 16.022986,
+      lng: 108.209356
     },
   ];
 
@@ -200,14 +230,18 @@
       if (stored) {
         const parsed = JSON.parse(stored);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed;
+          // KIỂM TRA PHIÊN BẢN CŨ: Nếu các phần tử chưa có trường 'lat', ta cần reset lại từ file JS mới
+          const hasLat = parsed.some(b => typeof b.lat !== "undefined");
+          if (hasLat) {
+            return parsed;
+          }
         }
       }
     } catch (e) {
       console.error("Lỗi đọc branches từ localStorage:", e);
     }
 
-    // Khởi sinh dữ liệu ban đầu
+    // Khởi sinh dữ liệu ban đầu từ danh sách mới có toạ độ GPS
     const initialBranches = BRANCH_BASE_LIST.map((branch, index) => {
       const contact = BRANCH_CONTACT_BY_CITY[branch.cityCode] || {};
       const descriptions = createDescriptions(branch);
