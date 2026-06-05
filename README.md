@@ -720,6 +720,24 @@ const firebaseConfig = {
 
 ## 📝 Changelog
 
+### Version 2.1 (2026-06-05) - Admin Dashboard & Analytics Update
+
+#### ✨ Tính năng mới & Cải tiến
+
+**📊 So sánh doanh thu chi nhánh (Branch Revenue Analytics)**
+- Thêm bảng so sánh doanh thu chi tiết giữa các chi nhánh trong hệ thống.
+- Biểu diễn trực quan tỷ trọng đóng góp (%) doanh thu thông qua thanh tiến trình (progress bar) của Bootstrap.
+- Thống kê số lượng đơn hàng hoàn thành tương ứng cho từng chi nhánh.
+- Tự động tô sáng (highlight) chi nhánh đang được chọn lọc trên bộ lọc báo cáo.
+
+**🏆 Tích hợp phân hạng thành viên (Loyalty Member Tiers)**
+- Áp dụng hệ thống phân hạng động: **VIP 👑**, **Thân thiết 🤝**, **Tiềm năng ⚡**, **Mới 🌱** dựa trên tổng chi tiêu hoặc số lượng đơn hàng tích lũy.
+- Tích hợp bảng thuyết minh tiêu chí xếp hạng và quyền lợi của từng hạng thành viên trong popup chi tiết khách hàng.
+
+**⚙️ Tối ưu hóa giao diện (UI/UX)**
+- Sửa lỗi không thể cuộn (scroll) trên popup chi tiết khách hàng bằng cách áp dụng cấu trúc cuộn nội dung `modal-dialog-scrollable` tương thích tốt trên cả giao diện sáng/tối.
+- Đồng bộ dữ liệu hiển thị tức thời khi thay đổi bộ lọc trên trang quản trị.
+
 ### Version 2.0 (2026-03-25) - Major Update
 
 #### ✨ Tính năng mới
@@ -813,9 +831,11 @@ const firebaseConfig = {
 
 ## 🎯 Roadmap
 
-### Version 2.1 (Planned)
+### Version 2.1 (Admin Dashboard & Analytics Update)
 
-- [ ] **Admin Dashboard** - Quản lý sản phẩm, đơn hàng, users
+- [x] **Admin Dashboard** - Quản lý sản phẩm, đơn hàng, users (Core & Management)
+- [x] **Analytics & Branch Comparison** - Báo cáo doanh thu chi tiết và so sánh chi nhánh
+- [x] **Loyalty Tiers** - Tích hợp phân hạng thành viên tự động (VIP/Thân thiết/Tiềm năng/Mới)
 - [ ] **Real-time Notifications** - WebSocket cho thông báo đơn hàng
 - [ ] **Email Marketing** - Newsletter subscription
 - [ ] **Product Reviews** - Đánh giá và review sản phẩm
@@ -829,8 +849,6 @@ const firebaseConfig = {
 - [ ] **Multi-language** - Hỗ trợ tiếng Anh
 - [ ] **PWA** - Progressive Web App
 - [ ] **Push Notifications** - Thông báo đẩy
-- [ ] **Analytics Dashboard** - Thống kê chi tiết
-- [ ] **Loyalty Tiers** - Hạng thành viên (Bronze/Silver/Gold)
 - [ ] **Referral Program** - Giới thiệu bạn bè
 
 ---
