@@ -464,23 +464,40 @@
     return orders;
   }
 
-  // ===================== SINH ĐIỂM TÍCH LŨY =====================
-  function generatePoints(users, orders) {
+  // ===================== SINH VÀ ĐỒNG BỘ ĐIỂM TÍCH LŨY =====================
+  function generatePointsAndSyncOrders(users, orders) {
     const pointsMap = {};
 
-    // Tính điểm từ đơn hàng hoàn tất
-    orders.forEach(order => {
-      if (order.status === "Hoàn tất") {
-        const earned = Math.floor(order.total / 1000);
-        if (!pointsMap[order.userId]) pointsMap[order.userId] = 0;
-        pointsMap[order.userId] += earned;
-      }
+    // Khởi tạo điểm ban đầu ngẫu nhiên cho tất cả user (từ 100 đến 300 điểm)
+    users.forEach(user => {
+      pointsMap[user.id] = randInt(10, 30) * 10;
     });
 
-    // Thêm điểm ngẫu nhiên cho các user chưa có đơn hoàn tất (mô phỏng tích điểm từ trước)
-    users.forEach(user => {
-      if (!pointsMap[user.id] && Math.random() < 0.5) {
-        pointsMap[user.id] = randInt(0, 500);
+    // Duyệt qua đơn hàng đã sắp xếp theo thời gian tăng dần để cập nhật điểm và điều chỉnh pointsDiscount nếu không đủ điểm
+    orders.forEach(order => {
+      const userId = order.userId;
+      if (pointsMap[userId] === undefined) {
+        pointsMap[userId] = 0;
+      }
+
+      // Điểm yêu cầu sử dụng trong đơn hàng này (1 điểm = 10đ giảm giá)
+      const pointsNeeded = Math.floor(order.pointsDiscount / 10);
+
+      if (pointsNeeded > 0) {
+        if (pointsMap[userId] >= pointsNeeded) {
+          // Đủ điểm: trừ điểm
+          pointsMap[userId] -= pointsNeeded;
+        } else {
+          // Không đủ điểm: Reset pointsDiscount về 0 và tính lại total đơn hàng
+          order.pointsDiscount = 0;
+          order.total = Math.max(0, order.subtotal + order.shipping - order.discount);
+        }
+      }
+
+      // Nếu đơn hoàn tất thì cộng điểm thưởng nhận được
+      if (order.status === "Hoàn tất") {
+        const earned = Math.floor(order.total / 1000);
+        pointsMap[userId] += earned;
       }
     });
 
@@ -519,7 +536,7 @@
     // 2. Sinh dữ liệu mới
     const newUsers = generateUsers();
     const newOrders = generateOrders(newUsers);
-    const newPoints = generatePoints(newUsers, newOrders);
+    const newPoints = generatePointsAndSyncOrders(newUsers, newOrders);
 
     // 3. Gộp dữ liệu (giữ nguyên dữ liệu cũ)
     const allUsers = [...existingUsers.filter(u => u !== null && u !== undefined), ...newUsers];
