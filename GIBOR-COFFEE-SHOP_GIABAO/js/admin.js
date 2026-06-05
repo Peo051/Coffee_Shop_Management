@@ -2501,10 +2501,80 @@ function bindPayosForm() {
       renderRevenuePeriodBars(data);
       renderRevenuePeriodTable(data);
       renderBestSellersReport(filteredOrders);
+      renderBranchRevenueComparison(orders, activeBranchId);
     } catch (error) {
       console.error("Error rendering custom revenue report:", error);
     }
   };
+
+  function renderBranchRevenueComparison(orders, activeBranchId) {
+    const tableBody = document.getElementById("branchRevenueComparisonTable");
+    if (!tableBody) return;
+
+    const branches = window.GIBOR_BRANCH_UTILS ? (window.GIBOR_BRANCH_UTILS.all() || []) : [];
+    const completedOrders = orders.filter(isCompletedOrder);
+    
+    // Tính tổng doanh thu toàn hệ thống từ các đơn hàng hoàn tất
+    const totalSystemRevenue = completedOrders.reduce(function (sum, order) {
+      return sum + getOrderTotal(order);
+    }, 0);
+
+    const branchStats = branches.map(function (branch) {
+      const branchOrders = completedOrders.filter(function (order) {
+        return order.branch && String(order.branch.id) === String(branch.id);
+      });
+      const revenue = branchOrders.reduce(function (sum, order) {
+        return sum + getOrderTotal(order);
+      }, 0);
+      const percentage = totalSystemRevenue > 0 ? (revenue / totalSystemRevenue) * 100 : 0;
+      return {
+        id: branch.id,
+        name: branch.name,
+        orderCount: branchOrders.length,
+        revenue: revenue,
+        percentage: percentage
+      };
+    });
+
+    // Sắp xếp theo doanh thu giảm dần
+    branchStats.sort(function (a, b) {
+      return b.revenue - a.revenue;
+    });
+
+    if (branchStats.length === 0) {
+      tableBody.innerHTML = `<tr><td class="admin-empty" colspan="4">Không có dữ liệu chi nhánh.</td></tr>`;
+      return;
+    }
+
+    tableBody.innerHTML = branchStats.map(function (item) {
+      const isSelected = activeBranchId && String(item.id) === String(activeBranchId);
+      const rowClass = isSelected ? 'table-warning-subtle' : '';
+      return `
+        <tr class="${rowClass}">
+          <td>
+            <div class="d-flex align-items-center">
+              <div class="bg-primary-subtle text-primary p-2 rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+                <i class="fas fa-store"></i>
+              </div>
+              <div>
+                <strong class="text-dark">${item.name}</strong> ${isSelected ? '<span class="badge bg-warning text-dark ms-1 small">Đang lọc</span>' : ''}
+              </div>
+            </div>
+          </td>
+          <td class="text-center fw-semibold text-secondary">${item.orderCount} đơn</td>
+          <td class="text-end fw-bold text-success">${formatMoney(item.revenue)}</td>
+          <td class="text-end">
+            <div class="d-flex align-items-center justify-content-end gap-2">
+              <span class="small fw-bold text-muted" style="min-width: 45px;">${item.percentage.toFixed(1)}%</span>
+              <div class="progress" style="width: 100px; height: 6px; border-radius: 3px;">
+                <div class="progress-bar bg-success" role="progressbar" style="width: ${item.percentage}%" aria-valuenow="${item.percentage}" aria-valuemin="0" aria-valuemax="100"></div>
+              </div>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join("");
+  }
 
   document.addEventListener("DOMContentLoaded", function () {
     const periodFilter = document.getElementById("filterRevenuePeriod");
