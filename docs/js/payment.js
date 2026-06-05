@@ -1707,27 +1707,36 @@ async function createPayosPaymentRequest(amount) {
     config.checksumKey,
   );
 
-  const response = await fetch("https://api-merchant.payos.vn/v2/payment-requests", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-client-id": config.clientId,
-      "x-api-key": config.apiKey,
-    },
-    body: JSON.stringify({
-      orderCode,
-      amount,
-      description,
-      returnUrl,
-      cancelUrl,
-      signature,
-      items: getCart().map((item) => ({
-        name: String(item.name || "GIBOR item").slice(0, 50),
-        quantity: Number(item.quantity || 1),
-        price: Number(item.price || 0),
-      })),
-    }),
-  });
+  const response = await fetch("/api/create-payos-payment", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    amount,
+    items: getCart().map((item) => ({
+      name: String(item.name || "GIBOR item").slice(0, 50),
+      quantity: Number(item.quantity || 1),
+      price: Number(item.price || 0),
+    })),
+  }),
+});
+
+const result = await response.json();
+
+if (!response.ok || result.code !== "00" || !result.data) {
+  throw new Error(result.message || result.desc || "Không tạo được link thanh toán payOS.");
+}
+
+return {
+  provider: "payos",
+  orderCode: result.data.orderCode || "",
+  description: result.data.description || "",
+  amount,
+  paymentLinkId: result.data.paymentLinkId || "",
+  checkoutUrl: result.data.checkoutUrl || "",
+  qrCode: result.data.qrCode || "",
+};
 
   const result = await response.json().catch(() => ({}));
   if (!response.ok || result.code !== "00" || !result.data) {
