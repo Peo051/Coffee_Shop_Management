@@ -920,9 +920,10 @@ function renderBestSellersReport(orders) {
         const qty = Number(item.quantity || 1);
         const price = Number(item.price || 0);
         const totalItemRevenue = price * qty;
+        const image = item.image || "images/logo/logo.jpg";
         
         if (!stats[name]) {
-          stats[name] = { productName: name, quantitySold: 0, revenue: 0 };
+          stats[name] = { productName: name, quantitySold: 0, revenue: 0, image: image };
         }
         stats[name].quantitySold += qty;
         stats[name].revenue += totalItemRevenue;
@@ -936,9 +937,16 @@ function renderBestSellersReport(orders) {
           .map(
             (item) => `
               <tr>
-                <td><strong style="color: var(--gibor-primary-text);">${escapeHTML(item.productName)}</strong></td>
-                <td><strong style="color: #137333;">${item.quantitySold} ly/phần</strong></td>
-                <td><strong style="color: var(--gibor-secondary-text);">${formatMoney(item.revenue)}</strong></td>
+                <td>
+                  <div class="d-flex align-items-center">
+                    <img src="${item.image}" alt="${item.productName}" class="rounded-3 me-3 object-fit-cover" style="width: 42px; height: 42px; min-width: 42px;" onerror="this.src='images/logo/logo.jpg'">
+                    <div>
+                      <strong class="text-dark">${escapeHTML(item.productName)}</strong>
+                    </div>
+                  </div>
+                </td>
+                <td class="text-center"><strong style="color: #137333;">${item.quantitySold}</strong> <span class="text-muted small">ly/phần</span></td>
+                <td class="text-end fw-bold text-success">${formatMoney(item.revenue)}</td>
               </tr>
             `,
           )
@@ -2530,6 +2538,7 @@ function bindPayosForm() {
       return {
         id: branch.id,
         name: branch.name,
+        image: branch.image || "images/logo/logo.jpg",
         orderCount: branchOrders.length,
         revenue: revenue,
         percentage: percentage
@@ -2553,9 +2562,7 @@ function bindPayosForm() {
         <tr class="${rowClass}">
           <td>
             <div class="d-flex align-items-center">
-              <div class="bg-primary-subtle text-primary p-2 rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
-                <i class="fas fa-store"></i>
-              </div>
+              <img src="${item.image}" alt="${item.name}" class="rounded-3 me-3 object-fit-cover" style="width: 42px; height: 42px; min-width: 42px;" onerror="this.src='images/logo/logo.jpg'">
               <div>
                 <strong class="text-dark">${item.name}</strong> ${isSelected ? '<span class="badge bg-warning text-dark ms-1 small">Đang lọc</span>' : ''}
               </div>
