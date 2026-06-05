@@ -472,6 +472,20 @@ body.dark .top-image-marquee__item {
   }
 }
 
+@media (min-width: 992px) {
+  html,
+  body {
+    overflow-x: hidden;
+  }
+
+  .top-image-marquee {
+    width: calc(100vw / 0.75);
+    max-width: none;
+    margin-left: calc(50% - (100vw / 0.75) / 2);
+    margin-right: calc(50% - (100vw / 0.75) / 2);
+  }
+}
+
 .reveal-on-scroll {
   opacity: 0;
   transform: translate3d(0, 28px, 0) scale(0.985);
@@ -2687,3 +2701,59 @@ body.dark .otp-cancel-btn:hover {
 
 ========================================================================================
 */
+
+@media (min-width: 992px) {
+  body {
+    zoom: 0.75;
+    -moz-transform: scale(0.75);
+    -moz-transform-origin: 0 0;
+  }
+}
+
+/* ==================== BỘ CHỌN CHI NHÁNH TƯƠNG THÍCH DARK MODE ==================== */
+.menu-branch-selector-wrap {
+  background: rgba(95, 61, 36, 0.04);
+  border: 1px solid rgba(95, 61, 36, 0.12);
+  max-width: 600px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.menu-branch-label {
+  color: #4b2c20 !important;
+}
+
+.menu-branch-button {
+  border: 1px solid rgba(95, 61, 36, 0.35);
+  color: #4b2c20;
+  background: #ffffff;
+}
+
+.menu-branch-button:hover {
+  background: #fdf8f5;
+  color: #4b2c20;
+  border-color: #4b2c20;
+}
+
+/* Chế độ Dark Mode */
+body.dark .menu-branch-selector-wrap {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+body.dark .menu-branch-label {
+  color: #f5f5f5 !important;
+}
+
+body.dark .menu-branch-button {
+  border-color: rgba(255, 255, 255, 0.25);
+  color: #f5f5f5;
+  background: #2a2a2a;
+}
+
+body.dark .menu-branch-button:hover {
+  background: #333333;
+  color: #ffffff;
+  border-color: #d4a373;
+}
+

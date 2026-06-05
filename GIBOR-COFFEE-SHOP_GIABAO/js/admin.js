@@ -29,6 +29,159 @@ window.addEventListener("error", function (event) {
 var _ORDERS_KEY = "gibor_orders";
 var _USERS_KEY = "gibor_users";
 
+// Pagination state variables
+var paginationState = {
+  accounts: { currentPage: 1, pageSize: 10 },
+  products: { currentPage: 1, pageSize: 10 },
+  orders: { currentPage: 1, pageSize: 10 },
+  branches: { currentPage: 1, pageSize: 10 },
+  customers: { currentPage: 1, pageSize: 10 }
+};
+
+function showToast(message, type = "info") {
+  const container = document.getElementById("gibor-toast-container");
+  if (!container) return;
+
+  const toast = document.createElement("div");
+  toast.className = `gibor-toast ${type}`;
+
+  let iconClass = "fa-info-circle";
+  let title = "Thông báo";
+  if (type === "success") {
+    iconClass = "fa-check-circle";
+    title = "Thành công";
+  } else if (type === "error") {
+    iconClass = "fa-times-circle";
+    title = "Lỗi";
+  } else if (type === "warning") {
+    iconClass = "fa-exclamation-triangle";
+    title = "Cảnh báo";
+  }
+
+  toast.innerHTML = `
+    <i class="fas ${iconClass} gibor-toast-icon"></i>
+    <div class="gibor-toast-body">
+      <div class="gibor-toast-title">${title}</div>
+      <div class="gibor-toast-message">${message}</div>
+    </div>
+    <button class="gibor-toast-close">&times;</button>
+    <div class="gibor-toast-progress"></div>
+  `;
+
+  container.appendChild(toast);
+
+  // Close button functionality
+  const closeBtn = toast.querySelector(".gibor-toast-close");
+  closeBtn.addEventListener("click", () => {
+    removeToast(toast);
+  });
+
+  // Auto remove after 3.5s
+  const timeoutId = setTimeout(() => {
+    removeToast(toast);
+  }, 3500);
+
+  function removeToast(el) {
+    if (el.classList.contains("removing")) return;
+    el.classList.add("removing");
+    clearTimeout(timeoutId);
+    el.addEventListener("animationend", () => {
+      el.remove();
+    });
+  }
+}
+
+function renderPagination(containerId, totalItems, currentPage, pageSize, onPageChange) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+
+  const totalPages = Math.ceil(totalItems / pageSize);
+  if (totalPages <= 1) {
+    container.innerHTML = "";
+    return;
+  }
+
+  const startItem = (currentPage - 1) * pageSize + 1;
+  const endItem = Math.min(currentPage * pageSize, totalItems);
+
+  let html = `
+    <div class="admin-pagination-info">
+      Hiển thị ${startItem}-${endItem} / ${totalItems} mục
+    </div>
+    <div class="admin-pagination-controls">
+  `;
+
+  // Previous button
+  html += `
+    <button ${currentPage === 1 ? "disabled" : ""} onclick="window.handlePageChange('${containerId}', ${currentPage - 1})">
+      <i class="fas fa-chevron-left"></i>
+    </button>
+  `;
+
+  // Page numbers
+  const maxVisiblePages = 5;
+  let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+  let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+  if (endPage - startPage + 1 < maxVisiblePages) {
+    startPage = Math.max(1, endPage - maxVisiblePages + 1);
+  }
+
+  if (startPage > 1) {
+    html += `<button onclick="window.handlePageChange('${containerId}', 1)">1</button>`;
+    if (startPage > 2) {
+      html += `<span class="pagination-ellipsis">...</span>`;
+    }
+  }
+
+  for (let i = startPage; i <= endPage; i++) {
+    html += `
+      <button class="${i === currentPage ? "active" : ""}" onclick="window.handlePageChange('${containerId}', ${i})">
+        ${i}
+      </button>
+    `;
+  }
+
+  if (endPage < totalPages) {
+    if (endPage < totalPages - 1) {
+      html += `<span class="pagination-ellipsis">...</span>`;
+    }
+    html += `<button onclick="window.handlePageChange('${containerId}', ${totalPages})">${totalPages}</button>`;
+  }
+
+  // Next button
+  html += `
+    <button ${currentPage === totalPages ? "disabled" : ""} onclick="window.handlePageChange('${containerId}', ${currentPage + 1})">
+      <i class="fas fa-chevron-right"></i>
+    </button>
+  `;
+
+  html += `</div>`;
+  container.innerHTML = html;
+}
+
+// Global page change handler
+window.handlePageChange = function (containerId, newPage) {
+  const key = containerId.replace("Pagination", "");
+  if (paginationState[key]) {
+    paginationState[key].currentPage = newPage;
+    
+    // Trigger corresponding render function
+    if (key === "accounts") renderAccounts();
+    else if (key === "products") renderProducts();
+    else if (key === "orders") renderOrders();
+    else if (key === "branches") renderBranches();
+    else if (key === "customers") renderCustomers();
+  }
+};
+
+function resetPageAndRender(key, renderFn) {
+  if (paginationState[key]) {
+    paginationState[key].currentPage = 1;
+  }
+  renderFn();
+}
+
 function parseJSON(key, fallback) {
   try {
     const value = localStorage.getItem(key);
@@ -317,8 +470,19 @@ function renderAccounts() {
       users = users.filter(u => u && u.status === filterStat);
     }
 
-    table.innerHTML = users.length
-      ? users
+    // Phân trang
+    const totalItems = users.length;
+    const state = paginationState.accounts;
+    const totalPages = Math.ceil(totalItems / state.pageSize);
+    if (state.currentPage > totalPages) {
+      state.currentPage = Math.max(1, totalPages);
+    }
+    const startIndex = (state.currentPage - 1) * state.pageSize;
+    const endIndex = startIndex + state.pageSize;
+    const paginatedUsers = users.slice(startIndex, endIndex);
+
+    table.innerHTML = paginatedUsers.length
+      ? paginatedUsers
           .map(
             (user) => {
               if (!user) return "";
@@ -369,6 +533,8 @@ function renderAccounts() {
           )
           .join("")
       : `<tr><td class="text-center text-muted py-3" colspan="5">Không tìm thấy tài khoản phù hợp.</td></tr>`;
+
+    renderPagination("accountsPagination", totalItems, state.currentPage, state.pageSize);
   } catch (error) {
     console.error("Error rendering accounts:", error);
   }
@@ -378,6 +544,9 @@ function renderProducts() {
   try {
     const table = document.getElementById("productsTable");
     if (!table) return;
+
+    const currentUser = typeof UserManager !== 'undefined' ? UserManager.getCurrentUser() : null;
+    const isBranchManager = currentUser && currentUser.role === "branch_manager";
 
     let products = (getProducts() || []).filter(p => p !== null && p !== undefined);
 
@@ -406,8 +575,19 @@ function renderProducts() {
       });
     }
 
-    table.innerHTML = products.length
-      ? products
+    // Phân trang
+    const totalItems = products.length;
+    const state = paginationState.products;
+    const totalPages = Math.ceil(totalItems / state.pageSize);
+    if (state.currentPage > totalPages) {
+      state.currentPage = Math.max(1, totalPages);
+    }
+    const startIndex = (state.currentPage - 1) * state.pageSize;
+    const endIndex = startIndex + state.pageSize;
+    const paginatedProducts = products.slice(startIndex, endIndex);
+
+    table.innerHTML = paginatedProducts.length
+      ? paginatedProducts
           .map(
             (product) => {
               if (!product) return "";
@@ -421,22 +601,62 @@ function renderProducts() {
                     ${product.desc ? `<div style="font-size: 0.8rem; color: var(--gibor-muted-text); max-width: 250px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHTML(product.desc)}">${escapeHTML(product.desc)}</div>` : ''}
                   </td>
                   <td><span class="badge bg-info text-dark">${escapeHTML(product.category)}</span></td>
-                  <td><strong style="color: var(--gibor-secondary-text);">${formatMoney(product.price)}</strong></td>
                   <td>
-                    ${product.status === "out_of_stock" 
-                      ? '<span class="badge bg-danger">Hết hàng</span>' 
-                      : '<span class="badge bg-success">Còn hàng</span>'
+                    <strong style="color: var(--gibor-secondary-text);">${formatMoney(product.price)}</strong>
+                  </td>
+                  <td>
+                    ${
+                      isBranchManager
+                        ? `
+                        <select class="form-select form-select-sm admin-status-select" 
+                                data-update-product-status="${escapeHTML(product.id)}" 
+                                style="width: auto; min-height: unset; padding: 4px 8px; font-size: 0.78rem; font-weight: 700; ${product.status === "out_of_stock" ? "color: #c94c40; border-color: rgba(201, 76, 64, 0.3);" : "color: #39703c; border-color: rgba(57, 112, 60, 0.3);" }">
+                          <option value="active" ${product.status !== "out_of_stock" ? "selected" : ""}>Còn hàng</option>
+                          <option value="out_of_stock" ${product.status === "out_of_stock" ? "selected" : ""}>Hết hàng</option>
+                        </select>
+                      `
+                        : `
+                        ${product.status === "out_of_stock" 
+                          ? '<span class="badge bg-danger">Hết hàng</span>' 
+                          : '<span class="badge bg-success">Còn hàng</span>'
+                        }
+                      `
                     }
-                    ${product.isBestSeller ? '<span class="badge bg-warning text-dark ms-1"><i class="fa-solid fa-fire text-danger"></i> Nổi bật</span>' : ''}
+                    ${
+                      isBranchManager
+                        ? `
+                        <div class="form-check form-switch d-inline-flex align-items-center ms-2" style="min-height: unset; margin: 0; padding-top: 4px;">
+                          <input class="form-check-input" type="checkbox" role="switch" 
+                                 id="switchBestSeller-${escapeHTML(product.id)}"
+                                 data-update-product-bestseller="${escapeHTML(product.id)}"
+                                 ${product.isBestSeller ? "checked" : ""} 
+                                 style="cursor: pointer; width: 1.8em; height: 1em;">
+                          <label class="form-check-label small fw-bold ms-1" for="switchBestSeller-${escapeHTML(product.id)}" style="font-size: 0.72rem; color: #856404; cursor: pointer;">
+                            <i class="fa-solid fa-fire text-danger"></i> Nổi bật
+                          </label>
+                        </div>
+                      `
+                        : `
+                        ${product.isBestSeller ? '<span class="badge bg-warning text-dark ms-1"><i class="fa-solid fa-fire text-danger"></i> Nổi bật</span>' : ''}
+                      `
+                    }
                   </td>
                   <td>
                     <div class="d-flex gap-1 justify-content-end">
-                      <button class="btn btn-sm btn-outline-primary" data-edit-product="${escapeHTML(product.id)}" title="Sửa">
-                        <i class="fas fa-pen"></i>
-                      </button>
-                      <button class="btn btn-sm btn-outline-danger" data-delete-product="${escapeHTML(product.id)}" title="Xóa">
-                        <i class="fas fa-trash"></i>
-                      </button>
+                      ${
+                        isBranchManager
+                          ? `
+                          <span class="text-muted small italic">Chỉ cập nhật trạng thái</span>
+                        `
+                          : `
+                          <button class="btn btn-sm btn-outline-primary" data-edit-product="${escapeHTML(product.id)}" title="Sửa">
+                            <i class="fas fa-pen"></i>
+                          </button>
+                          <button class="btn btn-sm btn-outline-danger" data-delete-product="${escapeHTML(product.id)}" title="Xóa">
+                            <i class="fas fa-trash"></i>
+                          </button>
+                        `
+                      }
                     </div>
                   </td>
                 </tr>
@@ -446,9 +666,11 @@ function renderProducts() {
           .join("")
       : `<tr><td class="text-center text-muted py-3" colspan="6">Không có sản phẩm nào.</td></tr>`;
 
+    renderPagination("productsPagination", totalItems, state.currentPage, state.pageSize);
+
     const statProducts = document.getElementById("statProducts");
     if (statProducts) {
-      statProducts.textContent = products.length;
+      statProducts.textContent = totalItems;
     }
   } catch (error) {
     console.error("Error rendering products:", error);
@@ -461,6 +683,13 @@ function renderOrders() {
     if (!table) return;
 
     let orders = (getOrders() || []).filter(o => o !== null && o !== undefined);
+
+    // Sắp xếp các đơn hàng theo thời gian mới nhất (createdAt giảm dần)
+    orders.sort((a, b) => {
+      const dateA = new Date(a.createdAt || a.date || 0);
+      const dateB = new Date(b.createdAt || b.date || 0);
+      return dateB - dateA;
+    });
 
     // Xác định phân quyền và lọc theo chi nhánh của người đăng nhập
     let activeBranchId = "";
@@ -480,9 +709,29 @@ function renderOrders() {
       orders = orders.filter(o => o && o.branch && o.branch.id === activeBranchId);
     }
 
+    // 1. Tính toán số lượng đơn hàng cho các Badges trước khi áp dụng bộ lọc trạng thái của riêng tab này
+    const countAll = orders.length;
+    const countPending = orders.filter(o => o && (o.status || "Đã ghi nhận") === "Chờ thanh toán").length;
+    const countProcessing = orders.filter(o => o && ["Đã ghi nhận", "Đang xử lý", "Đang giao"].includes(o.status || "Đã ghi nhận")).length;
+    const countCompleted = orders.filter(o => o && (o.status || "Hoàn tất") === "Hoàn tất").length;
+    const countCancelled = orders.filter(o => o && (o.status || "Đã hủy") === "Đã hủy").length;
+
+    // Cập nhật số lượng lên Badges HTML nếu tồn tại
+    if (document.getElementById("badge-count-all")) document.getElementById("badge-count-all").textContent = countAll;
+    if (document.getElementById("badge-count-pending")) document.getElementById("badge-count-pending").textContent = countPending;
+    if (document.getElementById("badge-count-processing")) document.getElementById("badge-count-processing").textContent = countProcessing;
+    if (document.getElementById("badge-count-completed")) document.getElementById("badge-count-completed").textContent = countCompleted;
+    if (document.getElementById("badge-count-cancelled")) document.getElementById("badge-count-cancelled").textContent = countCancelled;
+
     // Áp dụng bộ lọc tìm kiếm
     const searchQuery = document.getElementById("searchOrder") ? document.getElementById("searchOrder").value.toLowerCase().trim() : "";
-    const filterStat = document.getElementById("filterOrderStatus") ? document.getElementById("filterOrderStatus").value : "";
+    
+    // Lọc theo nút tab trạng thái nghiệp vụ nhanh đang active (nếu có)
+    const activeQuickTab = document.querySelector(".btn-quick-filter.active");
+    let filterStat = "";
+    if (activeQuickTab) {
+      filterStat = activeQuickTab.dataset.statusFilter;
+    }
 
     if (searchQuery) {
       orders = orders.filter(o => {
@@ -493,16 +742,51 @@ function renderOrders() {
         return code.includes(searchQuery) || customerName.includes(searchQuery) || customerPhone.includes(searchQuery);
       });
     }
+    
     if (filterStat) {
-      orders = orders.filter(o => o && (o.status || "Đã ghi nhận") === filterStat);
+      if (filterStat === "Đang xử lý") {
+        // Gom nhóm các trạng thái đang thực hiện
+        orders = orders.filter(o => o && ["Đã ghi nhận", "Đang xử lý", "Đang giao"].includes(o.status || "Đã ghi nhận"));
+      } else {
+        orders = orders.filter(o => o && (o.status || "Đã ghi nhận") === filterStat);
+      }
     }
 
-    table.innerHTML = orders.length
-      ? orders
+    // Sắp xếp đơn hàng
+    const sortValue = document.getElementById("sortOrder") ? document.getElementById("sortOrder").value : "newest";
+    orders.sort((a, b) => {
+      if (!a || !b) return 0;
+      switch (sortValue) {
+        case "newest":
+          return new Date(getOrderDate(b)) - new Date(getOrderDate(a));
+        case "oldest":
+          return new Date(getOrderDate(a)) - new Date(getOrderDate(b));
+        case "price-desc":
+          return (parseFloat(b.total) || 0) - (parseFloat(a.total) || 0);
+        case "price-asc":
+          return (parseFloat(a.total) || 0) - (parseFloat(b.total) || 0);
+        default:
+          return new Date(getOrderDate(b)) - new Date(getOrderDate(a));
+      }
+    });
+
+    // Phân trang
+    const totalItems = orders.length;
+    const state = paginationState.orders;
+    const totalPages = Math.ceil(totalItems / state.pageSize);
+    if (state.currentPage > totalPages) {
+      state.currentPage = Math.max(1, totalPages);
+    }
+    const startIndex = (state.currentPage - 1) * state.pageSize;
+    const endIndex = startIndex + state.pageSize;
+    const paginatedOrders = orders.slice(startIndex, endIndex);
+
+    table.innerHTML = paginatedOrders.length
+      ? paginatedOrders
           .map(
             (order, index) => {
               if (!order) return "";
-              const orderCode = order.code || order.id || `DH-${index + 1}`;
+              const orderCode = order.code || order.id || `DH-${startIndex + index + 1}`;
               
               // Chi nhánh xử lý: Hiển thị tĩnh đồng bộ từ đơn đặt hàng
               const branchCellHtml = `<span style="font-weight:700; color:var(--gibor-secondary-text); font-size:0.85rem;"><i class="fas fa-store" style="color:#e28743;"></i> ${order.branch ? escapeHTML(order.branch.name) : "Giao hàng tận nơi"}</span>`;
@@ -548,12 +832,21 @@ function renderOrders() {
                         .join("")}
                     </select>
                   </td>
+                  <td>
+                    <div class="d-flex gap-1 justify-content-end">
+                      <button class="btn btn-sm btn-outline-info" data-view-order-detail="${escapeHTML(orderCode)}" title="Xem chi tiết" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; padding: 0; border-radius: 8px;">
+                        <i class="fas fa-eye"></i>
+                      </button>
+                    </div>
+                  </td>
                 </tr>
               `;
             }
           )
           .join("")
-      : `<tr><td class="text-center text-muted py-3" colspan="7">Không tìm thấy đơn hàng phù hợp.</td></tr>`;
+      : `<tr><td class="text-center text-muted py-3" colspan="8">Không tìm thấy đơn hàng phù hợp.</td></tr>`;
+
+    renderPagination("ordersPagination", totalItems, state.currentPage, state.pageSize);
   } catch (error) {
     console.error("Error rendering orders:", error);
   }
@@ -739,7 +1032,7 @@ function bindProductForm() {
       const status = isActive ? "active" : "out_of_stock";
 
       if (!name || !category || isNaN(price) || price <= 0) {
-        alert("Vui lòng điền đầy đủ tên, danh mục và giá sản phẩm phải lớn hơn 0.");
+        showToast("Vui lòng điền đầy đủ tên, danh mục và giá sản phẩm phải lớn hơn 0.", "warning");
         return;
       }
 
@@ -757,7 +1050,7 @@ function bindProductForm() {
             isBestSeller, 
             status 
           };
-          alert("Cập nhật sản phẩm thành công!");
+          showToast("Cập nhật sản phẩm thành công!", "success");
         }
       } else {
         products.unshift({ 
@@ -770,7 +1063,7 @@ function bindProductForm() {
           isBestSeller, 
           status 
         });
-        alert("Thêm sản phẩm mới thành công!");
+        showToast("Thêm sản phẩm mới thành công!", "success");
       }
 
       saveProducts(products);
@@ -799,30 +1092,40 @@ function bindTableActions() {
       const user = users.find((u) => String(u.id) === String(resetPasswordUserId));
       if (!user) return;
       if (isProtectedAdminUser(user)) {
-        alert("Không reset mật khẩu tài khoản admin chính từ bảng này.");
+        showToast("Không reset mật khẩu tài khoản admin chính từ bảng này.", "error");
         return;
       }
 
-      const newPass = prompt(`Nhập mật khẩu mới cho ${user.email || user.username}:`, "123456");
-      if (newPass) {
-        if (newPass.length < 6) {
-          alert("Mật khẩu mới phải có ít nhất 6 ký tự.");
-          return;
+      showGiborPrompt({
+        title: "Reset Mật Khẩu",
+        message: `Nhập mật khẩu mới cho ${user.email || user.username}:`,
+        defaultValue: "123456",
+        confirmText: "Cập nhật",
+        cancelText: "Hủy bỏ",
+        onConfirm: (newPass) => {
+          if (newPass) {
+            if (newPass.length < 6) {
+              showToast("Mật khẩu mới phải có ít nhất 6 ký tự.", "warning");
+              return;
+            }
+            user.password = newPass;
+            saveUsers(users);
+            showToast("Đã reset mật khẩu thành công.", "success");
+            // Render lại bảng để đảm bảo cập nhật trạng thái nếu cần
+            if (typeof renderAccounts === "function") renderAccounts();
+          }
         }
-        user.password = newPass;
-        saveUsers(users);
-        alert("Đã reset mật khẩu thành công.");
-      }
+      });
     }
 
     if (lockUserId) {
       if (lockUserId === "admin-001") {
-        alert("Không thể khóa/mở khóa tài khoản admin chính!");
+        showToast("Không thể khóa/mở khóa tài khoản admin chính!", "error");
         return;
       }
       const currentUser = parseJSON("gibor_current_user", null);
       if (currentUser && String(currentUser.id) === String(lockUserId)) {
-        alert("Không thể tự khóa tài khoản của chính mình!");
+        showToast("Không thể tự khóa tài khoản của chính mình!", "error");
         return;
       }
 
@@ -893,14 +1196,22 @@ function bindTableActions() {
       const orders = getOrders();
       const activeBranchOrders = orders.filter(o => o && o.branch && (o.branch.id === b.id || o.branch.name === b.name) && o.status !== "Hoàn tất" && o.status !== "Đã hủy");
       if (activeBranchOrders.length > 0) {
-        alert(`Không thể xóa chi nhánh vì hiện đang có ${activeBranchOrders.length} đơn hàng chưa hoàn thành do chi nhánh này xử lý.`);
+        showToast(`Không thể xóa chi nhánh vì hiện đang có ${activeBranchOrders.length} đơn hàng chưa hoàn thành do chi nhánh này xử lý.`, "error");
         return;
       }
 
-      if (confirm(`Bạn có chắc muốn xoá chi nhánh "${b.name}"?`)) {
-        window.GIBOR_BRANCH_UTILS.delete(deleteBranchId);
-        renderAll();
-      }
+      showGiborPopup({
+        type: "warning",
+        title: "Xác Nhận Xóa",
+        message: `Bạn có chắc chắn muốn xóa chi nhánh "${b.name}" không? Hành động này không thể hoàn tác.`,
+        confirmText: "Xóa",
+        cancelText: "Hủy",
+        onConfirm: () => {
+          window.GIBOR_BRANCH_UTILS.delete(deleteBranchId);
+          showToast(`Đã xóa chi nhánh "${b.name}" thành công.`, "success");
+          renderAll();
+        }
+      });
     }
 
     if (editProductId) {
@@ -920,25 +1231,194 @@ function bindTableActions() {
       if (form) form.scrollIntoView({ behavior: "smooth" });
     }
 
-    if (deleteProductId && confirm("Bạn có chắc muốn xoá sản phẩm này?")) {
-      saveProducts(getProducts().filter((product) => product.id !== deleteProductId));
-      renderAll();
+    if (deleteProductId) {
+      showGiborPopup({
+        type: "warning",
+        title: "Xác Nhận Xóa",
+        message: "Bạn có chắc chắn muốn xóa sản phẩm này không?",
+        confirmText: "Xóa",
+        cancelText: "Hủy",
+        onConfirm: () => {
+          saveProducts(getProducts().filter((product) => product.id !== deleteProductId));
+          showToast("Đã xóa sản phẩm thành công.", "success");
+          renderAll();
+        }
+      });
     }
 
-    if (deleteUserId && confirm("Bạn có chắc muốn xoá tài khoản này?")) {
+    // Xem chi tiết đơn hàng
+    const viewOrderCode = event.target.closest("[data-view-order-detail]")?.dataset.viewOrderDetail;
+    if (viewOrderCode) {
+      const orders = getOrders();
+      const order = orders.find(o => (o.code || o.id) === viewOrderCode);
+      if (order) {
+        document.getElementById("detailOrderCode").textContent = `#${viewOrderCode}`;
+        
+        // Dựng thông tin khách hàng
+        const customerName = order.userName || order.customerName || (order.customer && order.customer.name) || "Khách hàng";
+        const customerPhone = order.customer && order.customer.phone ? order.customer.phone : "-";
+        const customerEmail = order.customer && order.customer.email ? order.customer.email : "-";
+        const customerAddress = order.customer && order.customer.address ? order.customer.address : "-";
+        
+        let receiveMethod = "Uống tại quán";
+        if (order.shipping && (order.shipping.method === "delivery" || order.shipping.required || customerAddress !== "-")) {
+          receiveMethod = "Giao hàng tận nơi";
+        } else if (order.shipping && order.shipping.method === "pickup") {
+          receiveMethod = "Mang đi (Tự đến lấy)";
+        }
+
+        const branchName = order.branch ? order.branch.name : "Toàn hệ thống";
+        const paymentVal = order.payment || "Thanh toán khi nhận hàng";
+        const payStat = order.paymentStatus || "Chưa thanh toán";
+        
+        let paymentBadge = `<span class="badge bg-warning text-dark">${escapeHTML(payStat)}</span>`;
+        if (payStat === "Đã thanh toán") {
+          paymentBadge = `<span class="badge bg-success">${escapeHTML(payStat)}</span>`;
+        }
+
+        let infoHtml = `
+          <div class="row g-3 mb-4">
+            <div class="col-12 col-md-6">
+              <div class="p-3 bg-light rounded-3 h-100 border border-light-subtle">
+                <h6 class="fw-bold text-primary mb-3"><i class="fas fa-user-circle me-1"></i> Thông tin khách hàng</h6>
+                <div class="small text-dark mb-2"><strong>Họ tên:</strong> ${escapeHTML(customerName)}</div>
+                <div class="small text-dark mb-2"><strong>Số điện thoại:</strong> ${escapeHTML(customerPhone)}</div>
+                <div class="small text-dark mb-2"><strong>Email:</strong> ${escapeHTML(customerEmail)}</div>
+                <div class="small text-dark"><strong>Địa chỉ nhận hàng:</strong> ${escapeHTML(customerAddress)}</div>
+              </div>
+            </div>
+            <div class="col-12 col-md-6">
+              <div class="p-3 bg-light rounded-3 h-100 border border-light-subtle">
+                <h6 class="fw-bold text-primary mb-3"><i class="fas fa-info-circle me-1"></i> Thông tin đơn hàng</h6>
+                <div class="small text-dark mb-2"><strong>Hình thức nhận:</strong> ${escapeHTML(receiveMethod)}</div>
+                <div class="small text-dark mb-2"><strong>Chi nhánh xử lý:</strong> ${escapeHTML(branchName)}</div>
+                <div class="small text-dark mb-2"><strong>Phương thức thanh toán:</strong> ${escapeHTML(paymentVal)}</div>
+                <div class="small text-dark mb-2"><strong>Trạng thái thanh toán:</strong> ${paymentBadge}</div>
+                <div class="small text-dark"><strong>Thời gian đặt:</strong> ${formatDate(getOrderDate(order))} ${new Date(getOrderDate(order)).toLocaleTimeString("vi-VN", {hour: '2-digit', minute:'2-digit'})}</div>
+              </div>
+            </div>
+          </div>
+        `;
+
+        // Dựng danh sách sản phẩm
+        let itemsHtml = `
+          <div class="table-responsive border rounded-3 mb-4">
+            <table class="table table-hover align-middle mb-0" style="font-size: 0.9rem;">
+              <thead class="table-light text-dark fw-bold">
+                <tr>
+                  <th>Sản phẩm</th>
+                  <th class="text-center">Đơn giá</th>
+                  <th class="text-center">Số lượng</th>
+                  <th class="text-end">Thành tiền</th>
+                </tr>
+              </thead>
+              <tbody>
+        `;
+
+        const items = Array.isArray(order.items) ? order.items : [];
+        items.forEach(item => {
+          const qty = Number(item.quantity || item.qty || 1);
+          const price = Number(item.price || 0);
+          const totalItemPrice = price * qty;
+          
+          // Chi tiết tùy chọn: Size, Sugar, Ice, Toppings
+          const opts = [];
+          if (item.size) opts.push(`Size: ${item.size}`);
+          if (item.sugar !== undefined) opts.push(`Đường: ${item.sugar}`);
+          if (item.ice !== undefined) opts.push(`Đá: ${item.ice}`);
+          if (Array.isArray(item.toppings) && item.toppings.length > 0) {
+            const toppingNames = item.toppings.map(t => typeof t === 'object' ? (t.name || t.productName) : t);
+            opts.push(`Topping: ${toppingNames.join(", ")}`);
+          }
+          if (item.note) opts.push(`<span class="text-danger">Ghi chú: ${item.note}</span>`);
+
+          let optionsText = "";
+          if (opts.length > 0) {
+            optionsText = `<div class="text-muted small mt-1" style="font-size: 0.78rem; line-height: 1.3;"><i class="fa-solid fa-gear text-secondary"></i> ${opts.join(" | ")}</div>`;
+          }
+
+          itemsHtml += `
+            <tr>
+              <td>
+                <div class="fw-bold text-dark">${escapeHTML(item.name || "Sản phẩm")}</div>
+                ${optionsText}
+              </td>
+              <td class="text-center">${formatMoney(price)}</td>
+              <td class="text-center fw-bold">${qty}</td>
+              <td class="text-end fw-bold text-dark">${formatMoney(totalItemPrice)}</td>
+            </tr>
+          `;
+        });
+
+        itemsHtml += `
+              </tbody>
+            </table>
+          </div>
+        `;
+
+        // Tổng cộng thanh toán
+        const subtotal = Number(order.subtotal || 0);
+        const shippingFee = Number(order.shipping?.fee || 0);
+        const discountVal = Number(order.couponDiscount || order.discount || 0);
+        const pointsUsed = Number(order.pointsUsed || 0);
+        const pointsDiscount = Number(order.pointsDiscount || 0);
+        const totalPay = getOrderTotal(order);
+
+        let billDetailsHtml = `
+          <div class="d-flex flex-column align-items-end gap-2 border-top pt-3 text-dark">
+            <div class="small">Tạm tính: <strong class="ms-2">${formatMoney(subtotal)}</strong></div>
+        `;
+        if (shippingFee > 0) {
+          billDetailsHtml += `<div class="small">Phí vận chuyển: <strong class="ms-2">${formatMoney(shippingFee)}</strong></div>`;
+        }
+        if (discountVal > 0) {
+          billDetailsHtml += `<div class="small text-danger">Mã giảm giá: <strong class="ms-2">-${formatMoney(discountVal)}</strong></div>`;
+        }
+        if (pointsUsed > 0) {
+          billDetailsHtml += `<div class="small text-danger">Dùng ${pointsUsed} điểm tích lũy: <strong class="ms-2">-${formatMoney(pointsDiscount)}</strong></div>`;
+        }
+        billDetailsHtml += `
+            <div class="fs-5 fw-bold text-primary mt-1">Tổng cộng: <span class="ms-2 text-danger">${formatMoney(totalPay)}</span></div>
+          </div>
+        `;
+
+        const modalBody = document.getElementById("orderDetailModalBody");
+        if (modalBody) {
+          modalBody.innerHTML = infoHtml + itemsHtml + billDetailsHtml;
+        }
+
+        // Mở Modal bằng Bootstrap API
+        if (typeof bootstrap !== "undefined" && bootstrap.Modal) {
+          const detailModal = new bootstrap.Modal(document.getElementById('orderDetailModal'));
+          detailModal.show();
+        }
+      }
+    }
+
+    if (deleteUserId) {
       if (deleteUserId === "admin-001") {
-        alert("Không thể xóa tài khoản admin chính!");
+        showToast("Không thể xóa tài khoản admin chính!", "error");
         return;
       }
       const currentUser = parseJSON("gibor_current_user", null);
       if (currentUser && String(currentUser.id) === String(deleteUserId)) {
-        alert("Không thể xóa tài khoản đang đăng nhập!");
+        showToast("Không thể xóa tài khoản đang đăng nhập!", "error");
         return;
       }
       
-      const users = getUsers().filter((user) => String(user.id) !== String(deleteUserId));
-      saveUsers(users);
-      renderAll();
+      showGiborPopup({
+        type: "warning",
+        title: "Xác Nhận Xóa",
+        message: "Bạn có chắc chắn muốn xóa tài khoản này không?",
+        confirmText: "Xóa",
+        cancelText: "Hủy",
+        onConfirm: () => {
+          const users = getUsers().filter((user) => String(user.id) !== String(deleteUserId));
+          saveUsers(users);
+          showToast("Đã xóa tài khoản thành công.", "success");
+          renderAll();
+        }
+      });
     }
   });
 
@@ -975,6 +1455,36 @@ function bindTableActions() {
       saveOrders(orders);
       renderAll();
     }
+
+    // 3. Cập nhật trực tiếp Trạng thái sản phẩm (dành riêng cho Quản lý chi nhánh)
+    if (event.target.matches("[data-update-product-status]")) {
+      const productId = event.target.dataset.updateProductStatus;
+      const newStatus = event.target.value; // "active" hoặc "out_of_stock"
+      
+      const products = getProducts();
+      const productIdx = products.findIndex(p => p && p.id === productId);
+      if (productIdx !== -1) {
+        products[productIdx].status = newStatus;
+        saveProducts(products);
+        showToast(`Đã cập nhật trạng thái "${products[productIdx].name}" thành công.`, "success");
+        renderAll();
+      }
+    }
+
+    // 4. Cập nhật trực tiếp trạng thái Bán chạy (dành riêng cho Quản lý chi nhánh)
+    if (event.target.matches("[data-update-product-bestseller]")) {
+      const productId = event.target.dataset.updateProductBestseller;
+      const isChecked = event.target.checked;
+      
+      const products = getProducts();
+      const productIdx = products.findIndex(p => p && p.id === productId);
+      if (productIdx !== -1) {
+        products[productIdx].isBestSeller = isChecked;
+        saveProducts(products);
+        showToast(`Đã cập nhật trạng thái nổi bật cho "${products[productIdx].name}" thành công.`, "success");
+        renderAll();
+      }
+    }
   });
 
   // Tự động đồng bộ giao diện Admin khi có đơn hàng mới được tạo từ trang thanh toán ở tab khác
@@ -987,14 +1497,21 @@ function bindTableActions() {
 }
 
 function handleLogout() {
-  if (confirm("Bạn có chắc muốn đăng xuất?")) {
-    if (typeof UserManager !== 'undefined') {
-      UserManager.logout();
-    } else {
-      localStorage.removeItem("gibor_current_user");
+  showGiborPopup({
+    type: "warning",
+    title: "Đăng Xuất",
+    message: "Bạn có chắc chắn muốn đăng xuất khỏi trang quản trị không?",
+    confirmText: "Đăng xuất",
+    cancelText: "Hủy",
+    onConfirm: () => {
+      if (typeof UserManager !== 'undefined') {
+        UserManager.logout();
+      } else {
+        localStorage.removeItem("gibor_current_user");
+      }
+      window.location.href = "login.html";
     }
-    window.location.href = "login.html";
-  }
+  });
 }
 
 function bindFilters() {
@@ -1016,31 +1533,46 @@ function bindFilters() {
   const searchProduct = document.getElementById("searchProduct");
   const filterProductCat = document.getElementById("filterProductCategory");
   const filterProductStat = document.getElementById("filterProductStatus");
-  if (searchProduct) searchProduct.addEventListener("input", renderProducts);
-  if (filterProductCat) filterProductCat.addEventListener("change", renderProducts);
-  if (filterProductStat) filterProductStat.addEventListener("change", renderProducts);
+  if (searchProduct) searchProduct.addEventListener("input", () => resetPageAndRender("products", renderProducts));
+  if (filterProductCat) filterProductCat.addEventListener("change", () => resetPageAndRender("products", renderProducts));
+  if (filterProductStat) filterProductStat.addEventListener("change", () => resetPageAndRender("products", renderProducts));
 
   // Bộ lọc đơn hàng
   const searchOrder = document.getElementById("searchOrder");
   const filterOrderBranch = document.getElementById("filterOrderBranch");
-  const filterOrderStatus = document.getElementById("filterOrderStatus");
-  if (searchOrder) searchOrder.addEventListener("input", renderOrders);
-  if (filterOrderBranch) filterOrderBranch.addEventListener("change", renderOrders);
-  if (filterOrderStatus) filterOrderStatus.addEventListener("change", renderOrders);
+  const sortOrder = document.getElementById("sortOrder");
+  if (searchOrder) searchOrder.addEventListener("input", () => resetPageAndRender("orders", renderOrders));
+  if (filterOrderBranch) filterOrderBranch.addEventListener("change", () => resetPageAndRender("orders", renderOrders));
+  if (sortOrder) {
+    sortOrder.addEventListener("change", () => {
+      resetPageAndRender("orders", renderOrders);
+    });
+  }
+
+  // Sự kiện cho các nút lọc trạng thái nghiệp vụ nhanh (btn-quick-filter)
+  const quickFilters = document.querySelectorAll(".btn-quick-filter");
+  quickFilters.forEach(btn => {
+    btn.addEventListener("click", () => {
+      quickFilters.forEach(item => item.classList.remove("active"));
+      btn.classList.add("active");
+      
+      resetPageAndRender("orders", renderOrders);
+    });
+  });
 
   // Bộ lọc tài khoản
   const searchAccount = document.getElementById("searchAccount");
   const filterAccountRole = document.getElementById("filterAccountRole");
   const filterAccountStatus = document.getElementById("filterAccountStatus");
-  if (searchAccount) searchAccount.addEventListener("input", renderAccounts);
-  if (filterAccountRole) filterAccountRole.addEventListener("change", renderAccounts);
-  if (filterAccountStatus) filterAccountStatus.addEventListener("change", renderAccounts);
+  if (searchAccount) searchAccount.addEventListener("input", () => resetPageAndRender("accounts", renderAccounts));
+  if (filterAccountRole) filterAccountRole.addEventListener("change", () => resetPageAndRender("accounts", renderAccounts));
+  if (filterAccountStatus) filterAccountStatus.addEventListener("change", () => resetPageAndRender("accounts", renderAccounts));
 
   // Bộ lọc chi nhánh
   const searchBranch = document.getElementById("searchBranch");
   const filterBranchCity = document.getElementById("filterBranchCity");
-  if (searchBranch) searchBranch.addEventListener("input", renderBranches);
-  if (filterBranchCity) filterBranchCity.addEventListener("change", renderBranches);
+  if (searchBranch) searchBranch.addEventListener("input", () => resetPageAndRender("branches", renderBranches));
+  if (filterBranchCity) filterBranchCity.addEventListener("change", () => resetPageAndRender("branches", renderBranches));
 
   // Bộ lọc doanh thu
   const revBranchFilter = document.getElementById("filterRevenueBranch");
@@ -1061,10 +1593,10 @@ function bindFilters() {
   const filterCustomerBranch = document.getElementById("filterCustomerBranch");
   const filterCustomerYear = document.getElementById("filterCustomerYear");
   const sortCustomerBy = document.getElementById("sortCustomerBy");
-  if (searchCustomer) searchCustomer.addEventListener("input", renderCustomers);
-  if (filterCustomerBranch) filterCustomerBranch.addEventListener("change", renderCustomers);
-  if (filterCustomerYear) filterCustomerYear.addEventListener("change", renderCustomers);
-  if (sortCustomerBy) sortCustomerBy.addEventListener("change", renderCustomers);
+  if (searchCustomer) searchCustomer.addEventListener("input", () => resetPageAndRender("customers", renderCustomers));
+  if (filterCustomerBranch) filterCustomerBranch.addEventListener("change", () => resetPageAndRender("customers", renderCustomers));
+  if (filterCustomerYear) filterCustomerYear.addEventListener("change", () => resetPageAndRender("customers", renderCustomers));
+  if (sortCustomerBy) sortCustomerBy.addEventListener("change", () => resetPageAndRender("customers", renderCustomers));
 }
 
 function applyRolePermissions(user) {
@@ -1087,14 +1619,20 @@ function applyRolePermissions(user) {
     const branchName = branch ? branch.name : "Chi nhánh";
     if (sidebarRole) sidebarRole.textContent = `QL: ${branchName}`;
     
-    // Ẩn các nút điều hướng sidebar đến accounts, products (giữ lại branches để xem tất cả chi nhánh)
-    const forbiddenTabs = ["accounts", "products"];
+    // Quản lý được xem tab sản phẩm và chi nhánh nhưng không được quản lý tài khoản người dùng
+    const forbiddenTabs = ["accounts"];
     document.querySelectorAll(".admin-nav-btn").forEach(btn => {
       const tab = btn.dataset.adminTab;
       if (forbiddenTabs.includes(tab)) {
         btn.style.display = "none";
       }
     });
+
+    // Ẩn form thêm sản phẩm đối với Quản lý chi nhánh
+    const productFormCard = document.querySelector('#productForm')?.closest('.card');
+    if (productFormCard) {
+      productFormCard.style.display = "none";
+    }
 
     // Đổi tên tab branches đối với branch_manager
     const branchesBtn = document.querySelector('.admin-nav-btn[data-admin-tab="branches"]');
@@ -1158,8 +1696,10 @@ function initAdminPage() {
   }
 
   if (!isAuthorized) {
-    alert("Bạn không có quyền truy cập trang quản trị. Vui lòng đăng nhập bằng tài khoản quản lý hoặc admin.");
-    window.location.href = "login.html";
+    showToast("Bạn không có quyền truy cập trang quản trị. Vui lòng đăng nhập bằng tài khoản quản lý hoặc admin.", "error");
+    setTimeout(() => {
+      window.location.href = "login.html";
+    }, 2000);
     return; // CHẶN HOÀN TOÀN
   }
 
@@ -1261,47 +1801,47 @@ function bindAccountForm() {
     const branchVal = roleVal === "branch_manager" && accountBranchId ? accountBranchId.value : "";
 
     if (!firstName || !email || !phone) {
-      alert("Vui lòng điền đầy đủ họ tên, email và số điện thoại.");
+      showToast("Vui lòng điền đầy đủ họ tên, email và số điện thoại.", "warning");
       return;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      alert("Email không đúng định dạng.");
+      showToast("Email không đúng định dạng.", "warning");
       return;
     }
 
     const phoneRegex = /^0[0-9]{9}$/;
     if (!phoneRegex.test(phone)) {
-      alert("Số điện thoại không hợp lệ (phải gồm 10 chữ số và bắt đầu bằng số 0).");
+      showToast("Số điện thoại không hợp lệ (phải gồm 10 chữ số và bắt đầu bằng số 0).", "warning");
       return;
     }
 
     if (isEmailUsedByAnotherUser(users, email, idStr)) {
-      alert("Email này đã được sử dụng bởi tài khoản khác.");
+      showToast("Email này đã được sử dụng bởi tài khoản khác.", "error");
       return;
     }
 
     if (roleVal === "branch_manager" && !branchVal) {
-      alert("Vui lòng chọn chi nhánh cho tài khoản Branch Manager.");
+      showToast("Vui lòng chọn chi nhánh cho tài khoản Branch Manager.", "warning");
       return;
     }
 
     const currentUser = getCurrentAdminUser();
     const targetUser = idStr === "" ? null : users.find(u => String(u.id) === String(idStr));
     if (targetUser && isProtectedAdminUser(targetUser) && roleVal !== "admin") {
-      alert("Không thể hạ quyền tài khoản admin chính.");
+      showToast("Không thể hạ quyền tài khoản admin chính.", "error");
       return;
     }
     if (targetUser && currentUser && String(currentUser.id) === String(targetUser.id) && roleVal !== "admin") {
-      alert("Không thể tự hạ quyền tài khoản đang đăng nhập.");
+      showToast("Không thể tự hạ quyền tài khoản đang đăng nhập.", "error");
       return;
     }
 
     if (idStr === "") {
       // Thêm mới tài khoản
       if (!password || password.length < 6) {
-        alert("Vui lòng nhập mật khẩu mới có ít nhất 6 ký tự.");
+        showToast("Vui lòng nhập mật khẩu mới có ít nhất 6 ký tự.", "warning");
         return;
       }
       const newUser = {
@@ -1321,7 +1861,7 @@ function bindAccountForm() {
         createdAt: new Date().toISOString(),
       };
       users.push(newUser);
-      alert("Thêm tài khoản mới thành công!");
+      showToast("Thêm tài khoản mới thành công!", "success");
     } else {
       // Cập nhật tài khoản hiện có
       const index = users.findIndex(u => String(u.id) === idStr);
@@ -1335,12 +1875,12 @@ function bindAccountForm() {
         users[index].permissions = roleVal === "admin" ? ["*"] : [];
         if (password) {
           if (password.length < 6) {
-            alert("Mật khẩu mới phải có ít nhất 6 ký tự.");
+            showToast("Mật khẩu mới phải có ít nhất 6 ký tự.", "warning");
             return;
           }
           users[index].password = password;
         }
-        alert("Cập nhật tài khoản thành công!");
+        showToast("Cập nhật tài khoản thành công!", "success");
       }
     }
 
@@ -1449,8 +1989,19 @@ function renderBranches() {
       list = list.filter(b => b.cityCode === filterCity);
     }
 
-    table.innerHTML = list.length
-      ? list.map(b => {
+    // Phân trang
+    const totalItems = list.length;
+    const state = paginationState.branches;
+    const totalPages = Math.ceil(totalItems / state.pageSize);
+    if (state.currentPage > totalPages) {
+      state.currentPage = Math.max(1, totalPages);
+    }
+    const startIndex = (state.currentPage - 1) * state.pageSize;
+    const endIndex = startIndex + state.pageSize;
+    const paginatedList = list.slice(startIndex, endIndex);
+
+    table.innerHTML = paginatedList.length
+      ? paginatedList.map(b => {
           let actionCellHtml = "";
           if (!isBranchManager) {
             actionCellHtml = `
@@ -1492,10 +2043,12 @@ function renderBranches() {
         }).join("")
       : `<tr><td class="text-center text-muted py-3" colspan="${isBranchManager ? 6 : 7}">Không tìm thấy chi nhánh phù hợp.</td></tr>`;
 
+    renderPagination("branchesPagination", totalItems, state.currentPage, state.pageSize);
+
     // Cập nhật thẻ thống kê chi nhánh ở Dashboard
     const statBranches = document.getElementById("statBranches");
     if (statBranches) {
-      statBranches.textContent = list.length;
+      statBranches.textContent = totalItems;
     }
   } catch (e) {
     console.error("Lỗi renderBranches:", e);
@@ -1530,19 +2083,19 @@ function bindBranchForm() {
       const fullDescription = document.getElementById("branchFullDesc").value.trim();
 
       if (!name || !district || !phone || !email || !address) {
-        alert("Vui lòng nhập đầy đủ các thông tin bắt buộc.");
+        showToast("Vui lòng nhập đầy đủ các thông tin bắt buộc.", "warning");
         return;
       }
 
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(email)) {
-        alert("Email chi nhánh không đúng định dạng.");
+        showToast("Email chi nhánh không đúng định dạng.", "warning");
         return;
       }
 
       const phoneRegex = /^0[0-9]{9}$/;
       if (!phoneRegex.test(phone)) {
-        alert("Số điện thoại liên hệ không hợp lệ (phải gồm 10 chữ số và bắt đầu bằng số 0).");
+        showToast("Số điện thoại liên hệ không hợp lệ (phải gồm 10 chữ số và bắt đầu bằng số 0).", "warning");
         return;
       }
 
@@ -1562,13 +2115,13 @@ function bindBranchForm() {
       if (id) {
         const success = window.GIBOR_BRANCH_UTILS.update(id, branchData);
         if (success) {
-          alert("Cập nhật chi nhánh thành công!");
+          showToast("Cập nhật chi nhánh thành công!", "success");
         } else {
-          alert("Cập nhật thất bại.");
+          showToast("Cập nhật thất bại.", "error");
         }
       } else {
         window.GIBOR_BRANCH_UTILS.add(branchData);
-        alert("Thêm chi nhánh mới thành công!");
+        showToast("Thêm chi nhánh mới thành công!", "success");
       }
 
       resetBranchForm();
@@ -1688,7 +2241,7 @@ function bindPayosForm() {
     e.preventDefault();
 
     if (isBranchManager) {
-      alert("Bạn không có quyền sửa cấu hình payOS.");
+      showToast("Bạn không có quyền sửa cấu hình payOS.", "error");
       return;
     }
 
@@ -1700,7 +2253,7 @@ function bindPayosForm() {
     const checksumKey = checksumKeyInput ? checksumKeyInput.value.trim() : "";
 
     if (!clientId || !apiKey || !checksumKey) {
-      alert("Vui lòng điền đầy đủ Client ID, API Key và Checksum Key payOS.");
+      showToast("Vui lòng điền đầy đủ Client ID, API Key và Checksum Key payOS.", "warning");
       return;
     }
 
@@ -1712,7 +2265,7 @@ function bindPayosForm() {
       localStorage.setItem("gibor_payos_mock_toggle" + suffix, mockToggle.checked ? "true" : "false");
     }
 
-    alert(`Đã lưu cấu hình payOS cho ${branchId ? "chi nhánh này" : "toàn hệ thống"}.`);
+    showToast(`Đã lưu cấu hình payOS cho ${branchId ? "chi nhánh này" : "toàn hệ thống"}.`, "success");
   });
 }
 // ===================== BÁO CÁO DOANH THU =====================
@@ -2121,9 +2674,20 @@ function renderCustomers() {
     // Lưu danh sách đã tính toán vào biến toàn cục của window để dùng khi xem chi tiết
     window.GIBOR_CUSTOMER_LIST_DATA = customerList;
 
+    // Phân trang
+    const totalItems = customerList.length;
+    const state = paginationState.customers;
+    const totalPages = Math.ceil(totalItems / state.pageSize);
+    if (state.currentPage > totalPages) {
+      state.currentPage = Math.max(1, totalPages);
+    }
+    const startIndex = (state.currentPage - 1) * state.pageSize;
+    const endIndex = startIndex + state.pageSize;
+    const paginatedCustomers = customerList.slice(startIndex, endIndex);
+
     // Render ra bảng
-    tableBody.innerHTML = customerList.length
-      ? customerList.map(c => {
+    tableBody.innerHTML = paginatedCustomers.length
+      ? paginatedCustomers.map(c => {
           let vipBadge = "";
           if (c.id === top1Id) {
             vipBadge = `<span class="badge bg-warning text-dark ms-2" style="font-size: 0.75rem; border: 1px solid #d39e00;"><i class="fas fa-crown text-danger me-1"></i>Top 1 Chi tiêu</span>`;
@@ -2172,6 +2736,8 @@ function renderCustomers() {
           `;
         }).join("")
       : `<tr><td class="text-center text-muted py-3" colspan="7">Không tìm thấy khách hàng phù hợp.</td></tr>`;
+
+    renderPagination("customersPagination", totalItems, state.currentPage, state.pageSize);
 
     // Gắn sự kiện click xem chi tiết
     document.querySelectorAll(".btn-view-customer").forEach(btn => {

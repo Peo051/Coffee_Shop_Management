@@ -164,8 +164,8 @@ const initApp = () => {
       } else if (currentUser.role === "branch_manager") {
         displayBtnName = "Quản lý";
       } else {
-        // Khách hàng hoặc người dùng thường: hiển thị Tên (firstName) cho gọn gàng
-        displayBtnName = currentUser.firstName || currentUser.displayName;
+        // Khách hàng hoặc người dùng thường: hiển thị Họ + Tên cho đúng quy tắc tiếng Việt
+        displayBtnName = currentUser.displayName || `${currentUser.lastName || ""} ${currentUser.firstName || ""}`.trim();
       }
 
       authLink.innerHTML =
@@ -807,6 +807,82 @@ function showGiborPopup({
     });
   }
 }
+
+/**
+ * Hệ thống Popup Prompt nhập liệu chuyên nghiệp dùng chung
+ */
+function showGiborPrompt({
+  title = "",
+  message = "",
+  placeholder = "",
+  defaultValue = "",
+  confirmText = "Xác nhận",
+  cancelText = "Hủy",
+  onConfirm = null,
+  onCancel = null,
+}) {
+  const oldPopup = document.getElementById("giborPopupOverlay");
+  if (oldPopup) oldPopup.remove();
+
+  const overlay = document.createElement("div");
+  overlay.className = "gibor-popup-overlay";
+  overlay.id = "giborPopupOverlay";
+
+  overlay.innerHTML = `
+    <div class="gibor-popup-box">
+      <div class="gibor-popup-icon warning">
+        <i class="fas fa-key"></i>
+      </div>
+      <div class="gibor-popup-title">${title}</div>
+      <div class="gibor-popup-message" style="margin-bottom: 12px;">${message}</div>
+      <div class="gibor-prompt-input-wrapper" style="margin-bottom: 20px;">
+        <input type="text" id="giborPromptInput" class="form-control text-center" 
+               placeholder="${placeholder}" value="${defaultValue}" 
+               style="border-radius: 8px; border: 1px solid rgba(75, 44, 32, 0.2); font-family: inherit; font-size: 0.95rem; padding: 10px;">
+      </div>
+      <div class="gibor-popup-actions">
+        <button class="gibor-popup-btn secondary" id="giborPopupCancel">${cancelText}</button>
+        <button class="gibor-popup-btn primary" id="giborPopupConfirm">${confirmText}</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+
+  // Focus input
+  const inputEl = document.getElementById("giborPromptInput");
+  setTimeout(() => inputEl.focus(), 100);
+
+  requestAnimationFrame(() => {
+    overlay.classList.add("show");
+  });
+
+  function closePopupNotify() {
+    overlay.classList.remove("show");
+    setTimeout(() => overlay.remove(), 300);
+  }
+
+  document.getElementById("giborPopupConfirm").addEventListener("click", () => {
+    const value = inputEl.value.trim();
+    closePopupNotify();
+    if (onConfirm) onConfirm(value);
+  });
+
+  document.getElementById("giborPopupCancel").addEventListener("click", () => {
+    closePopupNotify();
+    if (onCancel) onCancel();
+  });
+
+  // Hỗ trợ nhấn Enter
+  inputEl.addEventListener("keypress", (e) => {
+    if (e.key === "Enter") {
+      const value = inputEl.value.trim();
+      closePopupNotify();
+      if (onConfirm) onConfirm(value);
+    }
+  });
+}
+
 
 /**
  * Hiện popup lịch sử đơn hàng

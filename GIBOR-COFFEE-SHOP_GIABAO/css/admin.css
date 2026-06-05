@@ -47,7 +47,7 @@ body.dark {
   left: 0;
   top: 0;
   width: 292px;
-  height: calc(100vh - 88px);
+  height: 100vh;
   border-radius: 0;
   padding: 15px;
   overflow-y: auto;
@@ -626,7 +626,7 @@ body.dark .admin-nav-btn-logout:hover {
   background: rgba(200, 84, 76, 0.16);
 }
 
-@media (max-width: 1180px) {
+@media (max-width: 768px) {
   .admin-stats-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -640,7 +640,7 @@ body.dark .admin-nav-btn-logout:hover {
   }
 }
 
-@media (max-width: 900px) {
+@media (max-width: 576px) {
   .admin-shell {
     grid-template-columns: 1fr;
   }
@@ -1288,15 +1288,45 @@ body.sidebar-collapsed .admin-sidebar {
   overflow-y: auto;
 }
 
+/* Scrollbar styling for sidebar */
+.admin-sidebar::-webkit-scrollbar {
+  width: 4px;
+}
+.admin-sidebar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.admin-sidebar::-webkit-scrollbar-thumb {
+  background: rgba(75, 44, 32, 0.2);
+  border-radius: 4px;
+}
+body.dark .admin-sidebar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+body.sidebar-collapsed .admin-brand-panel {
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 8px !important;
+  padding: 10px 0 !important;
+}
+
 body.sidebar-collapsed .admin-brand-panel img {
   width: 40px;
   height: 40px;
   border-radius: 10px;
+  margin: 0 auto;
 }
 
 body.sidebar-collapsed .admin-sidebar-toggle {
   position: static;
-  margin: 4px auto 0;
+  margin: 4px auto 0 !important;
+  display: flex;
+}
+
+body.sidebar-collapsed .admin-sidebar-profile {
+  background: transparent !important;
+  border-color: transparent !important;
+  padding: 8px 0;
 }
 
 body.sidebar-collapsed .admin-nav-btn-logout {
@@ -1308,4 +1338,242 @@ body.sidebar-collapsed .admin-nav-btn-logout {
 body.sidebar-collapsed .admin-nav-btn-logout span {
   display: none;
 }
+
+/* ========================================================================================
+   FIXED DESKTOP VIEWPORT CONSTRAINT (PREVENTS ZOOM LAYOUT BREAKS)
+============================================================================================= */
+
+@media (min-width: 577px) {
+  .admin-page {
+    min-width: 1200px;
+  }
+}
+
+@media (min-width: 992px) {
+  body {
+    zoom: 0.67;
+    -moz-transform: scale(0.67);
+    -moz-transform-origin: 0 0;
+  }
+  .admin-sidebar {
+    height: 150vh !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    z-index: 1000 !important;
+  }
+  .admin-page {
+    min-height: 150vh !important;
+  }
+}
+
+/* ==================== ĐỒNG BỘ DARK MODE CHO MODAL CHI TIẾT ĐƠN HÀNG ==================== */
+body.dark .modal-content {
+  background-color: #1a1a1f !important;
+  color: #f3f0ea !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+body.dark .modal-header {
+  background-color: #24242b !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+body.dark .modal-title {
+  color: #f3f0ea !important;
+}
+
+body.dark .modal-footer {
+  background-color: #24242b !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+body.dark #orderDetailModalBody .bg-light {
+  background-color: #24242b !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+body.dark #orderDetailModalBody .text-dark {
+  color: #f3f0ea !important;
+}
+
+body.dark #orderDetailModalBody .table {
+  color: #f3f0ea !important;
+}
+
+body.dark #orderDetailModalBody .table-light {
+  --bs-table-bg: #24242b !important;
+  --bs-table-color: #bfae9d !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  background-color: #24242b !important;
+  color: #bfae9d !important;
+}
+
+body.dark #orderDetailModalBody .table tr,
+body.dark #orderDetailModalBody .table td,
+body.dark #orderDetailModalBody .table th {
+  background-color: transparent !important;
+  color: #f3f0ea !important;
+}
+
+body.dark #orderDetailModalBody .table-responsive {
+  background-color: #1f1f25 !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+body.dark #orderDetailModalBody .border {
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+body.dark #orderDetailModalBody .border-top {
+  border-top-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+body.dark #orderDetailModalBody .text-muted {
+  color: #c7baad !important;
+}
+
+body.dark .modal-header .btn-close {
+  filter: invert(1) grayscale(1) brightness(2);
+}
+
+/* Fix Bootstrap backdrop che lên modal do thuộc tính zoom */
+.modal-backdrop {
+  display: none !important;
+}
+
+.modal {
+  background-color: rgba(0, 0, 0, 0.5) !important;
+  display: none;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 150vw !important;
+  height: 150vh !important;
+  align-items: center !important;
+  justify-content: center !important;
+  z-index: 99999 !important;
+}
+
+
+.modal.show {
+  display: flex !important;
+}
+
+.modal:not(.show) {
+  display: none !important;
+}
+
+.modal-dialog {
+  margin: 0 !important;
+  width: 90% !important;
+  max-width: 800px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.modal-content {
+  max-height: 85vh !important;
+  display: flex !important;
+  flex-direction: column !important;
+  border-radius: 16px !important;
+  overflow: hidden !important;
+  width: 100% !important;
+}
+
+#orderDetailModalBody {
+  overflow-y: auto !important;
+  flex: 1 !important;
+  max-height: calc(85vh - 120px) !important;
+}
+
+/* Styling cho Quick Filter Tabs Quản lý đơn hàng */
+.btn-quick-filter {
+  background-color: transparent;
+  color: #5f3d24;
+  border-radius: 99px;
+  transition: all 0.2s ease-in-out;
+  font-size: 0.82rem;
+  padding: 6px 14px;
+}
+
+.btn-quick-filter:hover {
+  background-color: rgba(95, 61, 36, 0.08);
+  color: #4b2c20;
+}
+
+.btn-quick-filter.active {
+  background-color: #4b2c20 !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 10px rgba(75, 44, 32, 0.2);
+}
+
+/* Thiết lập màu sắc có độ tương phản cao cho Quick Filter trong cả Light và Dark Mode */
+.btn-quick-filter[data-status-filter="Chờ thanh toán"] {
+  color: #a0522d !important; /* Màu nâu đất nổi bật trên nền sáng */
+}
+.btn-quick-filter[data-status-filter="Đang xử lý"] {
+  color: #0c5460 !important;
+}
+.btn-quick-filter[data-status-filter="Hoàn tất"] {
+  color: #1e7e34 !important;
+}
+.btn-quick-filter[data-status-filter="Đã hủy"] {
+  color: #dc3545 !important;
+}
+
+/* Khi active thì luôn hiển thị chữ trắng */
+.btn-quick-filter.active {
+  background-color: #4b2c20 !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 10px rgba(75, 44, 32, 0.2);
+}
+
+/* Thiết lập màu có độ tương phản cao trong chế độ tối (body.dark) */
+body.dark .btn-quick-filter {
+  color: #e6c1a0 !important; /* Màu da cam nhạt cafe sang trọng */
+}
+body.dark .btn-quick-filter:hover {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  color: #ffffff !important;
+}
+
+body.dark .btn-quick-filter[data-status-filter="Chờ thanh toán"] {
+  color: #ffd54f !important; /* Màu vàng sáng rõ ràng */
+}
+body.dark .btn-quick-filter[data-status-filter="Đang xử lý"] {
+  color: #4fc3f7 !important; /* Màu xanh cyan sáng */
+}
+body.dark .btn-quick-filter[data-status-filter="Hoàn tất"] {
+  color: #81c784 !important; /* Màu xanh lá nhạt sáng */
+}
+body.dark .btn-quick-filter[data-status-filter="Đã hủy"] {
+  color: #ff8a80 !important; /* Màu đỏ hồng sáng */
+}
+
+/* Khi active trong Dark Mode thì luôn hiện chữ trắng */
+body.dark .btn-quick-filter.active {
+  background-color: #8f5d37 !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+body.dark .btn-quick-filter.active span.badge {
+  background-color: rgba(255, 255, 255, 0.2) !important;
+  color: #ffffff !important;
+}
+
+.badge-count-quick {
+  font-size: 0.72rem;
+  padding: 4px 8px;
+}
+
+
+
+
+
+
+
+
 

@@ -21,16 +21,26 @@
 /* ===== KHUNG POPUP ===== */
 .popup-box {
   background: var(--card, #fff);
-  width: 420px;
-  max-width: 92vw;
-  max-height: 90vh;
-  border-radius: 16px;
+  width: 960px;
+  max-width: 96vw;
+  max-height: 95vh;
+  border-radius: 24px;
   overflow: hidden;
-  overflow-y: auto;
   position: relative;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-  animation: popupSlideIn 0.35s ease;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.4);
+  animation: popupSlideIn 0.35s cubic-bezier(0.25, 1, 0.5, 1);
+  display: flex;
+  flex-direction: column;
 }
+
+/* Cấu trúc bố cục Flexbox cho 2 cột */
+@media (min-width: 769px) {
+  .popup-box {
+    flex-direction: row;
+    height: 760px; /* Cố định chiều cao mới lớn hơn */
+  }
+}
+
 
 @keyframes popupSlideIn {
   from {
@@ -46,24 +56,27 @@
 /* ===== NÚT ĐÓNG ===== */
 .popup-close {
   position: absolute;
-  top: 10px;
-  right: 14px;
+  top: 15px;
+  right: 15px;
   cursor: pointer;
   font-size: 22px;
-  color: #fff;
-  background: rgba(0, 0, 0, 0.4);
-  width: 32px;
-  height: 32px;
+  color: #555;
+  background: rgba(255, 255, 255, 0.85);
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 2;
-  transition: background 0.3s;
+  z-index: 10;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
 }
 
 .popup-close:hover {
-  background: rgba(231, 76, 60, 0.9);
+  background: rgba(231, 76, 60, 0.95);
+  color: #fff;
+  transform: rotate(90deg);
 }
 
 /* ===== ẢNH SẢN PHẨM ===== */
@@ -71,23 +84,44 @@
   width: 100%;
   height: 320px;
   overflow: hidden;
-  background-color: var(--card, #fff);
+  background-color: #faf6f1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0; /* Loại bỏ padding để ảnh tràn viền */
+  flex-shrink: 0;
+}
+
+@media (min-width: 769px) {
+  .popup-img-wrap {
+    width: 45%; /* Tăng nhẹ độ rộng của ảnh */
+    height: 100%;
+    border-right: 1px solid rgba(95, 61, 36, 0.08);
+  }
 }
 
 .popup-img-wrap img {
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  object-fit: cover; /* Đặt cover để ảnh lấp đầy toàn bộ khung */
   transition: transform 0.4s ease;
 }
 
 .popup-box:hover .popup-img-wrap img {
-  transform: scale(1.03);
+  transform: scale(1.05);
 }
 
 /* ===== PHẦN THÔNG TIN ===== */
 .popup-info {
-  padding: 20px 22px 22px;
+  padding: 25px 30px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+@media (min-width: 769px) {
+  .popup-info {
+    height: 100%;
+  }
 }
 
 /* Tên sản phẩm */
@@ -385,7 +419,7 @@ body.dark .popup-box {
 }
 
 body.dark .popup-img-wrap {
-  background-color: var(--dark-popup-bg, #1f1f1f);
+  background-color: #1a1a1f;
 }
 
 body.dark .popup-desc {
@@ -619,5 +653,307 @@ body.dark .add-cart {
 
                                     KẾT THÚC CODE BỞI TRẦN GIA BẢO
 
+========================================================================================
+*/
+
+/* 
+========================================================================================
+                                    BẮT ĐẦU CODE CHO MODAL CHỌN CỬA HÀNG PHONG CÁCH THE COFFEE HOUSE
+========================================================================================
+*/
+
+/* Overlay chiếm trọn màn hình, làm mờ nền */
+.branch-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(5px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.branch-modal-overlay.show {
+  display: flex;
+  opacity: 1;
+}
+
+/* Khung modal trượt từ dưới lên ở mobile, hoặc căn giữa ở desktop */
+.branch-modal-box {
+  background: #ffffff;
+  width: 540px;
+  max-width: 100%;
+  height: 85vh;
+  max-height: 720px;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 15px 45px rgba(0, 0, 0, 0.22);
+  display: flex;
+  flex-direction: column;
+  transform: translateY(100px);
+  transition: transform 0.35s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.branch-modal-overlay.show .branch-modal-box {
+  transform: translateY(0);
+}
+
+/* Header giống The Coffee House */
+.branch-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  background: #fff;
+}
+
+.branch-modal-back-btn {
+  background: transparent;
+  border: none;
+  font-size: 20px;
+  color: #2d2424;
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background 0.2s;
+}
+
+.branch-modal-back-btn:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.branch-modal-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #2d2424;
+  margin: 0;
+  text-align: center;
+  flex: 1;
+  font-family: var(--font-body), sans-serif;
+}
+
+/* Search Box wrapper */
+.branch-modal-search-wrap {
+  padding: 14px 20px;
+  background: #fff;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.branch-modal-search-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: #f5f5f5;
+  border: 1px solid #e8e8e8;
+  border-radius: 12px;
+  padding: 2px 14px;
+}
+
+.branch-modal-search-box .search-icon {
+  color: #8e8e93;
+  margin-right: 10px;
+  font-size: 0.95rem;
+}
+
+.branch-modal-search-box input {
+  width: 100%;
+  border: none;
+  background: transparent;
+  padding: 10px 0;
+  font-size: 0.95rem;
+  color: #2d2424;
+  outline: none;
+}
+
+.branch-modal-search-box input::placeholder {
+  color: #8e8e93;
+}
+
+.branch-modal-search-box .clear-btn {
+  background: transparent;
+  border: none;
+  color: #c7c7cc;
+  cursor: pointer;
+  padding: 0;
+  margin-left: 6px;
+  font-size: 1.05rem;
+  transition: color 0.2s;
+}
+
+.branch-modal-search-box .clear-btn:hover {
+  color: #8e8e93;
+}
+
+/* List chi nhánh dạng cuộn dọc */
+.branch-modal-list-container {
+  flex: 1;
+  overflow-y: auto;
+  background: #f5f5f7;
+  padding: 12px 16px;
+}
+
+/* Từng dòng chi nhánh */
+.branch-item {
+  display: flex;
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 14px;
+  margin-bottom: 12px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.25s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+}
+
+.branch-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
+  border-color: rgba(95, 61, 36, 0.15);
+}
+
+.branch-item.active {
+  border-color: var(--accent, #d4a373);
+  background: rgba(212, 163, 115, 0.03);
+}
+
+/* Ảnh cửa hàng bên trái (ảnh tỉ lệ 1:1 hoặc 4:3 bo góc đẹp mắt) */
+.branch-item-img {
+  width: 90px;
+  height: 90px;
+  border-radius: 12px;
+  overflow: hidden;
+  flex-shrink: 0;
+  margin-right: 14px;
+  background-color: #faf6f1;
+}
+
+.branch-item-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Thông tin chi tiết bên phải */
+.branch-item-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.branch-item-name {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #2d2424;
+  margin-bottom: 4px;
+  line-height: 1.3;
+}
+
+.branch-item-address {
+  font-size: 0.8rem;
+  color: #636366;
+  margin-bottom: 6px;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Khoảng cách giả lập hoặc tính toán màu cam nổi bật */
+.branch-item-distance {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #e67e22; /* Màu cam đất giống TCH */
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Dark mode tương thích */
+body.dark .branch-modal-box {
+  background: #1c1c1e;
+  color: #f5f5f7;
+}
+
+body.dark .branch-modal-header {
+  background: #1c1c1e;
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+body.dark .branch-modal-title,
+body.dark .branch-modal-back-btn {
+  color: #f5f5f7;
+}
+
+body.dark .branch-modal-search-wrap {
+  background: #1c1c1e;
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+body.dark .branch-modal-search-box {
+  background: #2c2c2e;
+  border-color: #3a3a3c;
+}
+
+body.dark .branch-modal-search-box input {
+  color: #f5f5f7;
+}
+
+body.dark .branch-modal-list-container {
+  background: #121212;
+}
+
+body.dark .branch-item {
+  background: #1c1c1e;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+body.dark .branch-item:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+body.dark .branch-item.active {
+  border-color: var(--accent, #d4a373);
+  background: rgba(212, 163, 115, 0.05);
+}
+
+body.dark .branch-item-name {
+  color: #f5f5f7;
+}
+
+body.dark .branch-item-address {
+  color: #aeaeb2;
+}
+
+body.dark .branch-item-distance {
+  color: #f39c12;
+}
+
+/* Responsive trượt từ dưới lên trên thiết bị di động */
+@media (max-width: 576px) {
+  .branch-modal-overlay {
+    align-items: flex-end;
+  }
+  
+  .branch-modal-box {
+    width: 100%;
+    height: 90vh;
+    border-radius: 20px 20px 0 0;
+    transform: translateY(100%);
+  }
+}
+
+/* 
+========================================================================================
+                                    KẾT THÚC CODE CHO MODAL CHỌN CỬA HÀNG
 ========================================================================================
 */
