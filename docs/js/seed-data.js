@@ -279,8 +279,29 @@
     for (let i = 1; i <= 3000; i++) {
       const user = randItem(activeUsers);
 
-      // Tạo 1-5 sản phẩm cho mỗi đơn hàng
-      const numItems = randInt(1, 5);
+      // Xác định phân khúc đơn hàng để bám sát thực tế (Đơn nhỏ, Đơn vừa, Đơn lớn, Đơn cực lớn)
+      const segmentRand = Math.random();
+      let numItems = 1;
+      let maxQtyPerItem = 1;
+
+      if (segmentRand < 0.55) {
+        // 55% Đơn nhỏ (1 món, 1 ly: 25k - 45k)
+        numItems = 1;
+        maxQtyPerItem = 1;
+      } else if (segmentRand < 0.85) {
+        // 30% Đơn vừa (1-2 món, tổng 1-3 ly: 50k - 120k)
+        numItems = randInt(1, 2);
+        maxQtyPerItem = randInt(1, 2);
+      } else if (segmentRand < 0.97) {
+        // 12% Đơn lớn (2-4 món, tổng 3-8 ly: 150k - 350k)
+        numItems = randInt(2, 4);
+        maxQtyPerItem = randInt(1, 3);
+      } else {
+        // 3% Đơn cực lớn (Party/Nhóm đông: 4-6 món, tổng 8-15 ly: 400k - 1000k)
+        numItems = randInt(4, 6);
+        maxQtyPerItem = randInt(2, 4);
+      }
+
       const items = [];
       const usedProducts = new Set();
 
@@ -298,11 +319,11 @@
         if (size === "M") sizePrice += 5000;
         if (size === "L") sizePrice += 10000;
 
-        // 40% có topping
-        const hasToppings = Math.random() < 0.4;
+        // 40% có topping (chỉ áp dụng cho đồ uống)
+        const hasToppings = product.category !== "Bánh ngọt" && Math.random() < 0.4;
         const toppings = [];
         if (hasToppings) {
-          const numToppings = randInt(1, 3);
+          const numToppings = randInt(1, 2);
           const shuffledToppings = [...TOPPINGS].sort(() => Math.random() - 0.5);
           for (let t = 0; t < numToppings; t++) {
             toppings.push(shuffledToppings[t]);
@@ -310,7 +331,7 @@
           }
         }
 
-        const quantity = randInt(1, 3);
+        const quantity = randInt(1, maxQtyPerItem);
 
         items.push({
           name: product.name,
