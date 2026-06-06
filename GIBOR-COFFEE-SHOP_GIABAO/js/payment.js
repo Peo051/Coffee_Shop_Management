@@ -1737,21 +1737,6 @@ return {
   checkoutUrl: result.data.checkoutUrl || "",
   qrCode: result.data.qrCode || "",
 };
-
-  const result = await response.json().catch(() => ({}));
-  if (!response.ok || result.code !== "00" || !result.data) {
-    throw new Error(result.desc || result.message || "Không tạo được link thanh toán payOS.");
-  }
-
-  return {
-    provider: "payos",
-    orderCode,
-    description,
-    amount,
-    paymentLinkId: result.data.paymentLinkId || "",
-    checkoutUrl: result.data.checkoutUrl || "",
-    qrCode: result.data.qrCode || "",
-  };
 }
 
 async function fetchPayosPaymentStatus(payment) {
