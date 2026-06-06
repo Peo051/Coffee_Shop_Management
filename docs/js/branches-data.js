@@ -29,7 +29,7 @@
       district: "Quận 1",
       name: "GIBOR Nguyễn Huệ",
       address: "263 Nguyễn Huệ, Bến Nghé, Quận 1, TP. Hồ Chí Minh",
-      image: "images/Branch/TPHCM1.jpg",
+      image: "images/Branch/TPHCM1.JPG",
       lat: 10.774163,
       lng: 106.703774
     },
@@ -233,6 +233,16 @@
           // KIỂM TRA PHIÊN BẢN CŨ: Nếu các phần tử chưa có trường 'lat', ta cần reset lại từ file JS mới
           const hasLat = parsed.some(b => typeof b.lat !== "undefined");
           if (hasLat) {
+            let changed = false;
+            parsed.forEach(b => {
+              if (b.image && b.image.includes("TPHCM1.jpg")) {
+                b.image = b.image.replace("TPHCM1.jpg", "TPHCM1.JPG");
+                changed = true;
+              }
+            });
+            if (changed) {
+              localStorage.setItem("gibor_branches", JSON.stringify(parsed));
+            }
             return parsed;
           }
         }
