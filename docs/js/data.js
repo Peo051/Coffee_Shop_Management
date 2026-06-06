@@ -142,9 +142,47 @@ const ProductManager = {
   }
 };
 
-// Khởi chạy đồng bộ Firebase
+// Khởi chạy đồng bộ Firebase và gán cấu hình URL database thông minh
+let activeDbUrl = "https://manage-coffee-3a860-default-rtdb.asia-southeast1.firebasedatabase.app";
+let dbWrapperSetup = false;
+
+function setupDatabaseURLWrapper() {
+  if (dbWrapperSetup) return;
+  if (typeof firebase !== 'undefined' && firebase.database) {
+    const originalDatabase = firebase.database;
+    firebase.database = function(url) {
+      return originalDatabase.call(firebase, url || activeDbUrl);
+    };
+    dbWrapperSetup = true;
+    console.log("🔌 Đã cấu hình wrap firebase.database() với URL mặc định:", activeDbUrl);
+
+    // Kiểm tra kết nối tới Singapore để làm fallback sang US nếu cần
+    try {
+      const testDb = originalDatabase.call(firebase, "https://manage-coffee-3a860-default-rtdb.asia-southeast1.firebasedatabase.app");
+      const connectedRef = testDb.ref(".info/connected");
+      let timeoutId = setTimeout(() => {
+        connectedRef.off();
+        console.warn("⚠️ Không thể kết nối tới Singapore DB. Chuyển sang US DB.");
+        activeDbUrl = "https://manage-coffee-3a860-default-rtdb.firebaseio.com";
+      }, 4000);
+
+      connectedRef.on("value", function listener(snap) {
+        if (snap.val() === true) {
+          clearTimeout(timeoutId);
+          connectedRef.off("value", listener);
+          console.log("✅ Kết nối thành công tới Singapore DB.");
+          activeDbUrl = "https://manage-coffee-3a860-default-rtdb.asia-southeast1.firebasedatabase.app";
+        }
+      });
+    } catch (e) {
+      console.warn("⚠️ Lỗi kiểm tra kết nối DB:", e.message);
+    }
+  }
+}
+
 function loadFirebaseDatabase(callback) {
   if (typeof firebase !== 'undefined' && firebase.database) {
+    setupDatabaseURLWrapper();
     if (callback) callback();
     return;
   }
@@ -152,13 +190,110 @@ function loadFirebaseDatabase(callback) {
   script.src = 'https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js';
   script.onload = () => {
     console.log('Firebase Database SDK loaded dynamically.');
+    setupDatabaseURLWrapper();
     if (callback) callback();
   };
   document.head.appendChild(script);
 }
 
+// Các hàm gộp (merge) dữ liệu để tránh ghi đè làm mất đơn hàng
+function mergeProducts(local, remote) {
+  const localMap = new Map((local || []).map(p => [p.id, p]));
+  const remoteMap = new Map((remote || []).map(p => [p.id, p]));
+  const mergedMap = new Map();
+
+  for (const [id, rProd] of remoteMap) {
+    const lProd = localMap.get(id);
+    if (lProd) {
+      const lTime = new Date(lProd.updatedAt || 0).getTime();
+      const rTime = new Date(rProd.updatedAt || 0).getTime();
+      mergedMap.set(id, lTime >= rTime ? lProd : rProd);
+    } else {
+      mergedMap.set(id, rProd);
+    }
+  }
+
+  for (const [id, lProd] of localMap) {
+    if (!mergedMap.has(id)) {
+      mergedMap.set(id, lProd);
+    }
+  }
+
+  return Array.from(mergedMap.values());
+}
+
+function mergeOrders(local, remote) {
+  const getKey = (o) => String(o.code || o.id || "");
+  const localMap = new Map((local || []).map(o => [getKey(o), o]));
+  const remoteMap = new Map((remote || []).map(o => [getKey(o), o]));
+  const mergedMap = new Map();
+
+  const statusPriority = {
+    "Hoàn tất": 4,
+    "Đã hủy": 4,
+    "Đang giao": 3,
+    "Đang xử lý": 2,
+    "Chờ thanh toán": 1,
+    "Đã ghi nhận": 0
+  };
+
+  for (const [key, rOrder] of remoteMap) {
+    const lOrder = localMap.get(key);
+    if (lOrder) {
+      const lPriority = statusPriority[lOrder.status] || 0;
+      const rPriority = statusPriority[rOrder.status] || 0;
+      if (lPriority > rPriority) {
+        mergedMap.set(key, lOrder);
+      } else if (rPriority > lPriority) {
+        mergedMap.set(key, rOrder);
+      } else {
+        const lTime = new Date(lOrder.updatedAt || lOrder.createdAt || 0).getTime();
+        const rTime = new Date(rOrder.updatedAt || rOrder.createdAt || 0).getTime();
+        mergedMap.set(key, lTime >= rTime ? lOrder : rOrder);
+      }
+    } else {
+      mergedMap.set(key, rOrder);
+    }
+  }
+
+  for (const [key, lOrder] of localMap) {
+    if (!mergedMap.has(key)) {
+      mergedMap.set(key, lOrder);
+    }
+  }
+
+  return Array.from(mergedMap.values());
+}
+
+function mergeUsers(local, remote) {
+  const localMap = new Map((local || []).map(u => [String(u.id), u]));
+  const remoteMap = new Map((remote || []).map(u => [String(u.id), u]));
+  const mergedMap = new Map();
+
+  for (const [id, rUser] of remoteMap) {
+    const lUser = localMap.get(id);
+    if (lUser) {
+      const lTime = new Date(lUser.updatedAt || lUser.createdAt || 0).getTime();
+      const rTime = new Date(rUser.updatedAt || rUser.createdAt || 0).getTime();
+      mergedMap.set(id, lTime >= rTime ? lUser : rUser);
+    } else {
+      mergedMap.set(id, rUser);
+    }
+  }
+
+  for (const [id, lUser] of localMap) {
+    if (!mergedMap.has(id)) {
+      mergedMap.set(id, lUser);
+    }
+  }
+
+  return Array.from(mergedMap.values());
+}
+
 function initFirebaseSync() {
+  setupDatabaseURLWrapper();
   loadFirebaseDatabase(() => {
+    setupDatabaseURLWrapper();
     if (typeof firebase !== "undefined") {
       try {
         const db = firebase.database();
@@ -167,17 +302,28 @@ function initFirebaseSync() {
         const dbProductsRef = db.ref('products');
         dbProductsRef.on('value', (snapshot) => {
           const remoteProducts = snapshot.val();
+          const localRaw = localStorage.getItem(ADMIN_PRODUCTS_KEY);
+          let localProducts = [];
+          try {
+            localProducts = localRaw ? JSON.parse(localRaw) : [];
+          } catch(e) {}
+          if (!Array.isArray(localProducts)) localProducts = [];
+
           if (remoteProducts && Array.isArray(remoteProducts)) {
-            const localRaw = localStorage.getItem(ADMIN_PRODUCTS_KEY);
+            const mergedProducts = mergeProducts(localProducts, remoteProducts);
+            const mergedStr = JSON.stringify(mergedProducts);
             const remoteStr = JSON.stringify(remoteProducts);
-            if (localRaw !== remoteStr) {
-              localStorage.setItem(ADMIN_PRODUCTS_KEY, remoteStr);
-              console.log('⚡ Đồng bộ sản phẩm từ Firebase.');
-              window.dispatchEvent(new CustomEvent('gibor_products_updated', { detail: remoteProducts }));
+            
+            if (localRaw !== mergedStr) {
+              localStorage.setItem(ADMIN_PRODUCTS_KEY, mergedStr);
+              console.log('⚡ Đồng bộ sản phẩm (gộp) từ Firebase.');
+              window.dispatchEvent(new CustomEvent('gibor_products_updated', { detail: mergedProducts }));
+            }
+            if (remoteStr !== mergedStr) {
+              dbProductsRef.set(mergedProducts);
             }
           } else {
-            const localProducts = ProductManager.getProducts();
-            if (localProducts && localProducts.length > 0) {
+            if (localProducts.length > 0) {
               dbProductsRef.set(localProducts);
             }
           }
@@ -189,23 +335,29 @@ function initFirebaseSync() {
         const dbOrdersRef = db.ref('orders');
         dbOrdersRef.on('value', (snapshot) => {
           const remoteOrders = snapshot.val();
+          const localRaw = localStorage.getItem('gibor_orders');
+          let localOrders = [];
+          try {
+            localOrders = localRaw ? JSON.parse(localRaw) : [];
+          } catch(e) {}
+          if (!Array.isArray(localOrders)) localOrders = [];
+
           if (remoteOrders && Array.isArray(remoteOrders)) {
-            const localRaw = localStorage.getItem('gibor_orders');
+            const mergedOrders = mergeOrders(localOrders, remoteOrders);
+            const mergedStr = JSON.stringify(mergedOrders);
             const remoteStr = JSON.stringify(remoteOrders);
-            if (localRaw !== remoteStr) {
-              localStorage.setItem('gibor_orders', remoteStr);
-              console.log('⚡ Đồng bộ đơn hàng từ Firebase.');
-              window.dispatchEvent(new CustomEvent('gibor_orders_updated', { detail: remoteOrders }));
+
+            if (localRaw !== mergedStr) {
+              localStorage.setItem('gibor_orders', mergedStr);
+              console.log('⚡ Đồng bộ đơn hàng (gộp) từ Firebase.');
+              window.dispatchEvent(new CustomEvent('gibor_orders_updated', { detail: mergedOrders }));
+            }
+            if (remoteStr !== mergedStr) {
+              dbOrdersRef.set(mergedOrders);
             }
           } else {
-            const localRaw = localStorage.getItem('gibor_orders');
-            if (localRaw) {
-              try {
-                const localOrders = JSON.parse(localRaw);
-                if (localOrders && localOrders.length > 0) {
-                  dbOrdersRef.set(localOrders);
-                }
-              } catch (e) {}
+            if (localOrders.length > 0) {
+              dbOrdersRef.set(localOrders);
             }
           }
         }, (error) => {
@@ -216,20 +368,27 @@ function initFirebaseSync() {
         const dbUsersRef = db.ref('users');
         dbUsersRef.on('value', (snapshot) => {
           const remoteUsers = snapshot.val();
+          const localRaw = localStorage.getItem('gibor_users');
+          let localUsers = [];
+          try {
+            localUsers = localRaw ? JSON.parse(localRaw) : [];
+          } catch(e) {}
+          if (!Array.isArray(localUsers)) localUsers = [];
+
           if (remoteUsers && Array.isArray(remoteUsers)) {
-            const localRaw = localStorage.getItem('gibor_users');
+            const mergedUsers = mergeUsers(localUsers, remoteUsers);
+            const mergedStr = JSON.stringify(mergedUsers);
             const remoteStr = JSON.stringify(remoteUsers);
-            if (localRaw !== remoteStr) {
-              localStorage.setItem('gibor_users', remoteStr);
-              console.log('⚡ Đồng bộ tài khoản từ Firebase.');
-              
-              // Kích hoạt sự kiện cập nhật
-              window.dispatchEvent(new CustomEvent('gibor_users_updated', { detail: remoteUsers }));
+
+            if (localRaw !== mergedStr) {
+              localStorage.setItem('gibor_users', mergedStr);
+              console.log('⚡ Đồng bộ tài khoản (gộp) từ Firebase.');
+              window.dispatchEvent(new CustomEvent('gibor_users_updated', { detail: mergedUsers }));
               
               // Kiểm tra xem tài khoản đang đăng nhập có bị khóa không
               const currentUser = UserManager.getCurrentUser();
               if (currentUser) {
-                const myAccount = remoteUsers.find(u => u && String(u.id) === String(currentUser.id));
+                const myAccount = mergedUsers.find(u => u && String(u.id) === String(currentUser.id));
                 if (myAccount) {
                   if (myAccount.status === 'locked') {
                     alert('Tài khoản của bạn đã bị khóa bởi quản trị viên.');
@@ -241,9 +400,11 @@ function initFirebaseSync() {
                 }
               }
             }
+            if (remoteStr !== mergedStr) {
+              dbUsersRef.set(mergedUsers);
+            }
           } else {
-            const localUsers = UserManager.getUsers();
-            if (localUsers && localUsers.length > 0) {
+            if (localUsers.length > 0) {
               dbUsersRef.set(localUsers);
             }
           }

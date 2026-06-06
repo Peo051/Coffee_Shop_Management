@@ -1063,7 +1063,8 @@ function bindProductForm() {
             img: img || "images/logo/logo.jpg", 
             desc, 
             isBestSeller, 
-            status 
+            status,
+            updatedAt: new Date().toISOString()
           };
           showToast("Cập nhật sản phẩm thành công!", "success");
         }
@@ -1076,7 +1077,8 @@ function bindProductForm() {
           img: img || "images/logo/logo.jpg", 
           desc, 
           isBestSeller, 
-          status 
+          status,
+          updatedAt: new Date().toISOString()
         });
         showToast("Thêm sản phẩm mới thành công!", "success");
       }
@@ -1124,6 +1126,7 @@ function bindTableActions() {
               return;
             }
             user.password = newPass;
+            user.updatedAt = new Date().toISOString();
             saveUsers(users);
             showToast("Đã reset mật khẩu thành công.", "success");
             // Render lại bảng để đảm bảo cập nhật trạng thái nếu cần
@@ -1148,6 +1151,7 @@ function bindTableActions() {
       const user = users.find((u) => String(u.id) === String(lockUserId));
       if (user) {
         user.status = user.status === "locked" ? "active" : "locked";
+        user.updatedAt = new Date().toISOString();
         saveUsers(users);
         renderAll();
       }
@@ -1447,6 +1451,7 @@ function bindTableActions() {
       
       const newStatus = event.target.value;
       orders[orderIdx].status = newStatus;
+      orders[orderIdx].updatedAt = new Date().toISOString();
       
       // TỰ ĐỘNG ĐỒNG BỘ: Nếu đơn hàng "Hoàn tất" thì tự động cập nhật Trạng thái thanh toán là "Đã thanh toán"
       if (newStatus === "Hoàn tất") {
@@ -1467,6 +1472,7 @@ function bindTableActions() {
       if (orderIdx === -1) return;
       
       orders[orderIdx].paymentStatus = event.target.value;
+      orders[orderIdx].updatedAt = new Date().toISOString();
       saveOrders(orders);
       renderAll();
     }
@@ -1480,6 +1486,7 @@ function bindTableActions() {
       const productIdx = products.findIndex(p => p && p.id === productId);
       if (productIdx !== -1) {
         products[productIdx].status = newStatus;
+        products[productIdx].updatedAt = new Date().toISOString();
         saveProducts(products);
         showToast(`Đã cập nhật trạng thái "${products[productIdx].name}" thành công.`, "success");
         renderAll();
@@ -1495,6 +1502,7 @@ function bindTableActions() {
       const productIdx = products.findIndex(p => p && p.id === productId);
       if (productIdx !== -1) {
         products[productIdx].isBestSeller = isChecked;
+        products[productIdx].updatedAt = new Date().toISOString();
         saveProducts(products);
         showToast(`Đã cập nhật trạng thái nổi bật cho "${products[productIdx].name}" thành công.`, "success");
         renderAll();
@@ -1899,6 +1907,7 @@ function bindAccountForm() {
         permissions: roleVal === "admin" ? ["*"] : [],
         provider: "email",
         createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       };
       users.push(newUser);
       showToast("Thêm tài khoản mới thành công!", "success");
@@ -1913,6 +1922,7 @@ function bindAccountForm() {
         users[index].role = roleVal;
         users[index].branchId = branchVal;
         users[index].permissions = roleVal === "admin" ? ["*"] : [];
+        users[index].updatedAt = new Date().toISOString();
         if (password) {
           if (password.length < 6) {
             showToast("Mật khẩu mới phải có ít nhất 6 ký tự.", "warning");
