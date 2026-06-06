@@ -29,7 +29,7 @@
       district: "Quận 1",
       name: "GIBOR Nguyễn Huệ",
       address: "263 Nguyễn Huệ, Bến Nghé, Quận 1, TP. Hồ Chí Minh",
-      image: "images/Branch/TPHCM1.JPG",
+      image: "images/Branch/TPHCM1.jpg",
       lat: 10.774163,
       lng: 106.703774
     },
