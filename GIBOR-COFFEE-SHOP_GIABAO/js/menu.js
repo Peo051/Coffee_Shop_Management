@@ -310,16 +310,6 @@ function renderMenuProducts() {
             .map(product => {
                 // Mô phỏng tính trạng của chi nhánh cụ thể (Ví dụ: chi nhánh đó có thể hết hàng một số món nhất định)
                 let isOutOfStock = product.status === "out_of_stock";
-                
-                // Demo logic: Tạo một chút sự khác biệt giữa các chi nhánh để tăng tính sinh động:
-                if (selectedBranchId !== "all") {
-                    const hash = (product.id || "").split("").reduce((acc, char) => acc + char.charCodeAt(0), 0) + 
-                                 selectedBranchId.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
-                    // 15% khả năng một món bất kỳ sẽ hết hàng ngẫu nhiên ở chi nhánh đó để tăng tính chân thực của tính năng "thực đơn riêng từng chi nhánh"
-                    if (hash % 7 === 0) {
-                        isOutOfStock = true;
-                    }
-                }
 
                 const cardClass = `menu-card h-100 w-100 ${product.isBestSeller && !isOutOfStock ? 'best-seller' : ''} ${isOutOfStock ? 'out-of-stock' : ''}`;
                 
