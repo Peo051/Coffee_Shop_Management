@@ -245,6 +245,13 @@ function getOrders() {
 
 function saveOrders(orders) {
   localStorage.setItem(_ORDERS_KEY, JSON.stringify(orders));
+  if (typeof firebase !== 'undefined' && firebase.database) {
+    try {
+      firebase.database().ref('orders').set(orders);
+    } catch (e) {
+      console.error("Lỗi đồng bộ orders lên Firebase từ Admin:", e);
+    }
+  }
 }
 
 function formatMoney(value) {
@@ -1508,6 +1515,24 @@ function bindTableActions() {
     if (typeof renderProducts === 'function') {
       renderProducts();
     }
+  });
+
+  window.addEventListener('gibor_orders_updated', () => {
+    console.log("⚡ Nhận được cập nhật đơn hàng thời gian thực từ Firebase. Đang tải lại danh sách đơn hàng...");
+    if (typeof renderOrders === 'function') renderOrders();
+    if (typeof renderDashboard === 'function') renderDashboard();
+    if (typeof renderRevenueReport === 'function') renderRevenueReport();
+  });
+
+  window.addEventListener('gibor_users_updated', () => {
+    console.log("⚡ Nhận được cập nhật tài khoản thời gian thực từ Firebase. Đang tải lại danh sách tài khoản...");
+    if (typeof renderAccounts === 'function') renderAccounts();
+    if (typeof renderCustomers === 'function') renderCustomers();
+  });
+
+  window.addEventListener('gibor_branches_updated', () => {
+    console.log("⚡ Nhận được cập nhật chi nhánh thời gian thực từ Firebase. Đang tải lại danh sách chi nhánh...");
+    if (typeof renderBranches === 'function') renderBranches();
   });
 }
 

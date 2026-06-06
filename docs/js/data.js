@@ -157,41 +157,111 @@ function loadFirebaseDatabase(callback) {
   document.head.appendChild(script);
 }
 
-function initProductSync() {
+function initFirebaseSync() {
   loadFirebaseDatabase(() => {
     if (typeof firebase !== "undefined") {
       try {
-        const dbRef = firebase.database().ref('products');
-        dbRef.on('value', (snapshot) => {
+        const db = firebase.database();
+        
+        // 1. Đồng bộ Products
+        const dbProductsRef = db.ref('products');
+        dbProductsRef.on('value', (snapshot) => {
           const remoteProducts = snapshot.val();
           if (remoteProducts && Array.isArray(remoteProducts)) {
             const localRaw = localStorage.getItem(ADMIN_PRODUCTS_KEY);
             const remoteStr = JSON.stringify(remoteProducts);
             if (localRaw !== remoteStr) {
               localStorage.setItem(ADMIN_PRODUCTS_KEY, remoteStr);
-              console.log('⚡ Đồng bộ sản phẩm từ Firebase: Trạng thái sản phẩm đã thay đổi.');
+              console.log('⚡ Đồng bộ sản phẩm từ Firebase.');
               window.dispatchEvent(new CustomEvent('gibor_products_updated', { detail: remoteProducts }));
             }
           } else {
             const localProducts = ProductManager.getProducts();
             if (localProducts && localProducts.length > 0) {
-              dbRef.set(localProducts);
+              dbProductsRef.set(localProducts);
             }
           }
         }, (error) => {
-          console.warn('⚠️ Firebase Database read error:', error.message);
+          console.warn('⚠️ Firebase Products read error:', error.message);
         });
+
+        // 2. Đồng bộ Orders
+        const dbOrdersRef = db.ref('orders');
+        dbOrdersRef.on('value', (snapshot) => {
+          const remoteOrders = snapshot.val();
+          if (remoteOrders && Array.isArray(remoteOrders)) {
+            const localRaw = localStorage.getItem('gibor_orders');
+            const remoteStr = JSON.stringify(remoteOrders);
+            if (localRaw !== remoteStr) {
+              localStorage.setItem('gibor_orders', remoteStr);
+              console.log('⚡ Đồng bộ đơn hàng từ Firebase.');
+              window.dispatchEvent(new CustomEvent('gibor_orders_updated', { detail: remoteOrders }));
+            }
+          } else {
+            const localRaw = localStorage.getItem('gibor_orders');
+            if (localRaw) {
+              try {
+                const localOrders = JSON.parse(localRaw);
+                if (localOrders && localOrders.length > 0) {
+                  dbOrdersRef.set(localOrders);
+                }
+              } catch (e) {}
+            }
+          }
+        }, (error) => {
+          console.warn('⚠️ Firebase Orders read error:', error.message);
+        });
+
+        // 3. Đồng bộ Users (Tài khoản)
+        const dbUsersRef = db.ref('users');
+        dbUsersRef.on('value', (snapshot) => {
+          const remoteUsers = snapshot.val();
+          if (remoteUsers && Array.isArray(remoteUsers)) {
+            const localRaw = localStorage.getItem('gibor_users');
+            const remoteStr = JSON.stringify(remoteUsers);
+            if (localRaw !== remoteStr) {
+              localStorage.setItem('gibor_users', remoteStr);
+              console.log('⚡ Đồng bộ tài khoản từ Firebase.');
+              
+              // Kích hoạt sự kiện cập nhật
+              window.dispatchEvent(new CustomEvent('gibor_users_updated', { detail: remoteUsers }));
+              
+              // Kiểm tra xem tài khoản đang đăng nhập có bị khóa không
+              const currentUser = UserManager.getCurrentUser();
+              if (currentUser) {
+                const myAccount = remoteUsers.find(u => u && String(u.id) === String(currentUser.id));
+                if (myAccount) {
+                  if (myAccount.status === 'locked') {
+                    alert('Tài khoản của bạn đã bị khóa bởi quản trị viên.');
+                    UserManager.logout();
+                    window.location.reload();
+                  } else {
+                    UserManager.setCurrentUser(myAccount);
+                  }
+                }
+              }
+            }
+          } else {
+            const localUsers = UserManager.getUsers();
+            if (localUsers && localUsers.length > 0) {
+              dbUsersRef.set(localUsers);
+            }
+          }
+        }, (error) => {
+          console.warn('⚠️ Firebase Users read error:', error.message);
+        });
+        
       } catch (err) {
-        console.warn('⚠️ Lỗi khởi tạo Firebase Database:', err.message);
+        console.warn('⚠️ Lỗi khởi tạo Firebase Database Sync:', err.message);
       }
     }
   });
 }
 
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initProductSync);
+  document.addEventListener('DOMContentLoaded', initFirebaseSync);
 } else {
-  initProductSync();
+  initFirebaseSync();
 }
 
 const UserManager = {
@@ -316,6 +386,15 @@ const UserManager = {
   saveUsers(users) {
     const cleanUsers = (users || []).filter(u => u !== null && u !== undefined);
     localStorage.setItem("gibor_users", JSON.stringify(cleanUsers));
+    
+    // Đồng bộ lên Firebase
+    if (typeof firebase !== 'undefined' && firebase.database) {
+      try {
+        firebase.database().ref('users').set(cleanUsers);
+      } catch (e) {
+        console.error('Lỗi khi đồng bộ users lên Firebase:', e);
+      }
+    }
   },
 
   /**
@@ -875,6 +954,11 @@ const OrderManager = {
         status: order.status || "Đã ghi nhận", // Tự động gán trạng thái mặc định
       });
       localStorage.setItem("gibor_orders", JSON.stringify(cleanOrders));
+      
+      // Đồng bộ lên Firebase
+      if (typeof firebase !== 'undefined' && firebase.database) {
+        firebase.database().ref('orders').set(cleanOrders);
+      }
     } catch (e) {
       console.error("Lỗi lưu đơn hàng:", e);
     }

@@ -318,6 +318,15 @@
       const cleanList = (branches || []).filter(Boolean);
       localStorage.setItem("gibor_branches", JSON.stringify(cleanList));
       window.GIBOR_BRANCHES = cleanList.map(cloneBranch);
+      
+      // Đồng bộ lên Firebase
+      if (typeof firebase !== 'undefined' && firebase.database) {
+        try {
+          firebase.database().ref('branches').set(cleanList);
+        } catch (e) {
+          console.error("Lỗi đồng bộ branches lên Firebase:", e);
+        }
+      }
     },
     add(branch) {
       const list = getStoredBranches();
@@ -384,10 +393,44 @@
         b.order = idx + 1;
       });
 
-      this.save(filtered);
-      return true;
     }
   };
+
+  // Khởi tạo listener cho branches từ Firebase
+  function initBranchFirebaseSync() {
+    const checkInterval = setInterval(() => {
+      if (typeof firebase !== "undefined" && firebase.database) {
+        clearInterval(checkInterval);
+        try {
+          const dbRef = firebase.database().ref('branches');
+          dbRef.on('value', (snapshot) => {
+            const remoteBranches = snapshot.val();
+            if (remoteBranches && Array.isArray(remoteBranches)) {
+              const localRaw = localStorage.getItem("gibor_branches");
+              const remoteStr = JSON.stringify(remoteBranches);
+              if (localRaw !== remoteStr) {
+                localStorage.setItem("gibor_branches", remoteStr);
+                window.GIBOR_BRANCHES = remoteBranches.map(cloneBranch);
+                console.log('⚡ Đồng bộ chi nhánh từ Firebase.');
+                window.dispatchEvent(new CustomEvent('gibor_branches_updated', { detail: remoteBranches }));
+              }
+            } else {
+              const localBranches = getStoredBranches();
+              if (localBranches && localBranches.length > 0) {
+                dbRef.set(localBranches);
+              }
+            }
+          }, (error) => {
+            console.warn('⚠️ Firebase Branches read error:', error.message);
+          });
+        } catch (err) {
+          console.warn('⚠️ Lỗi khởi tạo Firebase Branches Sync:', err.message);
+        }
+      }
+    }, 500);
+  }
+  
+  initBranchFirebaseSync();
 })();
 /* 
 ========================================================================================
