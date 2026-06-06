@@ -130,8 +130,69 @@ const ProductManager = {
   saveProducts(products) {
     const cleanProducts = (products || []).filter(p => p !== null && p !== undefined).map(normalizeProduct);
     localStorage.setItem(ADMIN_PRODUCTS_KEY, JSON.stringify(cleanProducts));
+    
+    // Đồng bộ lên Firebase
+    if (typeof firebase !== 'undefined' && firebase.database) {
+      try {
+        firebase.database().ref('products').set(cleanProducts);
+      } catch (e) {
+        console.error('Lỗi khi đồng bộ sản phẩm lên Firebase:', e);
+      }
+    }
   }
 };
+
+// Khởi chạy đồng bộ Firebase
+function loadFirebaseDatabase(callback) {
+  if (typeof firebase !== 'undefined' && firebase.database) {
+    if (callback) callback();
+    return;
+  }
+  const script = document.createElement('script');
+  script.src = 'https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js';
+  script.onload = () => {
+    console.log('Firebase Database SDK loaded dynamically.');
+    if (callback) callback();
+  };
+  document.head.appendChild(script);
+}
+
+function initProductSync() {
+  loadFirebaseDatabase(() => {
+    if (typeof firebase !== "undefined") {
+      try {
+        const dbRef = firebase.database().ref('products');
+        dbRef.on('value', (snapshot) => {
+          const remoteProducts = snapshot.val();
+          if (remoteProducts && Array.isArray(remoteProducts)) {
+            const localRaw = localStorage.getItem(ADMIN_PRODUCTS_KEY);
+            const remoteStr = JSON.stringify(remoteProducts);
+            if (localRaw !== remoteStr) {
+              localStorage.setItem(ADMIN_PRODUCTS_KEY, remoteStr);
+              console.log('⚡ Đồng bộ sản phẩm từ Firebase: Trạng thái sản phẩm đã thay đổi.');
+              window.dispatchEvent(new CustomEvent('gibor_products_updated', { detail: remoteProducts }));
+            }
+          } else {
+            const localProducts = ProductManager.getProducts();
+            if (localProducts && localProducts.length > 0) {
+              dbRef.set(localProducts);
+            }
+          }
+        }, (error) => {
+          console.warn('⚠️ Firebase Database read error:', error.message);
+        });
+      } catch (err) {
+        console.warn('⚠️ Lỗi khởi tạo Firebase Database:', err.message);
+      }
+    }
+  });
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initProductSync);
+} else {
+  initProductSync();
+}
 
 const UserManager = {
   ensureDefaultAdmin() {

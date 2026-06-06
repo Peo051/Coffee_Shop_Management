@@ -1502,6 +1502,13 @@ function bindTableActions() {
       renderAll();
     }
   });
+
+  window.addEventListener('gibor_products_updated', () => {
+    console.log("⚡ Nhận được cập nhật sản phẩm thời gian thực từ Firebase. Đang tải lại danh sách sản phẩm...");
+    if (typeof renderProducts === 'function') {
+      renderProducts();
+    }
+  });
 }
 
 function handleLogout() {

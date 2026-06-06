@@ -350,6 +350,13 @@ function renderMenuProducts() {
     });
 }
 
+window.addEventListener('gibor_products_updated', () => {
+    console.log("⚡ Nhận được cập nhật sản phẩm thời gian thực. Đang tải lại thực đơn...");
+    if (typeof renderMenuProducts === 'function') {
+        renderMenuProducts();
+    }
+});
+
 /* 
 ========================================================================================
 
