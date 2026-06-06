@@ -411,6 +411,67 @@ function initFirebaseSync() {
         }, (error) => {
           console.warn('⚠️ Firebase Users read error:', error.message);
         });
+
+        // 4. Đồng bộ payOS configs
+        const dbPayosRef = db.ref('payos_configs');
+        dbPayosRef.on('value', (snapshot) => {
+          const remoteConfig = snapshot.val();
+          if (remoteConfig && typeof remoteConfig === 'object') {
+            console.log('⚡ Đồng bộ cấu hình payOS từ Firebase.');
+            Object.keys(remoteConfig).forEach(key => {
+              const suffix = key === 'default' ? '' : '_' + key;
+              const conf = remoteConfig[key];
+              if (conf) {
+                if (conf.clientId) localStorage.setItem("gibor_payos_client_id" + suffix, conf.clientId);
+                if (conf.apiKey) localStorage.setItem("gibor_payos_api_key" + suffix, conf.apiKey);
+                if (conf.checksumKey) localStorage.setItem("gibor_payos_checksum_key" + suffix, conf.checksumKey);
+                if (conf.mockToggle) localStorage.setItem("gibor_payos_mock_toggle" + suffix, conf.mockToggle);
+              }
+            });
+            window.dispatchEvent(new CustomEvent('gibor_payos_config_updated'));
+          } else {
+            // Nếu trên Firebase chưa có cấu hình payOS nhưng local có, đẩy lên
+            const localConfig = {};
+            let hasLocal = false;
+            
+            // Đọc cấu hình mặc định (default)
+            const defClientId = localStorage.getItem("gibor_payos_client_id");
+            if (defClientId) {
+              hasLocal = true;
+              localConfig["default"] = {
+                clientId: defClientId,
+                apiKey: localStorage.getItem("gibor_payos_api_key") || "",
+                checksumKey: localStorage.getItem("gibor_payos_checksum_key") || "",
+                mockToggle: localStorage.getItem("gibor_payos_mock_toggle") || "true",
+                updatedAt: new Date().toISOString()
+              };
+            }
+            
+            // Đọc cấu hình theo từng chi nhánh nếu có trong localStorage
+            for (let i = 0; i < localStorage.length; i++) {
+              const key = localStorage.key(i);
+              if (key && key.startsWith("gibor_payos_client_id_")) {
+                const branchId = key.replace("gibor_payos_client_id_", "");
+                if (branchId) {
+                  hasLocal = true;
+                  localConfig[branchId] = {
+                    clientId: localStorage.getItem("gibor_payos_client_id_" + branchId) || "",
+                    apiKey: localStorage.getItem("gibor_payos_api_key_" + branchId) || "",
+                    checksumKey: localStorage.getItem("gibor_payos_checksum_key_" + branchId) || "",
+                    mockToggle: localStorage.getItem("gibor_payos_mock_toggle_" + branchId) || "true",
+                    updatedAt: new Date().toISOString()
+                  };
+                }
+              }
+            }
+            
+            if (hasLocal) {
+              dbPayosRef.set(localConfig);
+            }
+          }
+        }, (error) => {
+          console.warn('⚠️ Firebase payOS config read error:', error.message);
+        });
         
       } catch (err) {
         console.warn('⚠️ Lỗi khởi tạo Firebase Database Sync:', err.message);

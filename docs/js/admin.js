@@ -2241,6 +2241,8 @@ function bindPayosForm() {
     branchSelect.addEventListener("change", loadPayosConfig);
   }
 
+  window.addEventListener("gibor_payos_config_updated", loadPayosConfig);
+
   // Phân quyền kiểm tra người dùng hiện tại
   const currentUser = typeof UserManager !== "undefined" ? UserManager.getCurrentUser() : null;
   const isBranchManager = currentUser && currentUser.role === "branch_manager";
@@ -2311,8 +2313,25 @@ function bindPayosForm() {
     localStorage.setItem("gibor_payos_api_key" + suffix, apiKey);
     localStorage.setItem("gibor_payos_checksum_key" + suffix, checksumKey);
 
+    const isMock = mockToggle ? (mockToggle.checked ? "true" : "false") : "true";
     if (mockToggle) {
-      localStorage.setItem("gibor_payos_mock_toggle" + suffix, mockToggle.checked ? "true" : "false");
+      localStorage.setItem("gibor_payos_mock_toggle" + suffix, isMock);
+    }
+
+    // Đồng bộ lên Firebase Realtime Database
+    if (typeof firebase !== 'undefined' && firebase.database) {
+      try {
+        const dbKey = branchId || 'default';
+        firebase.database().ref('payos_configs/' + dbKey).set({
+          clientId,
+          apiKey,
+          checksumKey,
+          mockToggle: isMock,
+          updatedAt: new Date().toISOString()
+        });
+      } catch (err) {
+        console.error("Lỗi đồng bộ cấu hình payOS lên Firebase:", err);
+      }
     }
 
     showToast(`Đã lưu cấu hình payOS cho ${branchId ? "chi nhánh này" : "toàn hệ thống"}.`, "success");
