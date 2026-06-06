@@ -702,7 +702,7 @@ function showPopupToast(message) {
   }, 2500);
 }
 
-// Cập nhật số lượng giỏ hàng khi load trang
+// Cập nhật số lượng giỏ hàng khi load trang và yêu cầu quyền truy cập vị trí
 document.addEventListener("DOMContentLoaded", () => {
   const cart = JSON.parse(localStorage.getItem("giborCart") || "[]");
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
@@ -712,6 +712,20 @@ document.addEventListener("DOMContentLoaded", () => {
   cartBadges.forEach((badge) => {
     badge.textContent = totalItems;
   });
+
+  // Yêu cầu quyền truy cập vị trí địa lý
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        console.log("📍 Quyền vị trí được cấp:", position.coords.latitude, position.coords.longitude);
+        sessionStorage.setItem("user_latitude", position.coords.latitude);
+        sessionStorage.setItem("user_longitude", position.coords.longitude);
+      },
+      (error) => {
+        console.warn("⚠️ Từ chối hoặc lỗi truy cập vị trí:", error.message);
+      }
+    );
+  }
 });
 /* 
 ========================================================================================
