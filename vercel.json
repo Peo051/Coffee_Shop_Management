@@ -1,13 +1,69 @@
 {
-  "cleanUrls": true,
-  "routes": [
+  "version": 2,
+  "rewrites": [
     {
-      "src": "/api/(.*)",
-      "dest": "/api/$1"
+      "source": "/",
+      "destination": "/docs/index.html"
     },
     {
-      "src": "/(.*)",
-      "dest": "/docs/$1"
+      "source": "/index.html",
+      "destination": "/docs/index.html"
+    },
+    {
+      "source": "/menu.html",
+      "destination": "/docs/menu.html"
+    },
+    {
+      "source": "/cart.html",
+      "destination": "/docs/cart.html"
+    },
+    {
+      "source": "/payment.html",
+      "destination": "/docs/payment.html"
+    },
+    {
+      "source": "/account.html",
+      "destination": "/docs/account.html"
+    },
+    {
+      "source": "/login.html",
+      "destination": "/docs/login.html"
+    },
+    {
+      "source": "/register.html",
+      "destination": "/docs/register.html"
+    },
+    {
+      "source": "/admin.html",
+      "destination": "/docs/admin.html"
+    },
+    {
+      "source": "/about.html",
+      "destination": "/docs/about.html"
+    },
+    {
+      "source": "/contact.html",
+      "destination": "/docs/contact.html"
+    },
+    {
+      "source": "/branches.html",
+      "destination": "/docs/branches.html"
+    },
+    {
+      "source": "/ads.html",
+      "destination": "/docs/ads.html"
+    },
+    {
+      "source": "/css/:path*",
+      "destination": "/docs/css/:path*"
+    },
+    {
+      "source": "/js/:path*",
+      "destination": "/docs/js/:path*"
+    },
+    {
+      "source": "/images/:path*",
+      "destination": "/docs/images/:path*"
     }
   ]
 }
