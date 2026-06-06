@@ -1693,26 +1693,36 @@ async function createPayosSignature({ amount, cancelUrl, description, orderCode,
 }
 
 async function createPayosPaymentRequest(amount) {
-  const config = getPayosConfig();
-  if (!config.clientId || !config.apiKey || !config.checksumKey) {
-    throw new Error("Chưa cấu hình Client ID, API Key hoặc Checksum Key payOS.");
-  }
+  // Lấy cấu hình công khai
+  const branchId = selectedBranch ? selectedBranch.id : "";
+  const suffix = branchId ? '_' + branchId : '';
+  const enabled = localStorage.getItem("gibor_payos_enabled" + suffix) || localStorage.getItem("gibor_payos_enabled") || "false";
+  const mockMode = localStorage.getItem("gibor_payos_mock_mode" + suffix) || localStorage.getItem("gibor_payos_mock_mode") || "false";
 
   const orderCode = buildPayosOrderCode();
   const description = `GIBOR${orderCode}`;
   const returnUrl = buildReturnUrl();
   const cancelUrl = buildReturnUrl();
-  const signature = await createPayosSignature(
-    { amount, cancelUrl, description, orderCode, returnUrl },
-    config.checksumKey,
-  );
 
-  const response = await fetch("https://corsproxy.io/?https://api-merchant.payos.vn/v2/payment-requests", {
+  if (mockMode === "true") {
+    console.log("⚡ payOS Mock Mode is enabled. Simulating payment link creation.");
+    return {
+      provider: "payos",
+      orderCode,
+      description,
+      amount,
+      paymentLinkId: `mock-${orderCode}`,
+      checkoutUrl: buildReturnUrl() + `&mockOrderCode=${orderCode}`,
+      qrCode: `mock-qr-${orderCode}`,
+      isMock: true
+    };
+  }
+
+  // Gửi yêu cầu đến Serverless API /api/create-payos-payment
+  const response = await fetch("/api/create-payos-payment", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "x-client-id": config.clientId,
-      "x-api-key": config.apiKey,
     },
     body: JSON.stringify({
       orderCode,
@@ -1720,7 +1730,6 @@ async function createPayosPaymentRequest(amount) {
       description,
       cancelUrl,
       returnUrl,
-      signature,
       items: getCart().map((item) => ({
         name: String(item.name || "GIBOR item").slice(0, 50),
         quantity: Number(item.quantity || 1),
@@ -1732,7 +1741,7 @@ async function createPayosPaymentRequest(amount) {
   const result = await response.json();
 
   if (!response.ok || result.code !== "00" || !result.data) {
-    throw new Error(result.message || result.desc || "Không tạo được link thanh toán payOS.");
+    throw new Error(result.message || result.desc || "Không tạo được link thanh toán payOS qua backend.");
   }
 
   return {
@@ -1748,15 +1757,22 @@ async function createPayosPaymentRequest(amount) {
 
 async function fetchPayosPaymentStatus(payment) {
   if (!payment || !payment.orderCode) return null;
-  const config = getPayosConfig();
-  if (!config.clientId || !config.apiKey) return null;
 
-  const response = await fetch(`https://corsproxy.io/?https://api-merchant.payos.vn/v2/payment-requests/${encodeURIComponent(payment.orderCode)}`, {
+  if (payment.isMock) {
+    // Mock thanh toán tự động thành công sau một khoảng thời gian
+    return {
+      data: { status: "PAID", amountPaid: payment.amount },
+      isPaid: true,
+      status: "Đang xử lý",
+      paymentStatus: "Đã thanh toán",
+    };
+  }
+
+  // Gọi Serverless API /api/get-payos-payment
+  const response = await fetch(`/api/get-payos-payment?orderCode=${encodeURIComponent(payment.orderCode)}`, {
     method: "GET",
     headers: {
       Accept: "application/json",
-      "x-client-id": config.clientId,
-      "x-api-key": config.apiKey,
     },
   });
   if (!response.ok) return null;

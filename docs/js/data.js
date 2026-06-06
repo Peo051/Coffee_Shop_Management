@@ -8,7 +8,12 @@
   Lưu trữ & xử lý dữ liệu người dùng bằng localStorage
 */
 
-const ADMIN_PRODUCTS_KEY = "gibor_admin_products";
+const ADMIN_PRODUCTS_KEY = "gibor_products_cache_v3";
+
+if (localStorage.getItem("gibor_cache_schema_version") !== "3") {
+  localStorage.removeItem("gibor_admin_products");
+  localStorage.setItem("gibor_cache_schema_version", "3");
+}
 
 const defaultProducts = [
   { id: "p-1", name: "Cà phê đen", category: "Cà phê", price: 25000, img: "images/menu/capheden.jpg", desc: "Đậm đà nguyên chất – chuẩn gu truyền thống", isBestSeller: false, status: "active" },
@@ -298,34 +303,31 @@ function initFirebaseSync() {
       try {
         const db = firebase.database();
         
-        // 1. Đồng bộ Products
+        // 1. Đồng bộ Products (Firebase làm Source of Truth)
         const dbProductsRef = db.ref('products');
         dbProductsRef.on('value', (snapshot) => {
           const remoteProducts = snapshot.val();
           const localRaw = localStorage.getItem(ADMIN_PRODUCTS_KEY);
-          let localProducts = [];
-          try {
-            localProducts = localRaw ? JSON.parse(localRaw) : [];
-          } catch(e) {}
-          if (!Array.isArray(localProducts)) localProducts = [];
-
-          if (remoteProducts && Array.isArray(remoteProducts)) {
-            const mergedProducts = mergeProducts(localProducts, remoteProducts);
-            const mergedStr = JSON.stringify(mergedProducts);
+          
+          if (remoteProducts && Array.isArray(remoteProducts) && remoteProducts.length > 0) {
+            // Firebase đã có dữ liệu, lấy Firebase làm Chân lý
             const remoteStr = JSON.stringify(remoteProducts);
-            
-            if (localRaw !== mergedStr) {
-              localStorage.setItem(ADMIN_PRODUCTS_KEY, mergedStr);
-              console.log('⚡ Đồng bộ sản phẩm (gộp) từ Firebase.');
-              window.dispatchEvent(new CustomEvent('gibor_products_updated', { detail: mergedProducts }));
-            }
-            if (remoteStr !== mergedStr) {
-              dbProductsRef.set(mergedProducts);
+            if (localRaw !== remoteStr) {
+              localStorage.setItem(ADMIN_PRODUCTS_KEY, remoteStr);
+              console.log('⚡ Đồng bộ sản phẩm (Source of Truth) từ Firebase.');
+              window.dispatchEvent(new CustomEvent('gibor_products_updated', { detail: remoteProducts }));
             }
           } else {
-            if (localProducts.length > 0) {
-              dbProductsRef.set(localProducts);
+            // Firebase trống, seed từ local hoặc default nếu local cũng trống
+            let localProducts = [];
+            try {
+              localProducts = localRaw ? JSON.parse(localRaw) : [];
+            } catch(e) {}
+            if (!Array.isArray(localProducts) || localProducts.length === 0) {
+              localProducts = defaultProducts;
             }
+            // Chỉ ghi lên Firebase khi Firebase thật sự chưa có gì
+            dbProductsRef.set(localProducts);
           }
         }, (error) => {
           console.warn('⚠️ Firebase Products read error:', error.message);
@@ -334,7 +336,7 @@ function initFirebaseSync() {
         // 2. Đồng bộ Orders
         const dbOrdersRef = db.ref('orders');
         dbOrdersRef.on('value', (snapshot) => {
-          const remoteOrders = snapshot.val();
+          const remoteOrders = snapshot.val() || [];
           const localRaw = localStorage.getItem('gibor_orders');
           let localOrders = [];
           try {
@@ -342,23 +344,37 @@ function initFirebaseSync() {
           } catch(e) {}
           if (!Array.isArray(localOrders)) localOrders = [];
 
-          if (remoteOrders && Array.isArray(remoteOrders)) {
-            const mergedOrders = mergeOrders(localOrders, remoteOrders);
-            const mergedStr = JSON.stringify(mergedOrders);
-            const remoteStr = JSON.stringify(remoteOrders);
+          // Phân biệt đơn hàng offline pendingSync và các đơn hàng khác
+          const pendingSyncOrders = localOrders.filter(o => o && o.pendingSync === true);
+          
+          // Gộp dữ liệu
+          const mergedOrders = mergeOrders(localOrders, remoteOrders);
+          
+          // Xóa cờ pendingSync khi đã lưu thành công lên Firebase (được xử lý ở phần set)
+          const mergedStr = JSON.stringify(mergedOrders);
+          const remoteStr = JSON.stringify(remoteOrders);
 
-            if (localRaw !== mergedStr) {
-              localStorage.setItem('gibor_orders', mergedStr);
-              console.log('⚡ Đồng bộ đơn hàng (gộp) từ Firebase.');
-              window.dispatchEvent(new CustomEvent('gibor_orders_updated', { detail: mergedOrders }));
-            }
-            if (remoteStr !== mergedStr) {
-              dbOrdersRef.set(mergedOrders);
-            }
-          } else {
-            if (localOrders.length > 0) {
-              dbOrdersRef.set(localOrders);
-            }
+          if (localRaw !== mergedStr) {
+            localStorage.setItem('gibor_orders', mergedStr);
+            console.log('⚡ Đồng bộ đơn hàng từ Firebase.');
+            window.dispatchEvent(new CustomEvent('gibor_orders_updated', { detail: mergedOrders }));
+          }
+
+          // Đẩy lên Firebase nếu:
+          // - remote khác merged (ví dụ do có đơn hàng local mới, hoặc đơn pendingSync cần đẩy lên)
+          if (remoteStr !== mergedStr) {
+            // Cập nhật lên Firebase, đồng thời gỡ bỏ cờ pendingSync cho các đơn đã đẩy
+            const ordersToUpload = mergedOrders.map(o => {
+              if (o.pendingSync) {
+                const { pendingSync, ...rest } = o;
+                return rest;
+              }
+              return o;
+            });
+            dbOrdersRef.set(ordersToUpload).then(() => {
+              // Cập nhật lại local lưu trữ không còn cờ pendingSync
+              localStorage.setItem('gibor_orders', JSON.stringify(ordersToUpload));
+            });
           }
         }, (error) => {
           console.warn('⚠️ Firebase Orders read error:', error.message);
@@ -412,7 +428,7 @@ function initFirebaseSync() {
           console.warn('⚠️ Firebase Users read error:', error.message);
         });
 
-        // 4. Đồng bộ payOS configs
+        // 4. Đồng bộ payOS configs (Chỉ đồng bộ các thông tin cấu hình công khai, KHÔNG có API keys/Checksum keys)
         const dbPayosRef = db.ref('payos_configs');
         dbPayosRef.on('value', (snapshot) => {
           const remoteConfig = snapshot.val();
@@ -422,52 +438,14 @@ function initFirebaseSync() {
               const suffix = key === 'default' ? '' : '_' + key;
               const conf = remoteConfig[key];
               if (conf) {
-                if (conf.clientId) localStorage.setItem("gibor_payos_client_id" + suffix, conf.clientId);
-                if (conf.apiKey) localStorage.setItem("gibor_payos_api_key" + suffix, conf.apiKey);
-                if (conf.checksumKey) localStorage.setItem("gibor_payos_checksum_key" + suffix, conf.checksumKey);
-                if (conf.mockToggle) localStorage.setItem("gibor_payos_mock_toggle" + suffix, conf.mockToggle);
+                // Chỉ đồng bộ thuộc tính công khai lên localStorage nếu admin thay đổi
+                if (conf.enabled !== undefined) localStorage.setItem("gibor_payos_enabled" + suffix, conf.enabled);
+                if (conf.mockMode !== undefined) localStorage.setItem("gibor_payos_mock_mode" + suffix, conf.mockMode);
+                if (conf.branchId !== undefined) localStorage.setItem("gibor_payos_branch_id" + suffix, conf.branchId);
+                if (conf.displayName !== undefined) localStorage.setItem("gibor_payos_display_name" + suffix, conf.displayName);
               }
             });
             window.dispatchEvent(new CustomEvent('gibor_payos_config_updated'));
-          } else {
-            // Nếu trên Firebase chưa có cấu hình payOS nhưng local có, đẩy lên
-            const localConfig = {};
-            let hasLocal = false;
-            
-            // Đọc cấu hình mặc định (default)
-            const defClientId = localStorage.getItem("gibor_payos_client_id");
-            if (defClientId) {
-              hasLocal = true;
-              localConfig["default"] = {
-                clientId: defClientId,
-                apiKey: localStorage.getItem("gibor_payos_api_key") || "",
-                checksumKey: localStorage.getItem("gibor_payos_checksum_key") || "",
-                mockToggle: localStorage.getItem("gibor_payos_mock_toggle") || "true",
-                updatedAt: new Date().toISOString()
-              };
-            }
-            
-            // Đọc cấu hình theo từng chi nhánh nếu có trong localStorage
-            for (let i = 0; i < localStorage.length; i++) {
-              const key = localStorage.key(i);
-              if (key && key.startsWith("gibor_payos_client_id_")) {
-                const branchId = key.replace("gibor_payos_client_id_", "");
-                if (branchId) {
-                  hasLocal = true;
-                  localConfig[branchId] = {
-                    clientId: localStorage.getItem("gibor_payos_client_id_" + branchId) || "",
-                    apiKey: localStorage.getItem("gibor_payos_api_key_" + branchId) || "",
-                    checksumKey: localStorage.getItem("gibor_payos_checksum_key_" + branchId) || "",
-                    mockToggle: localStorage.getItem("gibor_payos_mock_toggle_" + branchId) || "true",
-                    updatedAt: new Date().toISOString()
-                  };
-                }
-              }
-            }
-            
-            if (hasLocal) {
-              dbPayosRef.set(localConfig);
-            }
           }
         }, (error) => {
           console.warn('⚠️ Firebase payOS config read error:', error.message);

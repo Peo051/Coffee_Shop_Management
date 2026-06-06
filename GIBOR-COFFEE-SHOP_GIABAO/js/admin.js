@@ -555,7 +555,7 @@ function renderProducts() {
     const currentUser = typeof UserManager !== 'undefined' ? UserManager.getCurrentUser() : null;
     const isBranchManager = currentUser && currentUser.role === "branch_manager";
 
-    let products = (getProducts() || []).filter(p => p !== null && p !== undefined);
+    let products = (getProducts() || []).filter(p => p !== null && p !== undefined && p.status !== "deleted" && p.isDeleted !== true);
 
     // Áp dụng bộ lọc tìm kiếm
     const searchQuery = document.getElementById("searchProduct") ? document.getElementById("searchProduct").value.toLowerCase().trim() : "";
@@ -1258,7 +1258,19 @@ function bindTableActions() {
         confirmText: "Xóa",
         cancelText: "Hủy",
         onConfirm: () => {
-          saveProducts(getProducts().filter((product) => product.id !== deleteProductId));
+          const updatedProducts = getProducts().map(p => {
+            if (p.id === deleteProductId) {
+              return {
+                ...p,
+                isDeleted: true,
+                status: "deleted",
+                deletedAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+              };
+            }
+            return p;
+          });
+          saveProducts(updatedProducts);
           showToast("Đã xóa sản phẩm thành công.", "success");
           renderAll();
         }
@@ -2227,13 +2239,25 @@ function bindPayosForm() {
     const branchId = branchSelect ? branchSelect.value : "";
     const suffix = branchId ? "_" + branchId : "";
 
-    if (clientIdInput) clientIdInput.value = localStorage.getItem("gibor_payos_client_id" + suffix) || "";
-    if (apiKeyInput) apiKeyInput.value = localStorage.getItem("gibor_payos_api_key" + suffix) || "";
-    if (checksumKeyInput) checksumKeyInput.value = localStorage.getItem("gibor_payos_checksum_key" + suffix) || "";
+    const enabled = localStorage.getItem("gibor_payos_enabled" + suffix);
+    if (clientIdInput) { // dùng làm nút bật tắt payos
+      clientIdInput.value = enabled === "true" ? "Đã bật" : "Đang tắt";
+      clientIdInput.disabled = true;
+    }
+    
+    // Ẩn/vô hiệu hóa các trường nhạy cảm nếu chúng tồn tại trong DOM để bảo mật hoàn toàn
+    if (apiKeyInput) {
+      apiKeyInput.value = "********************************";
+      apiKeyInput.disabled = true;
+    }
+    if (checksumKeyInput) {
+      checksumKeyInput.value = "********************************";
+      checksumKeyInput.disabled = true;
+    }
 
-    const autoSync = localStorage.getItem("gibor_payos_mock_toggle" + suffix);
+    const mockModeValue = localStorage.getItem("gibor_payos_mock_mode" + suffix);
     if (mockToggle) {
-      mockToggle.checked = autoSync !== "false"; // Mặc định là true
+      mockToggle.checked = mockModeValue === "true";
     }
   }
 
@@ -2254,10 +2278,6 @@ function bindPayosForm() {
       branchSelect.value = currentUser.branchId || "";
       branchSelect.disabled = true;
     }
-    // 2. Disable tất cả ô nhập key
-    if (clientIdInput) clientIdInput.disabled = true;
-    if (apiKeyInput) apiKeyInput.disabled = true;
-    if (checksumKeyInput) checksumKeyInput.disabled = true;
     if (mockToggle) mockToggle.disabled = true;
 
     // 3. Khóa nút lưu
@@ -2272,22 +2292,6 @@ function bindPayosForm() {
   // Khởi tạo hiển thị ban đầu
   loadPayosConfig();
 
-  // Xử lý nút toggle ẩn/hiện password key
-  form.querySelectorAll(".toggle-password-btn").forEach(btn => {
-    btn.addEventListener("click", () => {
-      const targetId = btn.getAttribute("data-target");
-      const input = document.getElementById(targetId);
-      if (input) {
-        const isPassword = input.type === "password";
-        input.type = isPassword ? "text" : "password";
-        const icon = btn.querySelector("i");
-        if (icon) {
-          icon.className = isPassword ? "fas fa-eye" : "fas fa-eye-slash";
-        }
-      }
-    });
-  });
-
   // Sự kiện submit lưu cấu hình (chỉ chạy đối với admin)
   form.addEventListener("submit", (e) => {
     e.preventDefault();
@@ -2300,33 +2304,26 @@ function bindPayosForm() {
     const branchId = branchSelect ? branchSelect.value : "";
     const suffix = branchId ? "_" + branchId : "";
 
-    const clientId = clientIdInput ? clientIdInput.value.trim() : "";
-    const apiKey = apiKeyInput ? apiKeyInput.value.trim() : "";
-    const checksumKey = checksumKeyInput ? checksumKeyInput.value.trim() : "";
+    // Toggle trạng thái kích hoạt (enabled) khi click submit
+    const currentEnabled = localStorage.getItem("gibor_payos_enabled" + suffix) === "true";
+    const nextEnabled = !currentEnabled;
 
-    if (!clientId || !apiKey || !checksumKey) {
-      showToast("Vui lòng điền đầy đủ Client ID, API Key và Checksum Key payOS.", "warning");
-      return;
-    }
+    localStorage.setItem("gibor_payos_enabled" + suffix, nextEnabled ? "true" : "false");
 
-    localStorage.setItem("gibor_payos_client_id" + suffix, clientId);
-    localStorage.setItem("gibor_payos_api_key" + suffix, apiKey);
-    localStorage.setItem("gibor_payos_checksum_key" + suffix, checksumKey);
-
-    const isMock = mockToggle ? (mockToggle.checked ? "true" : "false") : "true";
+    const isMock = mockToggle ? (mockToggle.checked ? "true" : "false") : "false";
     if (mockToggle) {
-      localStorage.setItem("gibor_payos_mock_toggle" + suffix, isMock);
+      localStorage.setItem("gibor_payos_mock_mode" + suffix, isMock);
     }
 
-    // Đồng bộ lên Firebase Realtime Database
+    // Đồng bộ lên Firebase Realtime Database các thuộc tính công khai
     if (typeof firebase !== 'undefined' && firebase.database) {
       try {
         const dbKey = branchId || 'default';
         firebase.database().ref('payos_configs/' + dbKey).set({
-          clientId,
-          apiKey,
-          checksumKey,
-          mockToggle: isMock,
+          enabled: nextEnabled,
+          mockMode: isMock === "true",
+          branchId: branchId,
+          displayName: branchId ? `Chi nhánh ${branchId.toUpperCase()}` : "Toàn hệ thống",
           updatedAt: new Date().toISOString()
         });
       } catch (err) {
@@ -2334,7 +2331,8 @@ function bindPayosForm() {
       }
     }
 
-    showToast(`Đã lưu cấu hình payOS cho ${branchId ? "chi nhánh này" : "toàn hệ thống"}.`, "success");
+    loadPayosConfig();
+    showToast(`Đã ${nextEnabled ? "Bật" : "Tắt"} cấu hình payOS & lưu chế độ Mock=${isMock} cho ${branchId ? "chi nhánh này" : "toàn hệ thống"}.`, "success");
   });
 }
 // ===================== BÁO CÁO DOANH THU =====================

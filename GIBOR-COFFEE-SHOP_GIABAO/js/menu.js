@@ -298,7 +298,7 @@ function renderMenuProducts() {
         if (!targetCategory) return;
 
         // Lọc sản phẩm theo danh mục
-        let categoryProducts = products.filter(p => p.category === targetCategory);
+        let categoryProducts = products.filter(p => p.category === targetCategory && p.status !== "deleted" && p.isDeleted !== true);
 
         if (categoryProducts.length === 0) {
             gridEl.innerHTML = `<div class="col-12 text-center text-muted py-3">Danh mục này hiện chưa có sản phẩm nào.</div>`;
