@@ -19,8 +19,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // Khởi tạo popup chọn chi nhánh kiểu mới
     initMenuBranchSelector();
 
-    // 1. Tải và render sản phẩm động lần đầu
-    renderMenuProducts();
+    // 1. Tải và render sản phẩm động lần đầu, sau đó cập nhật realtime từ Firebase
+    if (typeof ProductService !== "undefined") {
+        ProductService.subscribeProducts((products) => renderMenuProducts(products));
+    } else {
+        renderMenuProducts();
+    }
 
     // 2. Ủy quyền sự kiện click (Event Delegation) cho toàn bộ menu card
     document.addEventListener('click', (event) => {
@@ -267,16 +271,19 @@ function initMenuBranchSelector() {
     }
 }
 
-function renderMenuProducts() {
-    if (typeof ProductManager === "undefined") {
-        console.error("ProductManager is not defined in data.js");
+function renderMenuProducts(productsInput) {
+    const hasProductService = typeof ProductService !== "undefined";
+    const hasProductManager = typeof ProductManager !== "undefined";
+    if (!hasProductService && !hasProductManager) {
+        console.error("ProductService/ProductManager is not defined in data.js");
         return;
     }
 
     // Lấy chi nhánh được lưu trong localStorage
     const selectedBranchId = localStorage.getItem("gibor_selected_menu_branch") || "all";
 
-    const products = ProductManager.getProducts();
+    const products = (productsInput || (hasProductService ? ProductService.getCachedProducts() : ProductManager.getProducts()))
+        .filter(product => product && !product.isDeleted && product.status !== "deleted");
     const menuSections = document.querySelectorAll(".menu-section");
 
     menuSections.forEach(section => {

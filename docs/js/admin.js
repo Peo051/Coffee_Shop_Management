@@ -192,6 +192,9 @@ function parseJSON(key, fallback) {
 }
 
 function getProducts() {
+  if (typeof ProductService !== "undefined") {
+    return ProductService.getCachedProducts();
+  }
   if (typeof ProductManager !== "undefined") {
     return ProductManager.getProducts();
   }
@@ -576,10 +579,13 @@ function renderProducts() {
     if (filterStat) {
       products = products.filter(p => {
         if (!p) return false;
-        if (filterStat === "active") return p.status !== "out_of_stock";
-        if (filterStat === "out_of_stock") return p.status === "out_of_stock";
+        if (filterStat === "active") return !p.isDeleted && p.status !== "deleted" && p.status !== "out_of_stock";
+        if (filterStat === "out_of_stock") return !p.isDeleted && p.status === "out_of_stock";
+        if (filterStat === "deleted") return p.isDeleted || p.status === "deleted";
         return true;
       });
+    } else {
+      products = products.filter(p => p && !p.isDeleted && p.status !== "deleted");
     }
 
     // Phân trang
@@ -1033,7 +1039,7 @@ function bindNavigation() {
 function bindProductForm() {
   const productForm = document.getElementById("productForm");
   if (productForm) {
-    productForm.addEventListener("submit", (event) => {
+    productForm.addEventListener("submit", async (event) => {
       event.preventDefault();
 
       const id = document.getElementById("productId").value;
@@ -1051,41 +1057,42 @@ function bindProductForm() {
         return;
       }
 
-      const products = getProducts();
-      if (id) {
-        const index = products.findIndex((product) => product.id === id);
-        if (index !== -1) {
-          products[index] = { 
-            ...products[index], 
-            name, 
-            category, 
-            price, 
-            img: img || "images/logo/logo.jpg", 
-            desc, 
-            isBestSeller, 
-            status,
-            updatedAt: new Date().toISOString()
-          };
-          showToast("Cập nhật sản phẩm thành công!", "success");
-        }
-      } else {
-        products.unshift({ 
-          id: `p-${Date.now()}`, 
-          name, 
-          category, 
-          price, 
-          img: img || "images/logo/logo.jpg", 
-          desc, 
-          isBestSeller, 
-          status,
-          updatedAt: new Date().toISOString()
-        });
-        showToast("Thêm sản phẩm mới thành công!", "success");
-      }
+      const productPayload = {
+        name,
+        category,
+        price,
+        img: img || "images/logo/logo.jpg",
+        desc,
+        isBestSeller,
+        status
+      };
 
-      saveProducts(products);
-      resetProductForm();
-      renderAll();
+      try {
+        if (typeof ProductService !== "undefined") {
+          if (id) {
+            await ProductService.updateProduct(id, productPayload);
+            showToast("Cập nhật sản phẩm thành công!", "success");
+          } else {
+            await ProductService.createProduct(productPayload);
+            showToast("Thêm sản phẩm mới thành công!", "success");
+          }
+        } else {
+          const products = getProducts();
+          if (id) {
+            const index = products.findIndex((product) => product.id === id);
+            if (index !== -1) products[index] = { ...products[index], ...productPayload, updatedAt: new Date().toISOString() };
+          } else {
+            products.unshift({ id: `p-${Date.now()}`, ...productPayload, updatedAt: new Date().toISOString() });
+          }
+          saveProducts(products);
+        }
+
+        resetProductForm();
+        renderAll();
+      } catch (error) {
+        console.error("Lỗi lưu sản phẩm:", error);
+        showToast("Không thể lưu sản phẩm. Vui lòng kiểm tra kết nối Firebase.", "error");
+      }
     });
   }
 
@@ -1257,10 +1264,28 @@ function bindTableActions() {
         message: "Bạn có chắc chắn muốn xóa sản phẩm này không?",
         confirmText: "Xóa",
         cancelText: "Hủy",
-        onConfirm: () => {
-          saveProducts(getProducts().filter((product) => product.id !== deleteProductId));
-          showToast("Đã xóa sản phẩm thành công.", "success");
-          renderAll();
+        onConfirm: async () => {
+          try {
+            if (typeof ProductService !== "undefined") {
+              await ProductService.softDeleteProduct(deleteProductId);
+            } else {
+              saveProducts(getProducts().map((product) => {
+                if (product.id !== deleteProductId) return product;
+                return {
+                  ...product,
+                  isDeleted: true,
+                  status: "deleted",
+                  deletedAt: Date.now(),
+                  updatedAt: Date.now()
+                };
+              }));
+            }
+            showToast("Đã xóa sản phẩm thành công.", "success");
+            renderAll();
+          } catch (error) {
+            console.error("Lỗi xóa sản phẩm:", error);
+            showToast("Không thể xóa sản phẩm. Vui lòng kiểm tra kết nối Firebase.", "error");
+          }
         }
       });
     }
@@ -1441,7 +1466,7 @@ function bindTableActions() {
     }
   });
 
-  document.addEventListener("change", (event) => {
+  document.addEventListener("change", async (event) => {
     // 1. Cập nhật Trạng thái đơn hàng
     if (event.target.matches("[data-order-code]")) {
       const orders = getOrders();
@@ -1485,11 +1510,20 @@ function bindTableActions() {
       const products = getProducts();
       const productIdx = products.findIndex(p => p && p.id === productId);
       if (productIdx !== -1) {
-        products[productIdx].status = newStatus;
-        products[productIdx].updatedAt = new Date().toISOString();
-        saveProducts(products);
-        showToast(`Đã cập nhật trạng thái "${products[productIdx].name}" thành công.`, "success");
-        renderAll();
+        try {
+          if (typeof ProductService !== "undefined") {
+            await ProductService.updateProduct(productId, { status: newStatus, isDeleted: false, deletedAt: null });
+          } else {
+            products[productIdx].status = newStatus;
+            products[productIdx].updatedAt = new Date().toISOString();
+            saveProducts(products);
+          }
+          showToast(`Đã cập nhật trạng thái "${products[productIdx].name}" thành công.`, "success");
+          renderAll();
+        } catch (error) {
+          console.error("Lỗi cập nhật trạng thái sản phẩm:", error);
+          showToast("Không thể cập nhật trạng thái sản phẩm.", "error");
+        }
       }
     }
 
@@ -1501,11 +1535,20 @@ function bindTableActions() {
       const products = getProducts();
       const productIdx = products.findIndex(p => p && p.id === productId);
       if (productIdx !== -1) {
-        products[productIdx].isBestSeller = isChecked;
-        products[productIdx].updatedAt = new Date().toISOString();
-        saveProducts(products);
-        showToast(`Đã cập nhật trạng thái nổi bật cho "${products[productIdx].name}" thành công.`, "success");
-        renderAll();
+        try {
+          if (typeof ProductService !== "undefined") {
+            await ProductService.updateProduct(productId, { isBestSeller: isChecked });
+          } else {
+            products[productIdx].isBestSeller = isChecked;
+            products[productIdx].updatedAt = new Date().toISOString();
+            saveProducts(products);
+          }
+          showToast(`Đã cập nhật trạng thái nổi bật cho "${products[productIdx].name}" thành công.`, "success");
+          renderAll();
+        } catch (error) {
+          console.error("Lỗi cập nhật nổi bật sản phẩm:", error);
+          showToast("Không thể cập nhật trạng thái nổi bật.", "error");
+        }
       }
     }
   });

@@ -9,6 +9,14 @@
 */
 
 const ADMIN_PRODUCTS_KEY = "gibor_admin_products";
+const PRODUCT_CACHE_KEY = "gibor_products_cache_v2";
+const PRODUCT_SCHEMA_VERSION_KEY = "gibor_product_schema_version";
+const PRODUCT_SCHEMA_VERSION = "2";
+const LEGACY_PRODUCT_CACHE_KEYS = [
+  "gibor_admin_products",
+  "gibor_products",
+  "gibor_products_cache"
+];
 
 const defaultProducts = [
   { id: "p-1", name: "Cà phê đen", category: "Cà phê", price: 25000, img: "images/menu/capheden.jpg", desc: "Đậm đà nguyên chất – chuẩn gu truyền thống", isBestSeller: false, status: "active" },
@@ -67,6 +75,7 @@ const PRODUCT_IMAGE_OVERRIDES = {
 };
 
 function normalizeProduct(product) {
+  product = product || {};
   let img = product.img || "";
   const overrideImg = PRODUCT_IMAGE_OVERRIDES[product.id];
   if (overrideImg) {
@@ -91,54 +100,208 @@ function normalizeProduct(product) {
     img: img,
     desc: product.desc || "",
     isBestSeller: Boolean(product.isBestSeller),
-    status: product.status || "active"
+    status: product.isDeleted ? "deleted" : (product.status || "active"),
+    isDeleted: Boolean(product.isDeleted || product.status === "deleted"),
+    createdAt: product.createdAt || product.updatedAt || Date.now(),
+    updatedAt: product.updatedAt || Date.now(),
+    deletedAt: product.deletedAt || null
   };
 }
 
+const ProductService = {
+  _products: [],
+  _subscribers: [],
+  _initialized: false,
+  _listening: false,
+  _initPromise: null,
+
+  _ensureCacheVersion() {
+    if (localStorage.getItem(PRODUCT_SCHEMA_VERSION_KEY) !== PRODUCT_SCHEMA_VERSION) {
+      LEGACY_PRODUCT_CACHE_KEYS.forEach(key => localStorage.removeItem(key));
+      localStorage.setItem(PRODUCT_SCHEMA_VERSION_KEY, PRODUCT_SCHEMA_VERSION);
+    }
+  },
+
+  _getProductsRef() {
+    setupDatabaseURLWrapper();
+    return firebase.database().ref("products");
+  },
+
+  _arrayToProductMap(products) {
+    const map = {};
+    (products || []).filter(Boolean).forEach(product => {
+      const normalized = normalizeProduct(product);
+      map[normalized.id] = normalized;
+    });
+    return map;
+  },
+
+  _snapshotToProducts(value) {
+    if (!value) return [];
+    if (Array.isArray(value)) {
+      return value.filter(Boolean).map(normalizeProduct);
+    }
+    return Object.keys(value)
+      .map(key => normalizeProduct({ id: key, ...(value[key] || {}) }))
+      .sort((a, b) => {
+        const aTime = new Date(a.createdAt || 0).getTime() || 0;
+        const bTime = new Date(b.createdAt || 0).getTime() || 0;
+        return bTime - aTime;
+      });
+  },
+
+  _cacheProducts(products) {
+    const cleanProducts = (products || []).filter(Boolean).map(normalizeProduct);
+    this._products = cleanProducts;
+    localStorage.setItem(PRODUCT_CACHE_KEY, JSON.stringify(cleanProducts));
+    window.dispatchEvent(new CustomEvent("gibor_products_updated", { detail: cleanProducts }));
+    this._subscribers.forEach(callback => {
+      try {
+        callback(cleanProducts);
+      } catch (error) {
+        console.error("Product subscriber failed:", error);
+      }
+    });
+  },
+
+  initProducts() {
+    this._ensureCacheVersion();
+    if (this._initPromise) return this._initPromise;
+
+    this._initPromise = new Promise((resolve) => {
+      loadFirebaseDatabase(async () => {
+        try {
+          const ref = this._getProductsRef();
+          const snapshot = await ref.once("value");
+          const remoteValue = snapshot.val();
+
+          if (Array.isArray(remoteValue)) {
+            const migratedProducts = this._snapshotToProducts(remoteValue);
+            await ref.set(this._arrayToProductMap(migratedProducts));
+            this._cacheProducts(migratedProducts);
+          } else if (remoteValue && typeof remoteValue === "object") {
+            this._cacheProducts(this._snapshotToProducts(remoteValue));
+          } else {
+            await this.seedDefaultProductsIfEmpty();
+          }
+
+          this._initialized = true;
+          this._startRealtimeListener();
+          resolve(this.getCachedProducts());
+        } catch (error) {
+          console.warn("Không thể khởi tạo sản phẩm từ Firebase, dùng cache tạm:", error.message);
+          this._cacheProducts(this.getCachedProducts());
+          resolve(this.getCachedProducts());
+        }
+      });
+    });
+
+    return this._initPromise;
+  },
+
+  _startRealtimeListener() {
+    if (this._listening) return;
+    this._listening = true;
+    this._getProductsRef().on("value", snapshot => {
+      const value = snapshot.val();
+      if (Array.isArray(value)) {
+        const migratedProducts = this._snapshotToProducts(value);
+        this._getProductsRef().set(this._arrayToProductMap(migratedProducts));
+        this._cacheProducts(migratedProducts);
+        return;
+      }
+      this._cacheProducts(this._snapshotToProducts(value));
+    }, error => {
+      console.warn("Firebase Products read error:", error.message);
+    });
+  },
+
+  subscribeProducts(callback) {
+    if (typeof callback !== "function") return () => {};
+    this._subscribers.push(callback);
+    callback(this.getCachedProducts());
+    this.initProducts();
+    return () => {
+      this._subscribers = this._subscribers.filter(item => item !== callback);
+    };
+  },
+
+  getCachedProducts() {
+    if (this._products.length) return this._products;
+    try {
+      const raw = localStorage.getItem(PRODUCT_CACHE_KEY);
+      const cached = raw ? JSON.parse(raw) : [];
+      return Array.isArray(cached) ? cached.map(normalizeProduct) : [];
+    } catch (error) {
+      return [];
+    }
+  },
+
+  createProduct(product) {
+    const now = Date.now();
+    const normalized = normalizeProduct({
+      ...product,
+      id: product.id || `p-${now}`,
+      createdAt: product.createdAt || now,
+      updatedAt: now,
+      deletedAt: null,
+      isDeleted: false,
+      status: product.status || "active"
+    });
+    return this.initProducts().then(() => this._getProductsRef().child(normalized.id).set(normalized));
+  },
+
+  updateProduct(id, data) {
+    if (!id) return Promise.reject(new Error("Missing product id"));
+    const updates = { ...(data || {}), updatedAt: Date.now() };
+    if (updates.name !== undefined) updates.name = String(updates.name || "").trim();
+    if (updates.category !== undefined) updates.category = String(updates.category || "other");
+    if (updates.price !== undefined) updates.price = Number(updates.price) || 0;
+    if (updates.img !== undefined) updates.img = updates.img || "images/logo/logo.jpg";
+    if (updates.desc !== undefined) updates.desc = String(updates.desc || "");
+    if (updates.isBestSeller !== undefined) updates.isBestSeller = Boolean(updates.isBestSeller);
+    if (updates.isDeleted !== undefined) updates.isDeleted = Boolean(updates.isDeleted);
+    if (updates.status === "deleted") updates.isDeleted = true;
+    return this.initProducts().then(() => this._getProductsRef().child(id).update(updates));
+  },
+
+  softDeleteProduct(id) {
+    if (!id) return Promise.reject(new Error("Missing product id"));
+    const now = Date.now();
+    return this.initProducts().then(() => this._getProductsRef().child(id).update({
+      isDeleted: true,
+      status: "deleted",
+      deletedAt: now,
+      updatedAt: now
+    }));
+  },
+
+  async seedDefaultProductsIfEmpty() {
+    const ref = this._getProductsRef();
+    const snapshot = await ref.once("value");
+    if (snapshot.exists()) {
+      this._cacheProducts(this._snapshotToProducts(snapshot.val()));
+      return;
+    }
+    const seeded = defaultProducts.map(product => normalizeProduct({
+      ...product,
+      createdAt: Date.now(),
+      updatedAt: Date.now()
+    }));
+    await ref.set(this._arrayToProductMap(seeded));
+    this._cacheProducts(seeded);
+  },
+
+  normalizeProduct
+};
+
 const ProductManager = {
   getProducts() {
-    let products = [];
-    try {
-      const raw = localStorage.getItem(ADMIN_PRODUCTS_KEY);
-      products = raw ? JSON.parse(raw) : [];
-    } catch(e) {
-      products = [];
-    }
-    if (!Array.isArray(products) || !products.length) {
-      products = defaultProducts;
-      localStorage.setItem(ADMIN_PRODUCTS_KEY, JSON.stringify(defaultProducts));
-    }
-    
-    // Khôi phục ảnh gốc cho sản phẩm mặc định bị ô nhiễm
-    let needSave = false;
-    products = products.filter(p => p !== null && p !== undefined).map(p => {
-      const normalized = normalizeProduct(p);
-      // Kiểm tra nếu ảnh đã bị đổi thành logo cho sản phẩm gốc
-      if (p.img !== normalized.img) {
-        needSave = true;
-      }
-      return normalized;
-    });
-    
-    // Lưu lại nếu có thay đổi ảnh
-    if (needSave) {
-      localStorage.setItem(ADMIN_PRODUCTS_KEY, JSON.stringify(products));
-    }
-    
-    return products;
+    return ProductService.getCachedProducts();
   },
   saveProducts(products) {
-    const cleanProducts = (products || []).filter(p => p !== null && p !== undefined).map(normalizeProduct);
-    localStorage.setItem(ADMIN_PRODUCTS_KEY, JSON.stringify(cleanProducts));
-    
-    // Đồng bộ lên Firebase
-    if (typeof firebase !== 'undefined' && firebase.database) {
-      try {
-        firebase.database().ref('products').set(cleanProducts);
-      } catch (e) {
-        console.error('Lỗi khi đồng bộ sản phẩm lên Firebase:', e);
-      }
-    }
+    const productMap = ProductService._arrayToProductMap(products || []);
+    return ProductService.initProducts().then(() => ProductService._getProductsRef().set(productMap));
   }
 };
 
@@ -198,28 +361,17 @@ function loadFirebaseDatabase(callback) {
 
 // Các hàm gộp (merge) dữ liệu để tránh ghi đè làm mất đơn hàng
 function mergeProducts(local, remote) {
-  const localMap = new Map((local || []).map(p => [p.id, p]));
-  const remoteMap = new Map((remote || []).map(p => [p.id, p]));
-  const mergedMap = new Map();
+  const remoteProducts = Array.isArray(remote) ? remote : [];
+  const remoteDeletedIds = new Set(
+    remoteProducts
+      .filter(product => product && (product.isDeleted || product.status === "deleted"))
+      .map(product => product.id)
+  );
 
-  for (const [id, rProd] of remoteMap) {
-    const lProd = localMap.get(id);
-    if (lProd) {
-      const lTime = new Date(lProd.updatedAt || 0).getTime();
-      const rTime = new Date(rProd.updatedAt || 0).getTime();
-      mergedMap.set(id, lTime >= rTime ? lProd : rProd);
-    } else {
-      mergedMap.set(id, rProd);
-    }
-  }
-
-  for (const [id, lProd] of localMap) {
-    if (!mergedMap.has(id)) {
-      mergedMap.set(id, lProd);
-    }
-  }
-
-  return Array.from(mergedMap.values());
+  return remoteProducts
+    .filter(product => product && !remoteDeletedIds.has(product.id))
+    .concat(remoteProducts.filter(product => product && remoteDeletedIds.has(product.id)))
+    .map(normalizeProduct);
 }
 
 function mergeOrders(local, remote) {
@@ -298,38 +450,8 @@ function initFirebaseSync() {
       try {
         const db = firebase.database();
         
-        // 1. Đồng bộ Products
-        const dbProductsRef = db.ref('products');
-        dbProductsRef.on('value', (snapshot) => {
-          const remoteProducts = snapshot.val();
-          const localRaw = localStorage.getItem(ADMIN_PRODUCTS_KEY);
-          let localProducts = [];
-          try {
-            localProducts = localRaw ? JSON.parse(localRaw) : [];
-          } catch(e) {}
-          if (!Array.isArray(localProducts)) localProducts = [];
-
-          if (remoteProducts && Array.isArray(remoteProducts)) {
-            const mergedProducts = mergeProducts(localProducts, remoteProducts);
-            const mergedStr = JSON.stringify(mergedProducts);
-            const remoteStr = JSON.stringify(remoteProducts);
-            
-            if (localRaw !== mergedStr) {
-              localStorage.setItem(ADMIN_PRODUCTS_KEY, mergedStr);
-              console.log('⚡ Đồng bộ sản phẩm (gộp) từ Firebase.');
-              window.dispatchEvent(new CustomEvent('gibor_products_updated', { detail: mergedProducts }));
-            }
-            if (remoteStr !== mergedStr) {
-              dbProductsRef.set(mergedProducts);
-            }
-          } else {
-            if (localProducts.length > 0) {
-              dbProductsRef.set(localProducts);
-            }
-          }
-        }, (error) => {
-          console.warn('⚠️ Firebase Products read error:', error.message);
-        });
+        // 1. Đồng bộ Products: Firebase là nguồn dữ liệu chính.
+        ProductService.initProducts();
 
         // 2. Đồng bộ Orders
         const dbOrdersRef = db.ref('orders');
