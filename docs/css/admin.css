@@ -626,6 +626,45 @@ body.dark .admin-nav-btn-logout:hover {
   background: rgba(200, 84, 76, 0.16);
 }
 
+@media (max-width: 992px) {
+  .admin-sidebar {
+    position: relative !important;
+    width: 100% !important;
+    height: auto !important;
+    border-radius: 0 !important;
+    border-right: none !important;
+    border-bottom: 1px solid rgba(75, 44, 32, 0.12) !important;
+  }
+  .admin-content {
+    margin-left: 0 !important;
+    padding: 16px !important;
+  }
+  .admin-brand-panel {
+    justify-content: center !important;
+  }
+  .admin-sidebar-toggle {
+    display: none !important;
+  }
+  .admin-menu {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+  }
+  .admin-menu > div {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+    width: 100% !important;
+  }
+  .admin-nav-btn {
+    flex: 1 1 calc(50% - 8px) !important;
+    min-width: 140px !important;
+  }
+  .admin-sidebar-profile {
+    display: none !important;
+  }
+}
+
 @media (max-width: 768px) {
   .admin-stats-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1343,27 +1382,27 @@ body.sidebar-collapsed .admin-nav-btn-logout span {
    FIXED DESKTOP VIEWPORT CONSTRAINT (PREVENTS ZOOM LAYOUT BREAKS)
 ============================================================================================= */
 
-@media (min-width: 577px) {
+@media (min-width: 993px) {
   .admin-page {
     min-width: 1200px;
   }
 }
 
-@media (min-width: 992px) {
+@media (min-width: 993px) {
   body {
-    zoom: 0.67;
-    -moz-transform: scale(0.67);
+    zoom: 0.75;
+    -moz-transform: scale(0.75);
     -moz-transform-origin: 0 0;
   }
   .admin-sidebar {
-    height: 150vh !important;
+    height: 133vh !important;
     position: fixed !important;
     top: 0 !important;
     left: 0 !important;
     z-index: 1000 !important;
   }
   .admin-page {
-    min-height: 150vh !important;
+    min-height: 133vh !important;
   }
 }
 

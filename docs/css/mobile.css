@@ -23,6 +23,32 @@
   --m-safe-bottom: env(safe-area-inset-bottom, 0px);
 }
 
+/* ===== GLOBAL RESETS CHUNG RESPONSIVE ===== */
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+img,
+video,
+canvas,
+svg {
+  max-width: 100%;
+  height: auto;
+}
+
+button,
+input,
+select,
+textarea {
+  max-width: 100%;
+}
+
 /* ===== GLOBAL MOBILE RESETS ===== */
 @media (max-width: 768px) {
   html {
@@ -1695,7 +1721,7 @@
     gap: 4px;
   }
   .menu-grid {
-    grid-template-columns: repeat(2, 1fr) !important;
+    grid-template-columns: 1fr !important;
     gap: 8px;
   }
   .menu-card h4 {
@@ -2059,6 +2085,26 @@
     width: 100%;
     max-width: 100%;
     animation: m-sheet-up 0.3s ease;
+  }
+  /* Table responsive wrappers */
+  .table-responsive,
+  .admin-section table,
+  .order-history-box table,
+  .admin-page table {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Safe area padding bottom for main contents */
+  main,
+  .page,
+  .cart-page,
+  .checkout-page,
+  .payment-page,
+  .admin-page {
+    padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px)) !important;
   }
 }
 /* 
