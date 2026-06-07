@@ -761,6 +761,12 @@ function showConfirmPayment() {
     }
 
     overlay.classList.add("show");
+    
+    // Đảm bảo banking-info hiển thị trong popup xác nhận
+    const popupBankInfo = overlay.querySelector("#bankingInfo");
+    if (popupBankInfo) {
+      popupBankInfo.style.display = "block";
+    }
 
     // Trên mobile, tạo lại QR sau khi popup đã hiển thị để tránh bị hoãn tải ảnh.
     if (selectedPayment === "banking") {
