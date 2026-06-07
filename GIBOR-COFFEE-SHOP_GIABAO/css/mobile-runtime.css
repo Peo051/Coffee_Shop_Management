@@ -29,6 +29,32 @@
   --m-safe-bottom: env(safe-area-inset-bottom, 0px);
 }
 
+/* ===== GLOBAL RESETS CHUNG RESPONSIVE ===== */
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+img,
+video,
+canvas,
+svg {
+  max-width: 100%;
+  height: auto;
+}
+
+button,
+input,
+select,
+textarea {
+  max-width: 100%;
+}
+
 /* ===== GLOBAL MOBILE RESETS ===== */
 @media (max-width: 768px) {
   html {
@@ -884,6 +910,27 @@
     max-height: 85vh !important;
     border-radius: 20px 20px 0 0 !important;
     margin: 0 !important;
+  }
+
+  /* Table responsive wrappers */
+  .table-responsive,
+  .admin-section table,
+  .order-history-box table,
+  .admin-page table {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Safe area padding bottom for main contents */
+  main,
+  .page,
+  .cart-page,
+  .checkout-page,
+  .payment-page,
+  .admin-page {
+    padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px)) !important;
   }
 }
 
