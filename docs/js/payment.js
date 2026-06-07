@@ -1596,6 +1596,22 @@ var payosPaymentSuccess = false; // Biến đánh dấu đã thanh toán thành 
 
 // Ghi chú: Hàm getPayosConfig, createHmacSha256Hex và createPayosSignature đã bị loại bỏ vì các thao tác xử lý bảo mật/tạo chữ ký thanh toán payOS đã được chuyển hoàn toàn lên phía máy chủ (/api/create-payos-payment) để đảm bảo không rò rỉ API Keys/Checksum Keys.
 
+function getCurrentCheckoutAmount() {
+  const totalEl = document.getElementById("grandTotal");
+  const totalText = totalEl ? totalEl.innerText : "0";
+  return parseInt(totalText.replace(/[^0-9]/g, "") || "0", 10);
+}
+
+function buildPayosOrderCode() {
+  return Number(String(Date.now()).slice(-9));
+}
+
+function buildReturnUrl() {
+  const url = new URL(window.location.href);
+  url.searchParams.set("payos", "return");
+  return url.toString();
+}
+
 
 async function createPayosPaymentRequest(amount) {
   // Lấy cấu hình công khai
