@@ -95,45 +95,6 @@ async function updateQRCode() {
   };
   qrImg.src = getQrImageUrl(payment);
 }
-// ===== ĐỌC GIỎ HÀNG TỪ LOCALSTORAGE =====
-function getCart() {
-  // Key chính là giborCart; giữ fallback cart cho dữ liệu cũ.
-  return JSON.parse(
-    localStorage.getItem("giborCart") || localStorage.getItem("cart") || "[]",
-  );
-}
-function saveCart(cart) {
-  localStorage.setItem("giborCart", JSON.stringify(cart));
-}
-function formatPrice(p) {
-  return p.toLocaleString("vi-VN") + "đ";
-}
-
-// ===== CẬP NHẬT SỐ LƯỢNG ICON GIỎ =====
-function updateCartCount() {
-  const cart = getCart();
-  const total = cart.reduce((s, i) => s + i.quantity, 0);
-
-  const cartCountEl = document.getElementById("cart-count");
-  if (cartCountEl) cartCountEl.textContent = total;
-
-  document.querySelectorAll(".cart-count, .icon-btn.cart span:last-child")
-    .forEach((el) => (el.textContent = total));
-
-  // Đồng bộ badge giỏ hàng ở bottom nav mobile nếu mobile.js đã tạo.
-  if (typeof window.updateBottomNavBadge === "function") {
-    window.updateBottomNavBadge();
-  }
-}
-
-// ===== TOAST =====
-function showToast(msg) {
-  const t = document.getElementById("toast");
-  if (!t) return;
-  t.querySelector("span").textContent = msg;
-  t.classList.add("show");
-  setTimeout(() => t.classList.remove("show"), 3000);
-}
 
 // ===== RENDER ĐƠN HÀNG (CỘT PHẢI) =====
 function renderOrderSummary() {
@@ -1633,70 +1594,8 @@ var payosSyncInterval = null;
 var currentPayosPayment = null;
 var payosPaymentSuccess = false; // Biến đánh dấu đã thanh toán thành công qua payOS
 
-// Hàm phát âm thanh thông báo thành công (Web Audio API)
-function getPayosConfig() {
-  const branchId = selectedBranch ? selectedBranch.id : "";
-  if (branchId) {
-    const clientId = localStorage.getItem("gibor_payos_client_id_" + branchId);
-    const apiKey = localStorage.getItem("gibor_payos_api_key_" + branchId);
-    const checksumKey = localStorage.getItem("gibor_payos_checksum_key_" + branchId);
-    
-    if (clientId && apiKey && checksumKey) {
-      return {
-        clientId: clientId.trim(),
-        apiKey: apiKey.trim(),
-        checksumKey: checksumKey.trim(),
-      };
-    }
-  }
+// Ghi chú: Hàm getPayosConfig, createHmacSha256Hex và createPayosSignature đã bị loại bỏ vì các thao tác xử lý bảo mật/tạo chữ ký thanh toán payOS đã được chuyển hoàn toàn lên phía máy chủ (/api/create-payos-payment) để đảm bảo không rò rỉ API Keys/Checksum Keys.
 
-  // Fallback về cấu hình mặc định (Toàn hệ thống)
-  return {
-    clientId: (localStorage.getItem("gibor_payos_client_id") || "").trim(),
-    apiKey: (localStorage.getItem("gibor_payos_api_key") || "").trim(),
-    checksumKey: (localStorage.getItem("gibor_payos_checksum_key") || "").trim(),
-  };
-}
-
-function getCurrentCheckoutAmount() {
-  const totalEl = document.getElementById("grandTotal");
-  const totalText = totalEl ? totalEl.innerText : "0";
-  return parseInt(totalText.replace(/[^0-9]/g, "") || "0", 10);
-}
-
-function buildPayosOrderCode() {
-  return Number(String(Date.now()).slice(-9));
-}
-
-function buildReturnUrl() {
-  const url = new URL(window.location.href);
-  url.searchParams.set("payos", "return");
-  return url.toString();
-}
-
-async function createHmacSha256Hex(message, secret) {
-  if (!window.crypto || !window.crypto.subtle) {
-    throw new Error("Trinh duyet khong ho tro Web Crypto API de tao chu ky payOS.");
-  }
-
-  const encoder = new TextEncoder();
-  const key = await crypto.subtle.importKey(
-    "raw",
-    encoder.encode(secret),
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign"],
-  );
-  const signature = await crypto.subtle.sign("HMAC", key, encoder.encode(message));
-  return Array.from(new Uint8Array(signature))
-    .map((byte) => byte.toString(16).padStart(2, "0"))
-    .join("");
-}
-
-async function createPayosSignature({ amount, cancelUrl, description, orderCode, returnUrl }, checksumKey) {
-  const raw = `amount=${amount}&cancelUrl=${cancelUrl}&description=${description}&orderCode=${orderCode}&returnUrl=${returnUrl}`;
-  return createHmacSha256Hex(raw, checksumKey);
-}
 
 async function createPayosPaymentRequest(amount) {
   // Lấy cấu hình công khai

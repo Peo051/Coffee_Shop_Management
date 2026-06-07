@@ -269,7 +269,10 @@
 
   function getCartCount() {
     try {
-      // Giỏ hàng chính của project dùng key giborCart; giữ fallback cart cho dữ liệu cũ.
+      if (typeof getCart === "function") {
+        const cart = getCart();
+        return cart.reduce((sum, i) => sum + (i.quantity || 1), 0);
+      }
       const rawCart =
         localStorage.getItem("giborCart") || localStorage.getItem("cart") || "[]";
       const cart = safeParseJSON(rawCart, []);

@@ -1,65 +1,11 @@
 /* 
 ========================================================================================
-
-                             CODE BỞI TRẦN DƯƠNG GIA BẢO
-
+  GIBOR Coffee - Giỏ Hàng (cart.js)
+  Tác giả: Trần Dương Gia Bảo
+  Mô tả: Quản lý hiển thị giỏ hàng, cập nhật số lượng, xóa món ăn/nước uống
+        và điều hướng thanh toán cho khách hàng.
 ========================================================================================
 */
-
-// ==================== LẤY GIỎ HÀNG TỪ LOCALSTORAGE ====================
-function getCart() {
-  const cart = localStorage.getItem("giborCart");
-  return cart ? JSON.parse(cart) : [];
-}
-
-// ==================== LƯU GIỎ HÀNG VÀO LOCALSTORAGE ====================
-function saveCart(cart) {
-  localStorage.setItem("giborCart", JSON.stringify(cart));
-}
-
-// ==================== ĐỊNH DẠNG TIỀN VNĐ ====================
-function formatPrice(price) {
-  return price.toLocaleString("vi-VN") + "đ";
-}
-
-// ==================== CẬP NHẬT SỐ LƯỢNG TRÊN ICON GIỎ HÀNG (HEADER) ====================
-function updateCartCount() {
-  const cart = getCart();
-  const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
-
-  // Cập nhật tất cả badge giỏ hàng trên trang
-  const cartCountEl = document.getElementById("cart-count");
-  if (cartCountEl) {
-    cartCountEl.textContent = totalItems;
-  }
-
-  // Cập nhật nếu có span thứ 3 trong .icon-btn.cart (format cũ)
-  const cartBadges = document.querySelectorAll(
-    ".icon-btn.cart span:last-child",
-  );
-  cartBadges.forEach((badge) => {
-    badge.textContent = totalItems;
-  });
-
-  // Đồng bộ badge giỏ hàng ở bottom nav mobile nếu mobile.js đã tạo.
-  if (typeof window.updateBottomNavBadge === "function") {
-    window.updateBottomNavBadge();
-  }
-}
-
-// ==================== HIỂN THỊ TOAST THÔNG BÁO ====================
-function showToast(message) {
-  const toast = document.getElementById("toast");
-  const toastMsg = document.getElementById("toastMessage");
-  if (!toast || !toastMsg) return;
-
-  toastMsg.textContent = message;
-  toast.classList.add("show");
-
-  setTimeout(() => {
-    toast.classList.remove("show");
-  }, 2500);
-}
 
 // ==================== RENDER GIỎ HÀNG ====================
 function renderCart() {

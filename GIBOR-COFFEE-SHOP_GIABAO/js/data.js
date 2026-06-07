@@ -201,36 +201,49 @@ function loadFirebaseDatabase(callback) {
   document.head.appendChild(script);
 }
 
-// Các hàm gộp (merge) dữ liệu để tránh ghi đè làm mất đơn hàng
+/**
+ * Gộp danh sách sản phẩm từ local và remote dựa trên thời gian cập nhật mới nhất.
+ * 
+ * @param {Array} local - Danh sách sản phẩm lưu ở local cache.
+ * @param {Array} remote - Danh sách sản phẩm từ Firebase.
+ * @returns {Array} Danh sách sản phẩm đã được gộp.
+ */
 function mergeProducts(local, remote) {
-  const localMap = new Map((local || []).map(p => [p.id, p]));
-  const remoteMap = new Map((remote || []).map(p => [p.id, p]));
+  const localMap = new Map((local || []).map(product => [product.id, product]));
+  const remoteMap = new Map((remote || []).map(product => [product.id, product]));
   const mergedMap = new Map();
 
-  for (const [id, rProd] of remoteMap) {
-    const lProd = localMap.get(id);
-    if (lProd) {
-      const lTime = new Date(lProd.updatedAt || 0).getTime();
-      const rTime = new Date(rProd.updatedAt || 0).getTime();
-      mergedMap.set(id, lTime >= rTime ? lProd : rProd);
+  for (const [id, remoteProduct] of remoteMap) {
+    const localProduct = localMap.get(id);
+    if (localProduct) {
+      const localTime = new Date(localProduct.updatedAt || 0).getTime();
+      const remoteTime = new Date(remoteProduct.updatedAt || 0).getTime();
+      mergedMap.set(id, localTime >= remoteTime ? localProduct : remoteProduct);
     } else {
-      mergedMap.set(id, rProd);
+      mergedMap.set(id, remoteProduct);
     }
   }
 
-  for (const [id, lProd] of localMap) {
+  for (const [id, localProduct] of localMap) {
     if (!mergedMap.has(id)) {
-      mergedMap.set(id, lProd);
+      mergedMap.set(id, localProduct);
     }
   }
 
   return Array.from(mergedMap.values());
 }
 
+/**
+ * Gộp danh sách đơn hàng từ local và remote dựa trên mức độ ưu tiên trạng thái đơn hàng.
+ * 
+ * @param {Array} local - Danh sách đơn hàng từ local.
+ * @param {Array} remote - Danh sách đơn hàng từ Firebase.
+ * @returns {Array} Danh sách đơn hàng đã gộp.
+ */
 function mergeOrders(local, remote) {
-  const getKey = (o) => String(o.code || o.id || "");
-  const localMap = new Map((local || []).map(o => [getKey(o), o]));
-  const remoteMap = new Map((remote || []).map(o => [getKey(o), o]));
+  const getKey = (order) => String(order.code || order.id || "");
+  const localMap = new Map((local || []).map(order => [getKey(order), order]));
+  const remoteMap = new Map((remote || []).map(order => [getKey(order), order]));
   const mergedMap = new Map();
 
   const statusPriority = {
@@ -242,53 +255,60 @@ function mergeOrders(local, remote) {
     "Đã ghi nhận": 0
   };
 
-  for (const [key, rOrder] of remoteMap) {
-    const lOrder = localMap.get(key);
-    if (lOrder) {
-      const lPriority = statusPriority[lOrder.status] || 0;
-      const rPriority = statusPriority[rOrder.status] || 0;
-      if (lPriority > rPriority) {
-        mergedMap.set(key, lOrder);
-      } else if (rPriority > lPriority) {
-        mergedMap.set(key, rOrder);
+  for (const [key, remoteOrder] of remoteMap) {
+    const localOrder = localMap.get(key);
+    if (localOrder) {
+      const localPriority = statusPriority[localOrder.status] || 0;
+      const remotePriority = statusPriority[remoteOrder.status] || 0;
+      if (localPriority > remotePriority) {
+        mergedMap.set(key, localOrder);
+      } else if (remotePriority > localPriority) {
+        mergedMap.set(key, remoteOrder);
       } else {
-        const lTime = new Date(lOrder.updatedAt || lOrder.createdAt || 0).getTime();
-        const rTime = new Date(rOrder.updatedAt || rOrder.createdAt || 0).getTime();
-        mergedMap.set(key, lTime >= rTime ? lOrder : rOrder);
+        const localTime = new Date(localOrder.updatedAt || localOrder.createdAt || 0).getTime();
+        const remoteTime = new Date(remoteOrder.updatedAt || remoteOrder.createdAt || 0).getTime();
+        mergedMap.set(key, localTime >= remoteTime ? localOrder : remoteOrder);
       }
     } else {
-      mergedMap.set(key, rOrder);
+      mergedMap.set(key, remoteOrder);
     }
   }
 
-  for (const [key, lOrder] of localMap) {
+  for (const [key, localOrder] of localMap) {
     if (!mergedMap.has(key)) {
-      mergedMap.set(key, lOrder);
+      mergedMap.set(key, localOrder);
     }
   }
 
   return Array.from(mergedMap.values());
 }
 
+/**
+ * Gộp danh sách tài khoản người dùng từ local và remote dựa trên thời gian cập nhật.
+ * 
+ * @param {Array} local - Danh sách tài khoản từ local.
+ * @param {Array} remote - Danh sách tài khoản từ Firebase.
+ * @returns {Array} Danh sách tài khoản đã gộp.
+ */
 function mergeUsers(local, remote) {
-  const localMap = new Map((local || []).map(u => [String(u.id), u]));
-  const remoteMap = new Map((remote || []).map(u => [String(u.id), u]));
+  const localMap = new Map((local || []).map(user => [String(user.id), user]));
+  const remoteMap = new Map((remote || []).map(user => [String(user.id), user]));
   const mergedMap = new Map();
 
-  for (const [id, rUser] of remoteMap) {
-    const lUser = localMap.get(id);
-    if (lUser) {
-      const lTime = new Date(lUser.updatedAt || lUser.createdAt || 0).getTime();
-      const rTime = new Date(rUser.updatedAt || rUser.createdAt || 0).getTime();
-      mergedMap.set(id, lTime >= rTime ? lUser : rUser);
+  for (const [id, remoteUser] of remoteMap) {
+    const localUser = localMap.get(id);
+    if (localUser) {
+      const localTime = new Date(localUser.updatedAt || localUser.createdAt || 0).getTime();
+      const remoteTime = new Date(remoteUser.updatedAt || remoteUser.createdAt || 0).getTime();
+      mergedMap.set(id, localTime >= remoteTime ? localUser : remoteUser);
     } else {
-      mergedMap.set(id, rUser);
+      mergedMap.set(id, remoteUser);
     }
   }
 
-  for (const [id, lUser] of localMap) {
+  for (const [id, localUser] of localMap) {
     if (!mergedMap.has(id)) {
-      mergedMap.set(id, lUser);
+      mergedMap.set(id, localUser);
     }
   }
 
@@ -1170,10 +1190,94 @@ if (typeof UserManager !== 'undefined') {
   UserManager.ensureDefaultAdmin();
 }
 
+// ============================================================================
+// GLOBAL HELPERS (GIỎ HÀNG, TOAST, ĐỊNH DẠNG TIỀN)
+// ============================================================================
+
+/**
+ * Lấy giỏ hàng từ localStorage.
+ * 
+ * @returns {Array} Danh sách sản phẩm trong giỏ hàng.
+ */
+function getCart() {
+  try {
+    const cart = localStorage.getItem("giborCart") || localStorage.getItem("cart") || "[]";
+    return JSON.parse(cart);
+  } catch (e) {
+    return [];
+  }
+}
+
+/**
+ * Lưu giỏ hàng vào localStorage.
+ * 
+ * @param {Array} cart - Danh sách sản phẩm mới của giỏ hàng.
+ */
+function saveCart(cart) {
+  try {
+    localStorage.setItem("giborCart", JSON.stringify(cart || []));
+  } catch (e) {
+    console.error("Lỗi khi lưu giỏ hàng:", e);
+  }
+}
+
+/**
+ * Định dạng tiền tệ VNĐ.
+ * 
+ * @param {number} price - Số tiền cần định dạng.
+ * @returns {string} Chuỗi tiền tệ (ví dụ: "30.000đ").
+ */
+function formatPrice(price) {
+  return (Number(price) || 0).toLocaleString("vi-VN") + "đ";
+}
+
+/**
+ * Hiển thị Toast thông báo nhanh cho người dùng.
+ * 
+ * @param {string} message - Nội dung thông báo.
+ */
+function showToast(message) {
+  const toast = document.getElementById("toast");
+  const toastMsg = document.getElementById("toastMessage");
+  if (!toast) return;
+  
+  const msgSpan = toastMsg || toast.querySelector("span");
+  if (msgSpan) {
+    msgSpan.textContent = message;
+  }
+  
+  toast.classList.add("show");
+  setTimeout(() => {
+    toast.classList.remove("show");
+  }, 2500);
+}
+
+/**
+ * Cập nhật số lượng hiển thị trên tất cả các badge giỏ hàng.
+ */
+function updateCartCount() {
+  const cart = getCart();
+  const totalItems = cart.reduce((sum, item) => sum + (item.quantity || 1), 0);
+
+  const cartCountEl = document.getElementById("cart-count");
+  if (cartCountEl) {
+    cartCountEl.textContent = totalItems;
+  }
+
+  const cartBadges = document.querySelectorAll(
+    ".cart-count, .icon-btn.cart span:last-child"
+  );
+  cartBadges.forEach((badge) => {
+    badge.textContent = totalItems;
+  });
+
+  if (typeof window.updateBottomNavBadge === "function") {
+    window.updateBottomNavBadge();
+  }
+}
+
 /* 
 ========================================================================================
-
                                 KẾT THÚC CODE BỞI TRẦN DƯƠNG GIA BẢO
-
 ========================================================================================
 */

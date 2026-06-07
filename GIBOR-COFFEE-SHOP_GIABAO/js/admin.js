@@ -305,40 +305,59 @@ function getOrderItemsText(order) {
     .join(", ");
 }
 
-  function getRevenueByDay(days = 7, branchId = "") {
-    const orders = (getOrders() || []).filter(o => o !== null && o !== undefined);
-    const today = new Date();
-    const labels = [];
-  
-    for (let index = days - 1; index >= 0; index--) {
-      const date = new Date(today);
-      date.setDate(today.getDate() - index);
-      const key = date.toISOString().slice(0, 10);
-      labels.push({
-        key,
-        label: date.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" }),
-        value: 0,
-      });
-    }
-  
-    orders.forEach((order) => {
-      if (!order) return;
-      // Chỉ tính các đơn hàng "Hoàn tất"
-      if (order.status !== "Hoàn tất") return;
+/**
+ * Lấy dữ liệu doanh thu của các đơn hàng đã "Hoàn tất" theo từng ngày.
+ * 
+ * Nghiệp vụ: Lọc các đơn hàng hoàn tất trong khoảng thời gian nhất định (mặc định là 7 ngày).
+ * Hỗ trợ lọc theo chi nhánh để người quản lý chi nhánh chỉ xem được doanh thu của cơ sở mình.
+ * 
+ * @param {number} [days=7] - Số ngày muốn thống kê doanh thu ngược về trước.
+ * @param {string} [branchId=""] - ID của chi nhánh cần thống kê (để trống nếu muốn xem toàn hệ thống).
+ * @returns {Array<{key: string, label: string, value: number}>} Danh sách doanh thu theo ngày.
+ */
+function getRevenueByDay(days = 7, branchId = "") {
+  const orders = (getOrders() || []).filter(o => o !== null && o !== undefined);
+  const today = new Date();
+  const labels = [];
 
-      // Lọc theo chi nhánh nếu có yêu cầu
-      if (branchId && (!order.branch || order.branch.id !== branchId)) return;
-
-      const date = new Date(getOrderDate(order));
-      if (Number.isNaN(date.getTime())) return;
-      const key = date.toISOString().slice(0, 10);
-      const target = labels.find((item) => item.key === key);
-      if (target) target.value += getOrderTotal(order);
+  for (let index = days - 1; index >= 0; index--) {
+    const date = new Date(today);
+    date.setDate(today.getDate() - index);
+    const key = date.toISOString().slice(0, 10);
+    labels.push({
+      key,
+      label: date.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" }),
+      value: 0,
     });
-  
-    return labels;
   }
 
+  orders.forEach((order) => {
+    if (!order) return;
+    // Chỉ tính các đơn hàng "Hoàn tất"
+    if (order.status !== "Hoàn tất") return;
+
+    // Lọc theo chi nhánh nếu có yêu cầu
+    if (branchId && (!order.branch || order.branch.id !== branchId)) return;
+
+    const date = new Date(getOrderDate(order));
+    if (Number.isNaN(date.getTime())) return;
+    const key = date.toISOString().slice(0, 10);
+    const target = labels.find((item) => item.key === key);
+    if (target) target.value += getOrderTotal(order);
+  });
+
+  return labels;
+}
+
+/**
+ * Vẽ biểu đồ cột biểu thị doanh thu của 7 ngày gần nhất lên giao diện Admin.
+ * 
+ * Nghiệp vụ: Tính toán tỉ lệ chiều cao cột dựa trên doanh thu lớn nhất (max) của kỳ báo cáo,
+ * giúp giao diện hiển thị biểu đồ trực quan, co giãn tự động và thân thiện với người dùng.
+ * 
+ * @param {string} targetId - ID của phần tử DOM chứa biểu đồ.
+ * @param {string} [branchId=""] - ID của chi nhánh cần vẽ biểu đồ (để trống nếu tính toàn hệ thống).
+ */
 function renderRevenueBars(targetId, branchId = "") {
   const target = document.getElementById(targetId);
   if (!target) return;
@@ -976,13 +995,19 @@ function renderAll() {
 }
 
 function resetProductForm() {
-  document.getElementById("productId").value = "";
-  document.getElementById("productForm").reset();
+  const pId = document.getElementById("productId");
+  if (pId) pId.value = "";
+  
+  const pForm = document.getElementById("productForm");
+  if (pForm) pForm.reset();
+
   if (document.getElementById("productImg")) document.getElementById("productImg").value = "";
   if (document.getElementById("productDesc")) document.getElementById("productDesc").value = "";
   if (document.getElementById("productBestSeller")) document.getElementById("productBestSeller").checked = false;
   if (document.getElementById("productStatus")) document.getElementById("productStatus").checked = true;
-  document.getElementById("productSubmitText").textContent = "Thêm sản phẩm";
+  
+  const pSubmitText = document.getElementById("productSubmitText");
+  if (pSubmitText) pSubmitText.textContent = "Thêm sản phẩm";
 }
 
 function bindNavigation() {
@@ -997,19 +1022,12 @@ function bindNavigation() {
   };
 
   const navButtons = document.querySelectorAll(".admin-nav-btn");
-  console.log("Khởi tạo bindNavigation, tìm thấy số nút điều hướng:", navButtons.length);
 
   navButtons.forEach((button) => {
     const tab = button.dataset.adminTab;
-    if (!tab) {
-      console.log("Bỏ qua nút không có data-admin-tab:", button.textContent.trim());
-      return; 
-    }
-
-    console.log("Đã gán sự kiện click cho tab điều hướng:", tab);
+    if (!tab) return; 
 
     button.addEventListener("click", () => {
-      console.log("Người dùng click chuyển sang tab:", tab);
       document.querySelectorAll(".admin-nav-btn").forEach((item) => item.classList.remove("active"));
       document.querySelectorAll(".admin-panel").forEach((panel) => panel.classList.remove("active"));
       
@@ -1018,9 +1036,6 @@ function bindNavigation() {
       const panel = document.querySelector(`[data-admin-panel="${tab}"]`);
       if (panel) {
         panel.classList.add("active");
-        console.log(`Đã kích hoạt panel [data-admin-panel="${tab}"] thành công`);
-      } else {
-        console.warn(`Không tìm thấy panel tương ứng cho tab: ${tab}`);
       }
       
       if (title) {
@@ -1258,17 +1273,21 @@ function bindTableActions() {
         confirmText: "Xóa",
         cancelText: "Hủy",
         onConfirm: () => {
-          const updatedProducts = getProducts().map(p => {
-            if (p.id === deleteProductId) {
+          // Thực hiện Soft-delete (xóa mềm):
+          // Không xóa trực tiếp khỏi cơ sở dữ liệu để bảo toàn tính toàn vẹn của lịch sử đơn hàng.
+          // Đánh dấu isDeleted = true và status = "deleted" để ẩn khỏi thực đơn của khách hàng,
+          // đồng thời lưu vết thời gian xóa để phục vụ mục đích kiểm toán và đồng bộ Firebase.
+          const updatedProducts = getProducts().map(product => {
+            if (product.id === deleteProductId) {
               return {
-                ...p,
+                ...product,
                 isDeleted: true,
                 status: "deleted",
                 deletedAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString()
               };
             }
-            return p;
+            return product;
           });
           saveProducts(updatedProducts);
           showToast("Đã xóa sản phẩm thành công.", "success");
@@ -1793,15 +1812,11 @@ function initAdminPage() {
 
   initSteps.forEach((step) => {
     try {
-      console.log(`▶ Đang chạy: ${step.name}`);
       step.fn();
-      console.log(`✅ Hoàn thành: ${step.name}`);
     } catch (error) {
       console.error(`❌ Lỗi trong bước khởi tạo ${step.name}:`, error);
     }
   });
-
-  console.log("✅ Trang Admin đã khởi tạo hoàn tất.");
 }
 
 if (document.readyState === "loading") {
