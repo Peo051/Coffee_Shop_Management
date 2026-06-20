@@ -1138,6 +1138,28 @@ a {
   }
 }
 
+/* ===== DESKTOP SMALL (992px - 1200px) ===== */
+@media (min-width: 992px) and (max-width: 1200px) {
+  .header-container {
+    padding: 10px 16px;
+    gap: 12px;
+  }
+  .nav-links {
+    gap: 8px;
+  }
+  .nav-links a {
+    padding: 0 10px;
+    font-size: 0.82rem;
+  }
+  .header-actions {
+    gap: 6px;
+  }
+  .icon-btn {
+    padding: 0 10px;
+    font-size: 0.78rem;
+  }
+}
+
 /* ===== TABLET (max-width: 992px) ===== */
 @media (max-width: 992px) {
   /* HEADER */
