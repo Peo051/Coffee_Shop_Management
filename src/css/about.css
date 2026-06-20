@@ -15,15 +15,18 @@
 
 .about-page {
   background:
-    radial-gradient(circle at 10% 0, rgba(212, 163, 115, 0.2), transparent 32%),
-    var(--bg);
+    radial-gradient(circle at 80% 20%, rgba(212, 163, 115, 0.15), transparent 50%),
+    radial-gradient(circle at 10% 60%, rgba(75, 44, 32, 0.05), transparent 45%),
+    radial-gradient(circle at 90% 80%, rgba(212, 163, 115, 0.12), transparent 40%),
+    linear-gradient(180deg, #fdfcfb 0%, #f9f4ee 50%, #fdfcfb 100%);
 }
 
 body.dark .about-page {
   background:
-    radial-gradient(circle at 12% 0, rgba(212, 163, 115, 0.16), transparent 34%),
-    radial-gradient(circle at 88% 0, rgba(255, 255, 255, 0.05), transparent 24%),
-    linear-gradient(180deg, #141414 0%, #171313 44%, #1b1411 100%);
+    radial-gradient(circle at 80% 20%, rgba(212, 163, 115, 0.09), transparent 50%),
+    radial-gradient(circle at 20% 50%, rgba(75, 44, 32, 0.3), transparent 45%),
+    radial-gradient(circle at 85% 80%, rgba(212, 163, 115, 0.06), transparent 40%),
+    linear-gradient(180deg, #120e0c 0%, #181210 40%, #1f1612 100%);
 }
 
 .about-modern-hero {
