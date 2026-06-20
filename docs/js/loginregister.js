@@ -75,7 +75,7 @@ if (loginForm) {
     const submitBtn = loginForm.querySelector(".form-button-submit");
     const originalText = submitBtn.innerHTML;
     submitBtn.disabled = true;
-    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang xử lý...';
+    submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang xử lý...';
 
     // BƯỚC 1: XÁC THỰC VỚI FIREBASE (Ưu tiên Firebase vì có link quên mật khẩu)
     const isEmailFormat = email.includes("@");
@@ -166,7 +166,7 @@ if (registerForm) {
     const submitBtn = registerForm.querySelector(".form-button-submit");
     const originalText = submitBtn.innerHTML;
     submitBtn.disabled = true;
-    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang tạo tài khoản...';
+    submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang tạo tài khoản...';
 
     // BƯỚC 0: Kiểm tra email đã tồn tại trong localStorage chưa (kiểm tra trước cả Firebase)
     const users = UserManager.getUsers();
@@ -487,7 +487,7 @@ function showForgotPasswordPopup() {
 
   overlay.innerHTML =
     '<div class="gibor-popup-box">' +
-    '<div class="gibor-popup-icon warning"><i class="fas fa-key"></i></div>' +
+    '<div class="gibor-popup-icon warning"><i class="fa-solid fa-key"></i></div>' +
     '<div class="gibor-popup-title">Quên mật khẩu?</div>' +
     '<div class="gibor-popup-message">Nhập email của bạn để nhận liên kết đặt lại mật khẩu.</div>' +
     '<div style="margin: 12px 0;">' +
@@ -496,7 +496,7 @@ function showForgotPasswordPopup() {
     "</div>" +
     '<div class="gibor-popup-actions">' +
     '<button class="gibor-popup-btn secondary" id="forgotPwCancel">Hủy</button>' +
-    '<button class="gibor-popup-btn primary" id="forgotPwSubmit"><i class="fas fa-paper-plane"></i> Gửi Email Reset</button>' +
+    '<button class="gibor-popup-btn primary" id="forgotPwSubmit"><i class="fa-solid fa-paper-plane"></i> Gửi Email Reset</button>' +
     "</div>" +
     "</div>";
 
@@ -549,7 +549,7 @@ function showForgotPasswordPopup() {
     // Nút loading
     const submitBtn = document.getElementById("forgotPwSubmit");
     submitBtn.disabled = true;
-    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang gửi...';
+    submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang gửi...';
 
     // Gửi yêu cầu lấy link thay đổi mật khẩu từ Firebase
     firebase
@@ -569,7 +569,7 @@ function showForgotPasswordPopup() {
       })
       .catch((error) => {
         submitBtn.disabled = false;
-        submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Gửi Email Reset';
+        submitBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Gửi Email Reset';
 
         let errorMsg = "Không thể gửi email. Vui lòng thử lại.";
         if (error.code === "auth/user-not-found") {

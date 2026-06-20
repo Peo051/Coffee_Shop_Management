@@ -134,7 +134,7 @@ function renderOrderSummary() {
   if (cart.length === 0) {
     orderItems.innerHTML = `
       <div class="cart-empty-mini">
-        <i class="fas fa-shopping-cart"></i>
+        <i class="fa-solid fa-shopping-cart"></i>
         <p>Giỏ hàng trống</p>
       </div>`;
     updateTotals(0);

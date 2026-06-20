@@ -63,7 +63,7 @@
           <!-- Bootstrap grid giúp các điểm tin cậy tự xếp 1 cột trên mobile. -->
           <div class="col-md-4">
             <article class="trust-item h-100 d-flex gap-3">
-            <i class="fas fa-clock"></i>
+            <i class="fa-solid fa-clock"></i>
             <div>
               <strong>Phản hồi nhanh</strong>
               <p>Ưu tiên phản hồi trong giờ làm việc mỗi ngày.</p>
@@ -72,7 +72,7 @@
           </div>
           <div class="col-md-4">
             <article class="trust-item h-100 d-flex gap-3">
-            <i class="fas fa-shield-heart"></i>
+            <i class="fa-solid fa-shield-heart"></i>
             <div>
               <strong>Thông tin minh bạch</strong>
               <p>Quy trình tiếp nhận và xử lý rõ ràng, đáng tin cậy.</p>
@@ -81,7 +81,7 @@
           </div>
           <div class="col-md-4">
             <article class="trust-item h-100 d-flex gap-3">
-            <i class="fas fa-headset"></i>
+            <i class="fa-solid fa-headset"></i>
             <div>
               <strong>Hỗ trợ tận tâm</strong>
               <p>Đội ngũ chăm sóc khách hàng chuyên nghiệp và thân thiện.</p>
@@ -101,28 +101,28 @@
               </p>
               <ul class="contact-channel-list">
                 <li>
-                  <i class="fas fa-location-dot"></i>
+                  <i class="fa-solid fa-location-dot"></i>
                   <div>
                     <strong>Văn phòng & cửa hàng chính</strong>
                     <span>140 Lê Trọng Tấn, Tây Thạnh, Tân Phú, TP.HCM</span>
                   </div>
                 </li>
                 <li>
-                  <i class="fas fa-phone-volume"></i>
+                  <i class="fa-solid fa-phone-volume"></i>
                   <div>
                     <strong>Hotline</strong>
                     <a href="tel:0909999999">0909 999 999</a>
                   </div>
                 </li>
                 <li>
-                  <i class="fas fa-envelope"></i>
+                  <i class="fa-solid fa-envelope"></i>
                   <div>
                     <strong>Email</strong>
                     <a href="mailto:contact@giborcoffee.com">contact@giborcoffee.com</a>
                   </div>
                 </li>
                 <li>
-                  <i class="fas fa-business-time"></i>
+                  <i class="fa-solid fa-business-time"></i>
                   <div>
                     <strong>Thời gian hỗ trợ</strong>
                     <span>07:00 - 22:00 (Thứ 2 đến Chủ nhật)</span>
@@ -136,15 +136,15 @@
               <p>Cập nhật menu mới, ưu đãi tuần và hoạt động tại chi nhánh.</p>
               <div class="social-links">
                 <a href="#" class="social-btn">
-                  <i class="fab fa-facebook-f"></i>
+                  <i class="fa-brands fa-facebook-f"></i>
                   <span>Facebook</span>
                 </a>
                 <a href="#" class="social-btn">
-                  <i class="fab fa-instagram"></i>
+                  <i class="fa-brands fa-instagram"></i>
                   <span>Instagram</span>
                 </a>
                 <a href="#" class="social-btn">
-                  <i class="fab fa-tiktok"></i>
+                  <i class="fa-brands fa-tiktok"></i>
                   <span>TikTok</span>
                 </a>
               </div>
@@ -173,6 +173,18 @@
               </div>
 
               <div class="contact-field">
+                <label for="email" class="form-label">Địa chỉ Email</label>
+                <input
+                  class="form-control"
+                  type="email"
+                  id="email"
+                  name="email"
+                  placeholder="Ví dụ: name@example.com"
+                  required
+                />
+              </div>
+
+              <div class="contact-field">
                 <label for="phone" class="form-label">Số điện thoại</label>
                 <input
                   class="form-control"
@@ -185,12 +197,27 @@
               </div>
 
               <div class="contact-field">
-                <label for="message" class="form-label">Nội dung</label>
+                <label for="department" class="form-label">Bộ phận liên hệ</label>
+                <select
+                  class="form-select"
+                  id="department"
+                  name="department"
+                  required
+                  style="border-radius: 12px; padding: 12px; border: 1px solid rgba(75, 44, 32, 0.15); background-color: var(--card); color: var(--text);"
+                >
+                  <option value="Customer Support">Hỗ trợ khách hàng & Đơn hàng</option>
+                  <option value="Business Partnership">Hợp tác kinh doanh & Nhượng quyền</option>
+                  <option value="Feedback">Góp ý & Khiếu nại dịch vụ</option>
+                </select>
+              </div>
+
+              <div class="contact-field">
+                <label for="message" class="form-label">Nội dung chi tiết</label>
                 <textarea
                   class="form-control"
                   id="message"
                   name="message"
-                  rows="6"
+                  rows="5"
                   placeholder="Bạn cần GIBOR hỗ trợ vấn đề gì?"
                   required
                 ></textarea>

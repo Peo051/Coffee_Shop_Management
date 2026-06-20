@@ -116,7 +116,7 @@ function renderPagination(containerId, totalItems, currentPage, pageSize, onPage
   // Previous button
   html += `
     <button ${currentPage === 1 ? "disabled" : ""} onclick="window.handlePageChange('${containerId}', ${currentPage - 1})">
-      <i class="fas fa-chevron-left"></i>
+      <i class="fa-solid fa-chevron-left"></i>
     </button>
   `;
 
@@ -154,7 +154,7 @@ function renderPagination(containerId, totalItems, currentPage, pageSize, onPage
   // Next button
   html += `
     <button ${currentPage === totalPages ? "disabled" : ""} onclick="window.handlePageChange('${containerId}', ${currentPage + 1})">
-      <i class="fas fa-chevron-right"></i>
+      <i class="fa-solid fa-chevron-right"></i>
     </button>
   `;
 
@@ -609,16 +609,16 @@ function renderAccounts() {
                   <td>
                     <div class="d-flex gap-1 justify-content-end">
                       <button class="btn btn-sm btn-outline-primary" data-edit-user="${escapeHTML(user.id)}" title="Chỉnh sửa">
-                        <i class="fas fa-pen"></i>
+                        <i class="fa-solid fa-pen"></i>
                       </button>
                       <button class="btn btn-sm btn-outline-warning" data-lock-user="${escapeHTML(user.id)}" title="Khóa/Mở khóa">
                         <i class="fas ${user.status === 'locked' ? 'fa-lock' : 'fa-unlock'}"></i>
                       </button>
                       <button class="btn btn-sm btn-outline-info" data-reset-password-user="${escapeHTML(user.id)}" title="Đặt lại mật khẩu">
-                        <i class="fas fa-key"></i>
+                        <i class="fa-solid fa-key"></i>
                       </button>
                       <button class="btn btn-sm btn-outline-danger" data-delete-user="${escapeHTML(user.id)}" title="Xóa tài khoản">
-                        <i class="fas fa-trash"></i>
+                        <i class="fa-solid fa-trash"></i>
                       </button>
                     </div>
                   </td>
@@ -747,10 +747,10 @@ function renderProducts() {
                         `
                           : `
                           <button class="btn btn-sm btn-outline-primary" data-edit-product="${escapeHTML(product.id)}" title="Sửa">
-                            <i class="fas fa-pen"></i>
+                            <i class="fa-solid fa-pen"></i>
                           </button>
                           <button class="btn btn-sm btn-outline-danger" data-delete-product="${escapeHTML(product.id)}" title="Xóa">
-                            <i class="fas fa-trash"></i>
+                            <i class="fa-solid fa-trash"></i>
                           </button>
                         `
                       }
@@ -890,7 +890,7 @@ function renderOrders() {
               const orderCode = order.code || order.id || `DH-${startIndex + index + 1}`;
               
               // Chi nhánh xử lý: Hiển thị tĩnh đồng bộ từ đơn đặt hàng
-              const branchCellHtml = `<span style="font-weight:700; color:var(--gibor-secondary-text); font-size:0.85rem;"><i class="fas fa-store" style="color:#e28743;"></i> ${order.branch ? escapeHTML(order.branch.name) : "Giao hàng tận nơi"}</span>`;
+              const branchCellHtml = `<span style="font-weight:700; color:var(--gibor-secondary-text); font-size:0.85rem;"><i class="fa-solid fa-store" style="color:#e28743;"></i> ${order.branch ? escapeHTML(order.branch.name) : "Giao hàng tận nơi"}</span>`;
 
               // Hình thức thanh toán: Badge phương thức tĩnh + Dropdown trạng thái thanh toán
               const paymentVal = order.payment || "Thanh toán khi nhận hàng";
@@ -936,7 +936,7 @@ function renderOrders() {
                   <td>
                     <div class="d-flex gap-1 justify-content-end">
                       <button class="btn btn-sm btn-outline-info" data-view-order-detail="${escapeHTML(orderCode)}" title="Xem chi tiết" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; padding: 0; border-radius: 8px;">
-                        <i class="fas fa-eye"></i>
+                        <i class="fa-solid fa-eye"></i>
                       </button>
                     </div>
                   </td>
@@ -1413,7 +1413,7 @@ function bindTableActions() {
           <div class="row g-3 mb-4">
             <div class="col-12 col-md-6">
               <div class="p-3 bg-light rounded-3 h-100 border border-light-subtle">
-                <h6 class="fw-bold text-primary mb-3"><i class="fas fa-user-circle me-1"></i> Thông tin khách hàng</h6>
+                <h6 class="fw-bold text-primary mb-3"><i class="fa-solid fa-circle-user me-1"></i> Thông tin khách hàng</h6>
                 <div class="small text-dark mb-2"><strong>Họ tên:</strong> ${escapeHTML(customerName)}</div>
                 <div class="small text-dark mb-2"><strong>Số điện thoại:</strong> ${escapeHTML(customerPhone)}</div>
                 <div class="small text-dark mb-2"><strong>Email:</strong> ${escapeHTML(customerEmail)}</div>
@@ -1422,7 +1422,7 @@ function bindTableActions() {
             </div>
             <div class="col-12 col-md-6">
               <div class="p-3 bg-light rounded-3 h-100 border border-light-subtle">
-                <h6 class="fw-bold text-primary mb-3"><i class="fas fa-info-circle me-1"></i> Thông tin đơn hàng</h6>
+                <h6 class="fw-bold text-primary mb-3"><i class="fa-solid fa-info-circle me-1"></i> Thông tin đơn hàng</h6>
                 <div class="small text-dark mb-2"><strong>Hình thức nhận:</strong> ${escapeHTML(receiveMethod)}</div>
                 <div class="small text-dark mb-2"><strong>Chi nhánh xử lý:</strong> ${escapeHTML(branchName)}</div>
                 <div class="small text-dark mb-2"><strong>Phương thức thanh toán:</strong> ${escapeHTML(paymentVal)}</div>
@@ -2181,10 +2181,10 @@ function renderBranches() {
               <td>
                 <div class="d-flex gap-1 justify-content-end">
                   <button class="btn btn-sm btn-outline-primary" data-edit-branch="${escapeHTML(b.id)}" title="Sửa">
-                    <i class="fas fa-pen"></i>
+                    <i class="fa-solid fa-pen"></i>
                   </button>
                   <button class="btn btn-sm btn-outline-danger" data-delete-branch="${escapeHTML(b.id)}" title="Xóa">
-                    <i class="fas fa-trash"></i>
+                    <i class="fa-solid fa-trash"></i>
                   </button>
                 </div>
               </td>
@@ -2395,7 +2395,7 @@ function bindPayosForm() {
     const saveBtn = form.querySelector("button[type='submit']");
     if (saveBtn) {
       saveBtn.disabled = true;
-      saveBtn.innerHTML = '<i class="fas fa-lock me-2"></i> Chỉ Admin mới được quyền sửa';
+      saveBtn.innerHTML = '<i class="fa-solid fa-lock me-2"></i> Chỉ Admin mới được quyền sửa';
       saveBtn.className = "btn btn-secondary text-white fw-bold px-4 rounded-pill";
     }
   }
@@ -2954,11 +2954,11 @@ function renderCustomers() {
       ? paginatedCustomers.map(c => {
           let vipBadge = "";
           if (c.id === top1Id) {
-            vipBadge = `<span class="badge bg-warning text-dark ms-2" style="font-size: 0.75rem; border: 1px solid #d39e00;"><i class="fas fa-crown text-danger me-1"></i>Top 1 Chi tiêu</span>`;
+            vipBadge = `<span class="badge bg-warning text-dark ms-2" style="font-size: 0.75rem; border: 1px solid #d39e00;"><i class="fa-solid fa-crown text-danger me-1"></i>Top 1 Chi tiêu</span>`;
           } else if (c.id === top2Id) {
-            vipBadge = `<span class="badge bg-secondary text-white ms-2" style="font-size: 0.75rem;"><i class="fas fa-medal me-1"></i>Top 2</span>`;
+            vipBadge = `<span class="badge bg-secondary text-white ms-2" style="font-size: 0.75rem;"><i class="fa-solid fa-medal me-1"></i>Top 2</span>`;
           } else if (c.id === top3Id) {
-            vipBadge = `<span class="badge text-white ms-2" style="font-size: 0.75rem; background-color: #cd7f32;"><i class="fas fa-medal me-1"></i>Top 3</span>`;
+            vipBadge = `<span class="badge text-white ms-2" style="font-size: 0.75rem; background-color: #cd7f32;"><i class="fa-solid fa-medal me-1"></i>Top 3</span>`;
           }
 
           const totalLifetimeSpent = c.completedUserOrders.reduce((sum, order) => sum + getOrderTotal(order), 0);
@@ -2966,9 +2966,9 @@ function renderCustomers() {
           const rank = getCustomerRank(totalLifetimeSpent, lifetimeOrderCount);
           const rankBadge = `<span class="rank-badge ${rank.class} ms-2">${rank.label}</span>`;
 
-          let favBranchText = `<div class="text-muted small mt-1"><i class="fas fa-store-alt text-secondary me-1"></i>Chưa có giao dịch</div>`;
+          let favBranchText = `<div class="text-muted small mt-1"><i class="fa-solid fa-store-alt text-secondary me-1"></i>Chưa có giao dịch</div>`;
           if (c.favBranch) {
-            favBranchText = `<div class="text-muted small mt-1" style="font-size: 0.8rem;"><i class="fas fa-store text-danger me-1"></i>Thường mua tại: <strong class="text-dark">${escapeHTML(c.favBranch.name)}</strong> (${c.favBranch.count} đơn)</div>`;
+            favBranchText = `<div class="text-muted small mt-1" style="font-size: 0.8rem;"><i class="fa-solid fa-store text-danger me-1"></i>Thường mua tại: <strong class="text-dark">${escapeHTML(c.favBranch.name)}</strong> (${c.favBranch.count} đơn)</div>`;
           }
 
           return `
@@ -2990,10 +2990,10 @@ function renderCustomers() {
               <td>${escapeHTML(c.email)}</td>
               <td class="text-center"><strong class="text-primary">${c.orderCount}</strong> đơn</td>
               <td class="text-end fw-bold text-success">${formatMoney(c.totalSpent)}</td>
-              <td class="text-center text-warning fw-bold"><i class="fas fa-star me-1"></i>${c.points.toLocaleString("vi-VN")}</td>
+              <td class="text-center text-warning fw-bold"><i class="fa-solid fa-star me-1"></i>${c.points.toLocaleString("vi-VN")}</td>
               <td class="text-center">
                 <button class="btn btn-sm btn-outline-primary px-3 rounded-pill btn-view-customer" data-id="${c.id}">
-                  <i class="fas fa-eye me-1"></i>Chi tiết
+                  <i class="fa-solid fa-eye me-1"></i>Chi tiết
                 </button>
               </td>
             </tr>
@@ -3026,7 +3026,7 @@ function showCustomerDetail(customerId) {
     document.getElementById("detCustomerName").textContent = customer.displayName;
     document.getElementById("detCustomerPhone").textContent = customer.phone;
     document.getElementById("detCustomerEmail").textContent = customer.email;
-    document.getElementById("detCustomerPoints").innerHTML = `<i class="fas fa-star me-1"></i>${customer.points.toLocaleString("vi-VN")}`;
+    document.getElementById("detCustomerPoints").innerHTML = `<i class="fa-solid fa-star me-1"></i>${customer.points.toLocaleString("vi-VN")}`;
     document.getElementById("detCustomerTotalOrders").textContent = `${customer.completedUserOrders.length} đơn`;
     
     const allCompletedSpent = customer.completedUserOrders.reduce((sum, order) => sum + getOrderTotal(order), 0);
@@ -3057,11 +3057,11 @@ function showCustomerDetail(customerId) {
       
       const rankIdx = sortedAll.findIndex(c => String(c.id) === String(customer.id));
       if (rankIdx === 0) {
-        badgeContainer.innerHTML = `<span class="badge bg-warning text-dark" style="border: 1px solid #d39e00;"><i class="fas fa-crown text-danger me-1"></i>Top 1 Chi tiêu</span>`;
+        badgeContainer.innerHTML = `<span class="badge bg-warning text-dark" style="border: 1px solid #d39e00;"><i class="fa-solid fa-crown text-danger me-1"></i>Top 1 Chi tiêu</span>`;
       } else if (rankIdx === 1) {
-        badgeContainer.innerHTML = `<span class="badge bg-secondary text-white"><i class="fas fa-medal me-1"></i>Top 2</span>`;
+        badgeContainer.innerHTML = `<span class="badge bg-secondary text-white"><i class="fa-solid fa-medal me-1"></i>Top 2</span>`;
       } else if (rankIdx === 2) {
-        badgeContainer.innerHTML = `<span class="badge text-white" style="background-color: #cd7f32;"><i class="fas fa-medal me-1"></i>Top 3</span>`;
+        badgeContainer.innerHTML = `<span class="badge text-white" style="background-color: #cd7f32;"><i class="fa-solid fa-medal me-1"></i>Top 3</span>`;
       } else {
         badgeContainer.innerHTML = "";
       }
@@ -3087,7 +3087,7 @@ function showCustomerDetail(customerId) {
       branchTable.innerHTML = statsList.map(stat => {
         const ratio = allCompletedSpent > 0 ? ((stat.spent / allCompletedSpent) * 100).toFixed(1) : "0.0";
         const isFav = customer.favBranch && stat.id === customer.favBranch.id;
-        const favMarker = isFav ? `<span class="badge bg-warning-subtle text-warning-emphasis ms-2"><i class="fas fa-heart me-1"></i>Nhiều nhất</span>` : "";
+        const favMarker = isFav ? `<span class="badge bg-warning-subtle text-warning-emphasis ms-2"><i class="fa-solid fa-heart me-1"></i>Nhiều nhất</span>` : "";
 
         return `
           <tr class="${isFav ? 'table-warning-subtle' : ''}">
@@ -3137,11 +3137,11 @@ function showCustomerDetail(customerId) {
         let paymentBadge = `<span class="badge bg-secondary-subtle text-secondary-emphasis">Khác</span>`;
         const payMethod = String(order.paymentMethod || order.payment || "").toLowerCase();
         if (payMethod.includes("momo")) {
-          paymentBadge = `<span class="badge bg-danger-subtle text-danger"><i class="fab fa-paypal me-1"></i>MoMo</span>`;
+          paymentBadge = `<span class="badge bg-danger-subtle text-danger"><i class="fa-brands fa-paypal me-1"></i>MoMo</span>`;
         } else if (payMethod.includes("chuyển khoản") || payMethod.includes("banking") || payMethod.includes("payos")) {
-          paymentBadge = `<span class="badge bg-primary-subtle text-primary"><i class="fas fa-university me-1"></i>Banking</span>`;
+          paymentBadge = `<span class="badge bg-primary-subtle text-primary"><i class="fa-solid fa-university me-1"></i>Banking</span>`;
         } else if (payMethod.includes("tiền mặt") || payMethod.includes("cash") || payMethod.includes("cod")) {
-          paymentBadge = `<span class="badge bg-success-subtle text-success"><i class="fas fa-money-bill-wave me-1"></i>Tiền mặt</span>`;
+          paymentBadge = `<span class="badge bg-success-subtle text-success"><i class="fa-solid fa-money-bill-wave me-1"></i>Tiền mặt</span>`;
         }
 
         return `

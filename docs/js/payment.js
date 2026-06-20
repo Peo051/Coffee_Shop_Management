@@ -70,7 +70,7 @@ async function updateQRCode() {
     qrImg.style.display = "none";
     statusLabel.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> Khong tao duoc ma thanh toan payOS. Kiem tra cau hinh API key hoac CORS cua payOS.`;
     statusLabel.style.color = "#c5221f";
-    showToast("Khong tao duoc ma thanh toan payOS.");
+    showToast("Không tạo được mã thanh toán PayOS.");
     return;
   }
 
@@ -134,7 +134,7 @@ function renderOrderSummary() {
   if (cart.length === 0) {
     orderItems.innerHTML = `
       <div class="cart-empty-mini">
-        <i class="fas fa-shopping-cart"></i>
+        <i class="fa-solid fa-shopping-cart"></i>
         <p>Giỏ hàng trống</p>
       </div>`;
     updateTotals(0);
