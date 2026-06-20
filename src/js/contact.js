@@ -12,6 +12,7 @@ const modal = document.getElementById("myModal");
 const closeBtn = document.querySelector(".closeBtn");
 
 if (contactForm) {
+  // submit callback: Kiểm tra tính hợp lệ của biểu mẫu, giả lập gửi dữ liệu trong 1.5 giây, tạo và tải xuống file JSON chứa thông tin liên hệ, sau đó hiển thị modal thông báo thành công.
   contactForm.addEventListener("submit", (e) => {
     e.preventDefault();
 
@@ -72,11 +73,13 @@ if (contactForm) {
 
 // ĐÓNG MODAL
 if (closeBtn && modal) {
+  // closeBtn.onclick: Ẩn modal thông báo thành công khi người dùng click vào nút đóng.
   closeBtn.onclick = () => {
     modal.style.display = "none";
   };
 }
 
+// window.onclick: Ẩn modal thông báo thành công khi người dùng click ra vùng bên ngoài của modal.
 window.onclick = (event) => {
   if (modal && event.target === modal) {
     modal.style.display = "none";
