@@ -1824,7 +1824,7 @@ function applyRolePermissions(user) {
       customerBranchFilter.disabled = true;
     }
   } else {
-    if (sidebarRole) sidebarRole.textContent = "Quản trị tối cao";
+    if (sidebarRole) sidebarRole.textContent = "Quản trị cấp cao";
   }
 }
 
