@@ -153,44 +153,48 @@ const initApp = () => {
   }
 
   // ==================== HIỂN THỊ TRẠNG THÁI ĐĂNG NHẬP ====================
-  const authLink = document.getElementById("authLink");
+  // Phần tích hợp xử lý thông tin người dùng đăng nhập & đồng bộ hóa điểm tích lũy thành viên
+  const authLink = document.getElementById("authLink"); // Thẻ link điều hướng / hiển thị trên Header
   if (authLink && typeof UserManager !== "undefined") {
+    // Truy vấn thông tin người dùng đang đăng nhập từ UserManager
     const currentUser = UserManager.getCurrentUser();
     if (currentUser) {
-      // Đã đăng nhập → hiển thị tên người dùng rút gọn để tránh tràn layout
+      // Đã đăng nhập → hiển thị tên người dùng rút gọn để tránh tràn layout header
       let displayBtnName = currentUser.displayName;
       if (currentUser.role === "admin") {
-        displayBtnName = "Admin";
+        displayBtnName = "Admin"; // Nếu là quản trị viên
       } else if (currentUser.role === "branch_manager") {
-        displayBtnName = "Quản lý";
+        displayBtnName = "Quản lý"; // Nếu là quản lý chi nhánh
       } else {
         // Khách hàng hoặc người dùng thường: hiển thị Họ + Tên cho đúng quy tắc tiếng Việt
         displayBtnName = currentUser.displayName || `${currentUser.lastName || ""} ${currentUser.firstName || ""}`.trim();
       }
 
+      // Đổi HTML hiển thị icon tài khoản kèm tên rút gọn của người dùng trên header
       authLink.innerHTML =
         '<i class="fas fa-user-circle"></i> <span>' + displayBtnName + '</span>';
-      authLink.href = "#";
+      authLink.href = "#"; // Chặn điều hướng trực tiếp đến trang login
       authLink.classList.add("logged-in");
       authLink.title = "Tài khoản của bạn";
       authLink.style.cursor = "pointer";
 
-      // Tạo user dropdown popup (nếu chưa có)
+      // 1. Tạo user dropdown popup giả lập (nếu chưa được chèn vào DOM)
       if (!document.getElementById("userDropdownOverlay")) {
         const dropdownOverlay = document.createElement("div");
         dropdownOverlay.className = "user-dropdown-overlay";
         dropdownOverlay.id = "userDropdownOverlay";
 
-        // Lấy chữ cái đầu của tên
+        // Lấy 2 chữ cái đầu của Họ và Tên để sinh ảnh avatar ký tự viết tắt
         const initials = (
           (currentUser.lastName ? currentUser.lastName.charAt(0) : "") +
           (currentUser.firstName ? currentUser.firstName.charAt(0) : "")
         ).toUpperCase();
 
-        // Lấy điểm tích lũy
+        // Lấy số điểm tích lũy hiện có của thành viên từ PointsManager
         const userPoints =
           typeof PointsManager !== "undefined" ? PointsManager.getPoints() : 0;
 
+        // Xây dựng mã HTML cho dropdown quản lý tài khoản nhanh
         dropdownOverlay.innerHTML =
           '<div class="user-dropdown">' +
           '<div class="user-dropdown-header">' +
@@ -204,6 +208,7 @@ const initApp = () => {
           '<div class="user-dropdown-email">' +
           currentUser.email +
           "</div>" +
+          // Chỉ hiển thị điểm tích lũy thành viên đối với vai trò Khách hàng (không hiện cho Admin/Manager)
           ((currentUser.role !== "admin" && currentUser.role !== "branch_manager") ?
           '<div class="user-dropdown-points"><i class="fas fa-coins"></i> ' +
           userPoints.toLocaleString("vi-VN") +
@@ -211,6 +216,7 @@ const initApp = () => {
           "</div>" +
           "</div>" +
           '<ul class="user-dropdown-menu">' +
+          // Hiển thị thêm link Admin nếu tài khoản thuộc nhóm quản trị
           ((currentUser.role === "admin" || currentUser.role === "branch_manager") ? '<li><a href="admin.html" id="btnAdminPage"><i class="fas fa-user-shield"></i> Trang quản trị</a></li>' : '') +
           '<li><a href="#" id="btnMyAccount"><i class="fas fa-user"></i> Tài khoản của tôi</a></li>' +
           '<li><a href="#" id="btnOrderHistory"><i class="fas fa-shopping-bag"></i> Đơn hàng</a></li>' +
@@ -218,27 +224,29 @@ const initApp = () => {
           "</ul>" +
           "</div>";
 
-        document.body.appendChild(dropdownOverlay);
+        document.body.appendChild(dropdownOverlay); // Đưa dropdown vào DOM
 
-        // Click vào tên → mở/đóng dropdown
+        // Đăng ký sự kiện click vào nút Tài khoản trên header để đóng/mở dropdown
         authLink.addEventListener("click", (e) => {
           e.preventDefault();
           e.stopPropagation();
           dropdownOverlay.classList.toggle("show");
         });
 
-        // Click overlay → đóng dropdown
+        // Click vào vùng overlay nền tối phía ngoài dropdown để đóng dropdown
         dropdownOverlay.addEventListener("click", (e) => {
           if (e.target === dropdownOverlay) {
             dropdownOverlay.classList.remove("show");
           }
         });
 
-        // Nút đăng xuất
+        // Đăng ký sự kiện nút Đăng xuất (btnLogout) inside dropdown:
         const btnLogout = document.getElementById("btnLogout");
         if (btnLogout) {
           btnLogout.addEventListener("click", () => {
             dropdownOverlay.classList.remove("show");
+            
+            // Sử dụng popup modal warning tùy chỉnh để xác nhận đăng xuất
             if (typeof showGiborPopup === "function") {
               showGiborPopup({
                 type: "warning",
@@ -247,19 +255,20 @@ const initApp = () => {
                 confirmText: "Đăng xuất",
                 cancelText: "Hủy",
                 onConfirm: () => {
-                  UserManager.logout();
+                  UserManager.logout(); // Xóa session lưu trữ local
                   showGiborPopup({
                     type: "success",
                     title: "Đã đăng xuất",
                     message: "Hẹn gặp lại bạn tại GIBOR Coffee!",
                     confirmText: "OK",
                     onConfirm: () => {
-                      window.location.reload();
+                      window.location.reload(); // Reload trang để cập nhật lại Header
                     },
                   });
                 },
               });
             } else {
+              // Fallback dùng confirm mặc định nếu thiếu popup helper
               if (confirm("Bạn có chắc muốn đăng xuất?")) {
                 UserManager.logout();
                 window.location.reload();
@@ -268,7 +277,7 @@ const initApp = () => {
           });
         }
 
-        // Nút đơn hàng
+        // Nút Đơn hàng (btnOrderHistory) - điều hướng trực tiếp sang tab Lịch sử đơn hàng
         const btnOrderHistory = document.getElementById("btnOrderHistory");
         if (btnOrderHistory) {
           btnOrderHistory.addEventListener("click", (e) => {
@@ -278,7 +287,7 @@ const initApp = () => {
           });
         }
 
-        // Nút tài khoản của tôi
+        // Nút Tài khoản của tôi (btnMyAccount) - điều hướng trực tiếp sang tab Thông tin cá nhân
         const btnMyAccount = document.getElementById("btnMyAccount");
         if (btnMyAccount) {
           btnMyAccount.addEventListener("click", (e) => {

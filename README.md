@@ -49,62 +49,30 @@
 ## 🗂️ Cấu trúc dự án
 
 ```
-GIBOR-COFFEE-SHOP_GIABAO/
-├── 📄 HTML Pages (11 files)
-│   ├── index.html          # Trang chủ
-│   ├── menu.html           # Menu sản phẩm
-│   ├── cart.html           # Giỏ hàng
-│   ├── payment.html        # Thanh toán
-│   ├── account.html        # Quản lý tài khoản
-│   ├── login.html          # Đăng nhập
-│   ├── register.html       # Đăng ký
-│   ├── about.html          # Giới thiệu
-│   ├── contact.html        # Liên hệ
-│   ├── branches.html       # Chi nhánh
-│   └── ads.html            # Khuyến mãi
-│
-├── 🎨 CSS (13 files)
-│   ├── style.css           # CSS chung + Dark mode
-│   ├── home.css            # Trang chủ
-│   ├── menu.css            # Menu
-│   ├── cart.css            # Giỏ hàng
-│   ├── payment.css         # Thanh toán
-│   ├── account.css         # Tài khoản
-│   ├── login.css           # Đăng nhập
-│   ├── register.css        # Đăng ký
-│   ├── about.css           # Giới thiệu
-│   ├── contact.css         # Liên hệ
-│   ├── branches.css        # Chi nhánh
-│   ├── popup.css           # Popup system
-│   ├── ads.css             # Ads popup
-│   └── mobile.css          # Responsive mobile
-│
-├── 💻 JavaScript (12 files)
-│   ├── data.js             # Data layer (UserManager, PointsManager, OrderManager)
-│   ├── cart.js             # Logic giỏ hàng
-│   ├── payment.js          # Logic thanh toán
-│   ├── account.js          # Logic tài khoản
-│   ├── firebase.js         # Firebase config
-│   ├── loginregister.js    # Auth logic
-│   ├── main.js             # Logic chung (popup, OTP, email verification)
-│   ├── menu.js             # Logic menu
-│   ├── mobile.js           # Mobile interactions
-│   ├── about.js            # About page logic
-│   ├── contact.js          # Contact form
-│   ├── branches.js         # Branches logic
-│   ├── branches-data.js    # Branches data
-│   └── ads.js              # Ads popup logic
-│
-├── 🖼️ Images
-│   ├── logo/               # Logo & branding
-│   ├── banner/             # Hero banners
-│   ├── menu/               # Product images (50+ items)
-│   ├── about/              # About page images
-│   └── Branch/             # Branch photos (15 locations)
-│
-└── 🗄️ Database
-    ├── DB_DA_QuanLyQuanCF.sql    # Database script
-    └── Diagram.drawio            # ERD diagram
+Coffee_Shop_Management_Web/
+├── api/                  # API serverless payOS (backend)
+│   ├── create-payos-payment.js
+│   └── get-payos-payment.js
+├── GIBOR-COFFEE-SHOP_GIABAO/ # Thư mục làm việc chính (đã clean sạch)
+│   ├── index.html        # Trang chủ
+│   ├── menu.html         # Menu sản phẩm
+│   ├── cart.html         # Giỏ hàng
+│   ├── payment.html      # Thanh toán
+│   ├── account.html      # Quản lý tài khoản
+│   ├── login.html        # Đăng nhập
+│   ├── register.html     # Đăng ký
+│   ├── admin.html        # Trang quản trị admin
+│   ├── about.html        # Giới thiệu
+│   ├── contact.html      # Liên hệ
+│   ├── branches.html     # Chi nhánh
+│   ├── ads.html          # Khuyến mãi
+│   ├── css/              # Stylesheet sạch (style.css, home.css, menu.css,...)
+│   ├── js/               # Script sạch (data.js, main.js, payment.js,...)
+│   └── images/           # Ảnh tài nguyên chuẩn (logo, banner, menu, about, Branch)
+├── docs/                 # Thư mục deploy Vercel (đồng bộ 100% từ GIBOR-COFFEE-SHOP_GIABAO)
+├── screenshots/          # Ảnh minh họa giao diện cho tài liệu
+├── README.md             # Hướng dẫn dự án
+└── vercel.json           # Cấu hình định tuyến và deploy Vercel
 ```
 
 ---
@@ -978,21 +946,21 @@ Nếu bạn gặp vấn đề hoặc có câu hỏi:
 <table>
   <tr>
     <td width="50%">
-      <img src="docs/images/screenshots/desktop-home.png" alt="Home Page" width="100%"/>
+      <img src="screenshots/desktop-home.png" alt="Home Page" width="100%"/>
       <p align="center"><em>Trang chủ với hero banner và giới thiệu</em></p>
     </td>
     <td width="50%">
-      <img src="docs/images/screenshots/desktop-menu.png" alt="Menu Page" width="100%"/>
+      <img src="screenshots/desktop-menu.png" alt="Menu Page" width="100%"/>
       <p align="center"><em>Trang menu với popup chọn sản phẩm</em></p>
     </td>
   </tr>
   <tr>
     <td width="50%">
-      <img src="docs/images/screenshots/desktop-cart.png" alt="Cart Page" width="100%"/>
+      <img src="screenshots/desktop-cart.png" alt="Cart Page" width="100%"/>
       <p align="center"><em>Giỏ hàng với chi tiết sản phẩm</em></p>
     </td>
     <td width="50%">
-      <img src="docs/images/screenshots/desktop-payment.png" alt="Payment Page" width="100%"/>
+      <img src="screenshots/desktop-payment.png" alt="Payment Page" width="100%"/>
       <p align="center"><em>Trang thanh toán với QR code</em></p>
     </td>
   </tr>
@@ -1007,15 +975,15 @@ Nếu bạn gặp vấn đề hoặc có câu hỏi:
 <table>
   <tr>
     <td width="33%">
-      <img src="docs/images/screenshots/mobile-home.png" alt="Mobile Home" width="100%"/>
+      <img src="screenshots/mobile-home.png" alt="Mobile Home" width="100%"/>
       <p align="center"><em>Trang chủ responsive</em></p>
     </td>
     <td width="33%">
-      <img src="docs/images/screenshots/mobile-menu.png" alt="Mobile Menu" width="100%"/>
+      <img src="screenshots/mobile-menu.png" alt="Mobile Menu" width="100%"/>
       <p align="center"><em>Bottom navigation</em></p>
     </td>
     <td width="33%">
-      <img src="docs/images/screenshots/mobile-cart.png" alt="Mobile Cart" width="100%"/>
+      <img src="screenshots/mobile-cart.png" alt="Mobile Cart" width="100%"/>
       <p align="center"><em>Giỏ hàng mobile</em></p>
     </td>
   </tr>

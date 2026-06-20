@@ -1,19 +1,12 @@
 /* 
 ========================================================================================
 
-                                     CODE NGUYỄN HOÀNG BẢO (NÂNG CẤP ĐỘNG)
+                                     CODE NGUYỄN HOÀNG BẢO 
 
 ========================================================================================
 */
 
-function escapeHTML(value) {
-  return String(value ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-}
+
 
 document.addEventListener('DOMContentLoaded', () => {
     // Khởi tạo popup chọn chi nhánh kiểu mới

@@ -1,11 +1,21 @@
 /* 
   ========================================================================================
-
-                                    CODE BỞI TRẦN DƯƠNG GIA BẢO
-
+  Tên file: data.js
+  Tác giả: Trần Dương Gia Bảo
+  Vai trò: Lớp dữ liệu (Data Layer) của ứng dụng Coffee Shop Management Web.
+  Các chức năng chính:
+    - Quản lý sản phẩm (ProductManager), đồng bộ hóa với LocalStorage và Firebase.
+    - Quản lý người dùng, phân quyền Admin và Branch Manager (UserManager).
+    - Quản lý điểm tích lũy thành viên (PointsManager).
+    - Quản lý và lưu trữ đơn đặt hàng (OrderManager).
+  LocalStorage Keys liên quan:
+    - `gibor_products_cache_v3`: Lưu danh sách sản phẩm.
+    - `gibor_users`: Lưu danh sách tất cả tài khoản.
+    - `gibor_current_user`: Lưu thông tin tài khoản đang đăng nhập.
+    - `gibor_orders`: Lưu lịch sử tất cả hóa đơn mua hàng.
+    - `gibor_points`: Lưu số điểm tích lũy của khách hàng hiện tại.
+    - `gibor_branches`: Danh sách các chi nhánh của hệ thống.
   ========================================================================================
-  QUẢN LÝ TÀI KHOẢN NGƯỜI DÙNG - data.js
-  Lưu trữ & xử lý dữ liệu người dùng bằng localStorage
 */
 
 const ADMIN_PRODUCTS_KEY = "gibor_products_cache_v3";
@@ -71,6 +81,18 @@ const PRODUCT_IMAGE_OVERRIDES = {
   "p-44": "images/menu/3Q.jpg",
 };
 
+/**
+ * Tên hàm: normalizeProduct
+ * Mục đích: Đồng nhất cấu trúc thuộc tính của đối tượng sản phẩm, khôi phục ảnh mặc định và tạo ID ngẫu nhiên nếu bị thiếu.
+ * Tham số:
+ *   - product (Object): Đối tượng sản phẩm thô cần chuẩn hóa.
+ * Giá trị trả về:
+ *   - (Object): Đối tượng sản phẩm đã được chuẩn hóa đầy đủ cấu trúc thuộc tính.
+ * Luồng xử lý chính:
+ *   1. Lấy ảnh hiện tại hoặc ghi đè nếu nằm trong danh sách PRODUCT_IMAGE_OVERRIDES.
+ *   2. Nếu ảnh bị lỗi/rỗng/fallback, tìm ảnh chuẩn tương ứng từ danh sách defaultProducts.
+ *   3. Trả về cấu trúc đối tượng hoàn chỉnh chứa id, name, category, price, img, desc, isBestSeller, status.
+ */
 function normalizeProduct(product) {
   let img = product.img || "";
   const overrideImg = PRODUCT_IMAGE_OVERRIDES[product.id];
@@ -100,7 +122,21 @@ function normalizeProduct(product) {
   };
 }
 
+// Đối tượng quản lý toàn bộ nghiệp vụ liên quan đến sản phẩm
 const ProductManager = {
+  /**
+   * Tên hàm: getProducts
+   * Mục đích: Lấy toàn bộ danh sách sản phẩm từ LocalStorage hoặc khôi phục danh sách mặc định nếu trống.
+   * Tham số: Không.
+   * Giá trị trả về:
+   *   - (Array): Mảng chứa các đối tượng sản phẩm đã được chuẩn hóa.
+   * Luồng xử lý chính:
+   *   1. Đọc dữ liệu từ LocalStorage qua key `gibor_products_cache_v3`.
+   *   2. Nếu dữ liệu rỗng hoặc lỗi parse JSON, dùng danh sách mặc định defaultProducts và ghi lại vào LocalStorage.
+   *   3. Lọc bỏ các sản phẩm lỗi (null/undefined), chuẩn hóa ảnh sản phẩm qua normalizeProduct().
+   *   4. Nếu phát hiện ảnh sản phẩm bị thay đổi (ví dụ: khôi phục từ ảnh logo fallback sang ảnh gốc chuẩn), ghi lại vào LocalStorage.
+   *   5. Trả về mảng sản phẩm.
+   */
   getProducts() {
     let products = [];
     try {
@@ -132,6 +168,18 @@ const ProductManager = {
     
     return products;
   },
+
+  /**
+   * Tên hàm: saveProducts
+   * Mục đích: Lưu danh sách sản phẩm mới vào LocalStorage và đồng bộ lên Firebase Database.
+   * Tham số:
+   *   - products (Array): Mảng các sản phẩm cần lưu.
+   * Giá trị trả về: Không.
+   * Luồng xử lý chính:
+   *   1. Loại bỏ phần tử null/undefined và chuẩn hóa từng phần tử qua normalizeProduct().
+   *   2. Ghi mảng sản phẩm dạng chuỗi JSON vào LocalStorage.
+   *   3. Nếu Firebase SDK đã được nhúng, gọi API Firebase Realtime Database ghi đè lên nhánh 'products' để đồng bộ.
+   */
   saveProducts(products) {
     const cleanProducts = (products || []).filter(p => p !== null && p !== undefined).map(normalizeProduct);
     localStorage.setItem(ADMIN_PRODUCTS_KEY, JSON.stringify(cleanProducts));
@@ -1066,13 +1114,24 @@ const UserManager = {
 };
 
 /**
- * Quản lý điểm tích lũy - lưu vào localStorage theo userId
- * Quy tắc: 1.000đ = 1 điểm (tích), 1 điểm = 10đ (dùng)
+ * Tên đối tượng: PointsManager
+ * Mục đích: Quản lý điểm tích lũy thành viên cho khách hàng thân thiết.
+ * Lưu trữ: Lưu trong LocalStorage dưới key `gibor_points` theo dạng Object có key là userId.
+ * Quy tắc tính toán:
+ *   - Tích lũy: Mỗi 1.000đ chi tiêu = 1 điểm tích lũy.
+ *   - Sử dụng: 1 điểm tích lũy = 10đ giảm giá trực tiếp vào hóa đơn.
  */
 const PointsManager = {
   /**
-   * Lấy điểm hiện tại của user đang đăng nhập
-   * @returns {number}
+   * Tên hàm: getPoints
+   * Mục đích: Lấy số điểm tích lũy hiện tại của người dùng đang đăng nhập.
+   * Tham số: Không.
+   * Giá trị trả về:
+   *   - (number): Số điểm tích lũy hiện tại (mặc định là 0 nếu chưa có hoặc chưa đăng nhập).
+   * Luồng xử lý chính:
+   *   1. Lấy thông tin user hiện tại qua UserManager.getCurrentUser().
+   *   2. Đọc LocalStorage key `gibor_points`.
+   *   3. Trả về số điểm tương ứng của userId đó.
    */
   getPoints() {
     const user = UserManager.getCurrentUser();
@@ -1082,8 +1141,15 @@ const PointsManager = {
   },
 
   /**
-   * Cập nhật điểm cho user hiện tại
-   * @param {number} points - Số điểm mới
+   * Tên hàm: setPoints
+   * Mục đích: Cập nhật số điểm tích lũy mới cho người dùng đang đăng nhập vào LocalStorage.
+   * Tham số:
+   *   - points (number): Số điểm mới.
+   * Giá trị trả về: Không.
+   * Luồng xử lý chính:
+   *   1. Xác định user hiện tại đang đăng nhập.
+   *   2. Lấy danh sách điểm từ LocalStorage, cập nhật điểm cho user đó (đảm bảo không âm và làm tròn xuống).
+   *   3. Lưu lại danh sách điểm vào LocalStorage.
    */
   setPoints(points) {
     const user = UserManager.getCurrentUser();
@@ -1094,9 +1160,16 @@ const PointsManager = {
   },
 
   /**
-   * Cộng điểm (sau khi thanh toán)
-   * @param {number} amount - Tổng tiền đơn hàng (VNĐ)
-   * @returns {number} Số điểm được cộng
+   * Tên hàm: earnPoints
+   * Mục đích: Tích điểm mới cho khách hàng dựa trên số tiền của đơn hàng đã thanh toán.
+   * Tham số:
+   *   - amount (number): Tổng số tiền thanh toán của đơn hàng (VNĐ).
+   * Giá trị trả về:
+   *   - (number): Số điểm được cộng thêm từ đơn hàng này.
+   * Luồng xử lý chính:
+   *   1. Tính toán số điểm nhận được: 1.000đ = 1 điểm (làm tròn xuống).
+   *   2. Lấy số điểm hiện tại, cộng thêm điểm mới tính và cập nhật qua setPoints().
+   *   3. Trả về số điểm vừa được cộng.
    */
   earnPoints(amount) {
     const earned = Math.floor(amount / 1000);
@@ -1105,9 +1178,16 @@ const PointsManager = {
   },
 
   /**
-   * Trừ điểm (khi sử dụng)
-   * @param {number} points - Số điểm muốn dùng
-   * @returns {boolean}
+   * Tên hàm: usePoints
+   * Mục đích: Trừ điểm tích lũy của khách hàng khi họ quyết định quy đổi điểm để giảm giá.
+   * Tham số:
+   *   - points (number): Số điểm khách hàng yêu cầu sử dụng.
+   * Giá trị trả về:
+   *   - (boolean): True nếu trừ điểm thành công, False nếu số điểm yêu cầu vượt quá số điểm hiện có.
+   * Luồng xử lý chính:
+   *   1. Lấy số điểm hiện tại của khách hàng.
+   *   2. Nếu số điểm yêu cầu lớn hơn số điểm đang có, từ chối giao dịch (trả về false).
+   *   3. Trừ bớt điểm và lưu số điểm còn lại qua setPoints(), trả về true.
    */
   usePoints(points) {
     const current = this.getPoints();
@@ -1117,18 +1197,24 @@ const PointsManager = {
   },
 
   /**
-   * Tính số tiền giảm từ điểm
-   * @param {number} points - Số điểm dùng
-   * @returns {number} Số tiền giảm (VNĐ) — 1 điểm = 10đ
+   * Tên hàm: pointsToMoney
+   * Mục đích: Quy đổi số điểm tích lũy thành số tiền tương ứng được giảm giá (1 điểm = 10đ).
+   * Tham số:
+   *   - points (number): Số điểm cần quy đổi.
+   * Giá trị trả về:
+   *   - (number): Số tiền được giảm tương ứng (VNĐ).
    */
   pointsToMoney(points) {
     return points * 10;
   },
 
   /**
-   * Tính số điểm nhận được từ tổng tiền
-   * @param {number} amount - Tổng tiền (VNĐ)
-   * @returns {number} Số điểm
+   * Tên hàm: moneyToPoints
+   * Mục đích: Tính toán số điểm tích lũy được từ tổng số tiền chi tiêu (1.000đ = 1 điểm).
+   * Tham số:
+   *   - amount (number): Số tiền chi tiêu (VNĐ).
+   * Giá trị trả về:
+   *   - (number): Số điểm tích lũy tương ứng.
    */
   moneyToPoints(amount) {
     return Math.floor(amount / 1000);
@@ -1136,12 +1222,21 @@ const PointsManager = {
 };
 
 /**
- * Quản lý lịch sử đơn hàng - lưu vào localStorage
+ * Tên đối tượng: OrderManager
+ * Mục đích: Quản lý lịch sử hóa đơn đơn hàng của người dùng.
+ * Lưu trữ: Lưu trong LocalStorage dưới key `gibor_orders` và đồng bộ lên Firebase Database.
  */
 const OrderManager = {
   /**
-   * Lấy tất cả đơn hàng của user hiện tại
-   * @returns {Array}
+   * Tên hàm: getOrders
+   * Mục đích: Lấy toàn bộ đơn hàng của người dùng hiện tại đang đăng nhập.
+   * Tham số: Không.
+   * Giá trị trả về:
+   *   - (Array): Mảng chứa các đối tượng đơn hàng của riêng người dùng này.
+   * Luồng xử lý chính:
+   *   1. Lấy thông tin user hiện tại qua UserManager.getCurrentUser().
+   *   2. Đọc LocalStorage key `gibor_orders` và parse thành mảng.
+   *   3. Lọc bỏ phần tử null/undefined và lọc các đơn hàng có userId khớp với id của user hiện tại.
    */
   getOrders() {
     try {
@@ -1157,8 +1252,17 @@ const OrderManager = {
   },
 
   /**
-   * Lưu đơn hàng mới
-   * @param {Object} order - { code, items, total, payment, shipping, date }
+   * Tên hàm: saveOrder
+   * Mục đích: Lưu đơn hàng mới vào lịch sử LocalStorage và đồng bộ lên Firebase Database.
+   * Tham số:
+   *   - order (Object): Thông tin đơn hàng mới chứa code, items, total, payment, shipping, v.v.
+   * Giá trị trả về: Không.
+   * Luồng xử lý chính:
+   *   1. Lấy thông tin user hiện tại.
+   *   2. Đọc danh sách đơn hàng cũ từ LocalStorage.
+   *   3. Tạo đối tượng đơn hàng mới bổ sung userId, userName, thời gian tạo createdAt, trạng thái mặc định.
+   *   4. Push đơn hàng mới vào danh sách và lưu lại LocalStorage.
+   *   5. Đồng bộ mảng đơn hàng lên nhánh 'orders' của Firebase Database nếu có kết nối.
    */
   saveOrder(order) {
     try {
@@ -1185,7 +1289,7 @@ const OrderManager = {
   },
 };
 
-// Initialize default admin
+// Khởi chạy đồng bộ tạo tài khoản Admin mặc định khi load trang
 if (typeof UserManager !== 'undefined') {
   UserManager.ensureDefaultAdmin();
 }
@@ -1195,9 +1299,11 @@ if (typeof UserManager !== 'undefined') {
 // ============================================================================
 
 /**
- * Lấy giỏ hàng từ localStorage.
- * 
- * @returns {Array} Danh sách sản phẩm trong giỏ hàng.
+ * Tên hàm: getCart
+ * Mục đích: Đọc và lấy danh sách sản phẩm trong giỏ hàng hiện tại của khách hàng từ LocalStorage.
+ * Tham số: Không.
+ * Giá trị trả về:
+ *   - (Array): Mảng chứa các sản phẩm trong giỏ hàng.
  */
 function getCart() {
   try {
@@ -1209,9 +1315,11 @@ function getCart() {
 }
 
 /**
- * Lưu giỏ hàng vào localStorage.
- * 
- * @param {Array} cart - Danh sách sản phẩm mới của giỏ hàng.
+ * Tên hàm: saveCart
+ * Mục đích: Lưu danh sách giỏ hàng mới vào LocalStorage dưới key `giborCart`.
+ * Tham số:
+ *   - cart (Array): Mảng chứa danh sách sản phẩm mới cần lưu.
+ * Giá trị trả về: Không.
  */
 function saveCart(cart) {
   try {
@@ -1222,19 +1330,23 @@ function saveCart(cart) {
 }
 
 /**
- * Định dạng tiền tệ VNĐ.
- * 
- * @param {number} price - Số tiền cần định dạng.
- * @returns {string} Chuỗi tiền tệ (ví dụ: "30.000đ").
+ * Tên hàm: formatPrice
+ * Mục đích: Định dạng số tiền thô thành chuỗi hiển thị đơn vị tiền tệ VNĐ (ví dụ: 30000 -> "30.000đ").
+ * Tham số:
+ *   - price (number): Số tiền cần định dạng.
+ * Giá trị trả về:
+ *   - (string): Chuỗi tiền tệ đã định dạng.
  */
 function formatPrice(price) {
   return (Number(price) || 0).toLocaleString("vi-VN") + "đ";
 }
 
 /**
- * Hiển thị Toast thông báo nhanh cho người dùng.
- * 
- * @param {string} message - Nội dung thông báo.
+ * Tên hàm: showToast
+ * Mục đích: Hiển thị hộp thông báo nhanh (Toast) tự động ẩn sau 2.5 giây cho khách hàng.
+ * Tham số:
+ *   - message (string): Nội dung thông báo hiển thị.
+ * Giá trị trả về: Không.
  */
 function showToast(message) {
   const toast = document.getElementById("toast");
@@ -1253,7 +1365,10 @@ function showToast(message) {
 }
 
 /**
- * Cập nhật số lượng hiển thị trên tất cả các badge giỏ hàng.
+ * Tên hàm: updateCartCount
+ * Mục đích: Tính toán và cập nhật số lượng badge giỏ hàng hiển thị ở tất cả vị trí trên giao diện (desktop và mobile).
+ * Tham số: Không.
+ * Giá trị trả về: Không.
  */
 function updateCartCount() {
   const cart = getCart();
@@ -1274,6 +1389,39 @@ function updateCartCount() {
   if (typeof window.updateBottomNavBadge === "function") {
     window.updateBottomNavBadge();
   }
+}
+
+/**
+ * Tên hàm: escapeHTML
+ * Mục đích: Chuẩn hóa chuỗi ký tự, thay thế các ký tự đặc biệt thành HTML Entities nhằm ngăn chặn tấn công XSS.
+ * Tham số:
+ *   - value (string): Chuỗi thô cần lọc.
+ * Giá trị trả về:
+ *   - (string): Chuỗi an toàn đã được mã hóa ký tự đặc biệt.
+ */
+function escapeHTML(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+/**
+ * Tên hàm: formatDate
+ * Mục đích: Định dạng mốc thời gian thành chuỗi hiển thị tiếng Việt (ngày/tháng/năm hoặc ngày/tháng/năm giờ:phút:giây).
+ * Tham số:
+ *   - value (string|number|Date): Thời gian đầu vào.
+ *   - includeTime (boolean): Có hiển thị kèm theo giờ phút giây không (mặc định là false).
+ * Giá trị trả về:
+ *   - (string): Chuỗi thời gian đã định dạng.
+ */
+function formatDate(value, includeTime = false) {
+  if (!value) return "-";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "-";
+  return includeTime ? date.toLocaleString("vi-VN") : date.toLocaleDateString("vi-VN");
 }
 
 /* 

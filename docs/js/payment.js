@@ -6,21 +6,38 @@
 ========================================================================================
 */
 
+/**
+ * Cập nhật và hiển thị mã QR thanh toán qua payOS.
+ * Hàm này sẽ gọi API tạo yêu cầu thanh toán với số tiền hiện tại,
+ * hiển thị trạng thái đang xử lý và hiển thị mã QR kèm đường link thanh toán khi thành công.
+ * 
+ * @async
+ * @function updateQRCode
+ * @returns {Promise<void>} Không trả về giá trị
+ */
 async function updateQRCode() {
-  const loader = document.getElementById("qrLoader");
-  const qrImg = document.getElementById("qrImage");
-  const amountEl = document.getElementById("displayAmount");
-  const descEl = document.getElementById("displayDesc");
-  const bankingInfo = document.getElementById("bankingInfo");
+  // Lấy các phần tử DOM liên quan đến khu vực hiển thị QR thanh toán
+  const loader = document.getElementById("qrLoader"); // Icon loading khi đang tạo mã QR
+  const qrImg = document.getElementById("qrImage"); // Thẻ img để hiển thị QR Code
+  const amountEl = document.getElementById("displayAmount"); // Element hiển thị số tiền thanh toán
+  const descEl = document.getElementById("displayDesc"); // Element hiển thị nội dung chuyển khoản
+  const bankingInfo = document.getElementById("bankingInfo"); // Container chứa toàn bộ phần thông tin chuyển khoản
 
+  // Nếu thiếu một trong các phần tử giao diện cần thiết, dừng thực thi hàm
   if (!loader || !qrImg || !amountEl || !descEl || !bankingInfo) return;
 
+  // Reset trạng thái thanh toán về mặc định (chưa thành công, chưa có thông tin giao dịch)
   payosPaymentSuccess = false;
   currentPayosPayment = null;
+  
+  // Hủy các tiến trình đồng bộ (polling check trạng thái thanh toán) cũ nếu đang chạy
   if (payosSyncTimeout) clearTimeout(payosSyncTimeout);
   if (payosSyncInterval) clearInterval(payosSyncInterval);
 
+  // Lấy tổng số tiền cần thanh toán của đơn hàng hiện tại
   const amountNum = getCurrentCheckoutAmount();
+  
+  // Nếu số tiền không hợp lệ (nhỏ hơn hoặc bằng 0), ẩn QR, thông báo lỗi và dừng thực thi
   if (amountNum <= 0) {
     loader.style.display = "none";
     qrImg.style.display = "none";
@@ -28,9 +45,11 @@ async function updateQRCode() {
     return;
   }
 
+  // Xóa icon/thông báo thanh toán thành công cũ nếu tồn tại trong khu vực chuyển khoản
   const oldSuccess = bankingInfo.querySelector(".payos-success-check");
   if (oldSuccess) oldSuccess.remove();
 
+  // Tạo hoặc lấy nhãn hiển thị trạng thái thanh toán payOS trên giao diện
   let statusLabel = bankingInfo.querySelector(".payos-status-label");
   if (!statusLabel) {
     statusLabel = document.createElement("div");
@@ -39,6 +58,7 @@ async function updateQRCode() {
     bankingInfo.appendChild(statusLabel);
   }
 
+  // Hiển thị phần chi tiết chuyển khoản, ẩn mã QR cũ và bật spinner tải dữ liệu
   const qrDetails = bankingInfo.querySelector(".qr-details");
   if (qrDetails) qrDetails.style.display = "block";
   qrImg.style.display = "none";
@@ -49,8 +69,10 @@ async function updateQRCode() {
 
   let payment;
   try {
+    // Gọi hàm gửi yêu cầu tạo link thanh toán payOS lên serverless API
     payment = await createPayosPaymentRequest(amountNum);
   } catch (error) {
+    // Xử lý khi gặp lỗi kết nối API hoặc lỗi máy chủ không tạo được link thanh toán
     console.error("Khong tao duoc payment link payOS:", error);
     loader.style.display = "none";
     qrImg.style.display = "none";
@@ -60,12 +82,15 @@ async function updateQRCode() {
     return;
   }
 
+  // Lưu thông tin giao dịch payOS hiện tại vào biến toàn cục để dùng cho các bước tiếp theo
   currentPayosPayment = payment;
+  // Cập nhật số tiền và nội dung chuyển khoản tương ứng với giao dịch lên giao diện
   amountEl.innerText = amountNum.toLocaleString("vi-VN") + "d";
   descEl.innerText = payment.description;
   statusLabel.innerHTML = "";
   statusLabel.style.display = "none";
 
+  // Tạo hoặc cập nhật đường link chuyển hướng đến trang cổng thanh toán payOS chính thức
   let checkoutLink = bankingInfo.querySelector(".payos-checkout-link");
   if (!checkoutLink) {
     checkoutLink = document.createElement("a");
@@ -76,6 +101,7 @@ async function updateQRCode() {
     bankingInfo.appendChild(checkoutLink);
   }
 
+  // Nếu có link thanh toán checkoutUrl từ payOS, hiển thị nút mở trang thanh toán
   if (payment.checkoutUrl) {
     checkoutLink.href = payment.checkoutUrl;
     checkoutLink.innerHTML = `<i class="fa-solid fa-arrow-up-right-from-square"></i> Mo trang thanh toan payOS`;
@@ -84,28 +110,42 @@ async function updateQRCode() {
     checkoutLink.style.display = "none";
   }
 
+  // Thiết lập sự kiện khi ảnh QR được tải xuống thành công từ máy chủ
   qrImg.onload = function () {
-    loader.style.display = "none";
-    qrImg.style.display = "block";
+    loader.style.display = "none"; // Ẩn spinner loading
+    qrImg.style.display = "block"; // Hiển thị ảnh QR Code
   };
+  
+  // Thiết lập sự kiện khi xảy ra lỗi trong quá trình tải ảnh QR Code
   qrImg.onerror = function () {
     loader.style.display = "none";
     qrImg.style.display = "none";
     showToast("Khong tai duoc ma QR thanh toan payOS.");
   };
+  
+  // Đặt nguồn ảnh cho thẻ img bằng URL sinh mã QR từ dữ liệu trả về của payOS
   qrImg.src = getQrImageUrl(payment);
 }
 
-// ===== RENDER ĐƠN HÀNG (CỘT PHẢI) =====
+/**
+ * Hiển thị thông tin tóm tắt giỏ hàng (cột bên phải trang thanh toán).
+ * Hàm này lấy dữ liệu giỏ hàng hiện tại, tạo HTML cấu trúc danh sách sản phẩm,
+ * hiển thị số lượng và các tùy chọn đi kèm (size, toppings, combo) của từng món.
+ * 
+ * @function renderOrderSummary
+ * @returns {void} Không trả về giá trị
+ */
 function renderOrderSummary() {
-  const cart = getCart();
-  const orderItems = document.getElementById("orderItems");
-  const orderCount = document.getElementById("orderCount");
+  const cart = getCart(); // Lấy mảng sản phẩm trong giỏ hàng từ localStorage
+  const orderItems = document.getElementById("orderItems"); // Phần tử chứa danh sách món
+  const orderCount = document.getElementById("orderCount"); // Badge hiển thị số lượng món
 
   if (!orderItems || !orderCount) return;
 
+  // Tính tổng số lượng tất cả các sản phẩm có trong giỏ hàng và cập nhật lên badge
   orderCount.textContent = cart.reduce((s, i) => s + i.quantity, 0);
 
+  // Trường hợp giỏ hàng trống, hiển thị giao diện giỏ hàng trống và cập nhật tổng tiền bằng 0
   if (cart.length === 0) {
     orderItems.innerHTML = `
       <div class="cart-empty-mini">
@@ -117,24 +157,35 @@ function renderOrderSummary() {
   }
 
   let html = "";
+  // Duyệt qua từng sản phẩm trong giỏ hàng để tạo mã HTML hiển thị
   cart.forEach((item) => {
-    const total = item.price * item.quantity;
+    const total = item.price * item.quantity; // Tính tổng tiền cho sản phẩm hiện tại (giá * số lượng)
+    
+    // Lấy danh sách các món trong combo (nếu sản phẩm là một combo)
     const comboItems =
       Array.isArray(item.comboItems) && item.comboItems.length > 0
         ? item.comboItems
         : typeof window.getComboItemsByName === "function"
           ? window.getComboItemsByName(item.name)
           : [];
-    const metaParts = [];
+          
+    const metaParts = []; // Mảng chứa các chuỗi thông tin tùy chọn (size, đường, đá, toppings)
+    
+    // Đưa thông tin các món trong combo vào phần mô tả
     if (comboItems.length > 0) metaParts.push("Gồm: " + comboItems.join(" + "));
+    // Đưa thông tin kích thước (size) vào nếu khác kích thước mặc định
     if (item.size && item.size !== "Mặc định")
       metaParts.push("Size " + item.size);
+    // Đưa thông tin mức đường
     if (item.sugar) metaParts.push("Đường " + item.sugar);
+    // Đưa thông tin mức đá
     if (item.ice) metaParts.push("Đá " + item.ice);
+    // Đưa danh sách topping đi kèm sản phẩm nếu có
     if (item.toppings && item.toppings.length > 0) {
       metaParts.push("Topping: " + item.toppings.map((t) => t.name).join(", "));
     }
 
+    // Nối chuỗi HTML của sản phẩm vào chuỗi kết quả chung
     html += `
       <div class="order-item">
         <div class="order-item-img">
@@ -150,51 +201,71 @@ function renderOrderSummary() {
       </div>`;
   });
 
+  // Chèn chuỗi HTML danh sách sản phẩm vào vùng hiển thị trên giao diện
   orderItems.innerHTML = html;
 
-  // Tính tổng
+  // Tính tổng tiền tạm tính của giỏ hàng (chưa trừ mã giảm giá, chưa tính phí ship)
   const subtotal = cart.reduce((s, i) => s + i.price * i.quantity, 0);
+  // Cập nhật các mục tiền (tạm tính, phí ship, giảm giá, tổng tiền cuối cùng)
   updateTotals(subtotal);
 }
 
 // ===== CẬP NHẬT TỔNG TIỀN =====
-let currentDiscount = 0;
-let isFreeShip = false;
-let pointsDiscount = 0; // Số tiền giảm từ điểm
-let usedPoints = 0; // Số điểm đã dùng
+let currentDiscount = 0; // Biến lưu số tiền giảm giá từ Coupon
+let isFreeShip = false;  // Biến lưu trạng thái đơn hàng có được miễn phí vận chuyển hay không
+let pointsDiscount = 0; // Số tiền được giảm khi áp dụng điểm tích lũy của khách hàng thành viên
+let usedPoints = 0; // Số điểm tích lũy thực tế đã sử dụng cho đơn hàng này
 
+/**
+ * Tính toán phí vận chuyển, các khoản giảm giá và cập nhật tổng tiền đơn hàng lên giao diện.
+ * Đồng thời tính toán số điểm thưởng tích lũy dự kiến khách hàng nhận được khi mua hàng.
+ * 
+ * @function updateTotals
+ * @param {number} subtotal - Số tiền tạm tính của các sản phẩm trong giỏ hàng (chưa gồm giảm giá và phí ship)
+ * @returns {void} Không trả về giá trị
+ */
 function updateTotals(subtotal) {
-  const subEl = document.getElementById("subtotalPrice");
-  const shipEl = document.getElementById("shippingFee");
-  const discountRow = document.getElementById("discountRow");
-  const discountEl = document.getElementById("discountAmount");
-  const grandEl = document.getElementById("grandTotal");
+  // Lấy các phần tử hiển thị giá trị tiền trên giao diện
+  const subEl = document.getElementById("subtotalPrice"); // Tiền tạm tính
+  const shipEl = document.getElementById("shippingFee"); // Phí vận chuyển
+  const discountRow = document.getElementById("discountRow"); // Dòng hiển thị giảm giá coupon
+  const discountEl = document.getElementById("discountAmount"); // Số tiền giảm từ coupon
+  const grandEl = document.getElementById("grandTotal"); // Tổng tiền cuối cùng phải trả
 
   if (!subEl) return;
 
-  // Tính phí ship: miễn phí nếu uống tại quán, đơn >= 200k, hoặc có mã FREESHIP
+  // 1. Tính toán phí vận chuyển (shipping fee):
+  // Mặc định phí ship là 0đ. Nếu chọn hình thức giao hàng (delivery):
+  // - Nếu tổng tiền hàng >= 200,000đ thì được miễn phí ship.
+  // - Nếu tổng tiền hàng < 200,000đ và lớn hơn 0đ thì phí ship là 30,000đ.
   let shippingFee = 0;
   if (selectedShipping === "delivery") {
     shippingFee = subtotal > 0 ? (subtotal >= 200000 ? 0 : 30000) : 0;
   }
+  // Nếu có mã coupon miễn phí vận chuyển (isFreeShip === true) và giỏ hàng không trống, phí ship bằng 0đ
   if (isFreeShip && subtotal > 0) shippingFee = 0;
 
+  // 2. Tính tổng tiền thanh toán cuối cùng (Grand Total):
+  // Công thức: Tổng tiền = Tiền tạm tính - Giảm giá Coupon - Giảm giá đổi điểm + Phí ship
   const grand = subtotal - currentDiscount - pointsDiscount + shippingFee;
 
+  // Cập nhật giá trị tiền tạm tính và phí vận chuyển lên giao diện
   subEl.textContent = formatPrice(subtotal);
   shipEl.textContent =
     shippingFee === 0 && subtotal > 0 ? "Miễn phí" : formatPrice(shippingFee);
 
-  // Hiển thị giảm giá từ coupon
+  // 3. Cập nhật hiển thị giảm giá từ mã coupon:
+  // Nếu có tiền giảm từ coupon (> 0đ), hiển thị dòng giảm giá và số tiền tương ứng
   if (currentDiscount > 0) {
     discountRow.style.display = "flex";
     discountEl.textContent = "- " + formatPrice(currentDiscount);
   } else {
-    // Ẩn dòng giảm giá nếu chỉ có freeship (đã thể hiện ở phí ship)
+    // Nếu không có giảm giá, ẩn dòng này trên giao diện
     discountRow.style.display = "none";
   }
 
-  // Hiển thị giảm giá từ điểm (trong points-section và phần tính tiền)
+  // 4. Cập nhật hiển thị giảm giá từ điểm tích lũy thành viên:
+  // Có hai dòng hiển thị giảm giá từ điểm cần đồng bộ giá trị trên giao diện
   [
     { rowId: "pointsDiscountRow", elId: "pointsDiscountAmount" },
     { rowId: "pointsDiscountCalcRow", elId: "pointsDiscountCalc" },
@@ -211,35 +282,60 @@ function updateTotals(subtotal) {
     }
   });
 
-  // Cập nhật điểm nhận được (chỉ tính trên tiền hàng, KHÔNG tính phí ship)
+  // 5. Cập nhật điểm tích lũy thành viên dự kiến sẽ nhận được:
+  // Điểm tích lũy chỉ được tính dựa trên số tiền thực tế khách trả cho sản phẩm (không tính trên phí vận chuyển)
+  // Công thức: Tiền sản phẩm thực tế = Tạm tính - Giảm giá Coupon - Giảm giá đổi điểm
   const productTotal = Math.max(0, subtotal - currentDiscount - pointsDiscount);
   const earnEl = document.getElementById("pointsEarn");
+  
+  // Nếu tìm thấy phần tử hiển thị điểm thưởng và lớp PointsManager đã được tải thành công
   if (earnEl && typeof PointsManager !== "undefined") {
+    // Quy đổi số tiền mua sản phẩm thực tế sang điểm thưởng (ví dụ: 10,000đ = 1 điểm)
     const earnedPoints = PointsManager.moneyToPoints(productTotal);
     earnEl.textContent = "+" + earnedPoints.toLocaleString("vi-VN") + " điểm";
   }
 
+  // Cập nhật tổng tiền cuối cùng lên giao diện (đảm bảo không âm)
   grandEl.textContent = formatPrice(Math.max(0, grand));
 }
 
 // ===== MÃ GIẢM GIÁ =====
+/**
+ * Danh sách cấu trúc các mã giảm giá được cấu hình trên hệ thống Client.
+ * Gồm các loại:
+ * - percent: Giảm theo phần trăm (kèm theo mức giảm tối đa max)
+ * - fixed: Giảm một số tiền cố định
+ * - freeship: Miễn phí vận chuyển
+ * 
+ * @constant {Object} COUPONS
+ */
 const COUPONS = {
-  GIBOR10: { type: "percent", value: 10, max: 50000 },
-  GIBOR20K: { type: "fixed", value: 20000 },
-  FREESHIP: { type: "freeship", value: 0 },
+  GIBOR10: { type: "percent", value: 10, max: 50000 }, // Giảm 10%, tối đa 50,000đ
+  GIBOR20K: { type: "fixed", value: 20000 },           // Giảm cố định 20,000đ
+  FREESHIP: { type: "freeship", value: 0 },            // Miễn phí vận chuyển
 };
 
+/**
+ * Kiểm tra và áp dụng mã giảm giá do người dùng nhập vào.
+ * Tính toán lại số tiền được giảm tương ứng với loại mã và cập nhật lại tổng tiền.
+ * 
+ * @function applyCoupon
+ * @returns {void} Không trả về giá trị
+ */
 function applyCoupon() {
-  const input = document.getElementById("couponCode");
-  const code = input.value.trim().toUpperCase();
+  const input = document.getElementById("couponCode"); // Ô nhập mã giảm giá
+  const code = input.value.trim().toUpperCase(); // Loại bỏ khoảng trắng và chuyển thành chữ in hoa
 
+  // Nếu người dùng bấm áp dụng nhưng chưa nhập mã, thông báo nhắc nhở
   if (!code) {
     showToast("Vui lòng nhập mã giảm giá!");
     return;
   }
 
+  // Tìm kiếm thông tin coupon trong danh sách cấu hình
   const coupon = COUPONS[code];
   if (!coupon) {
+    // Nếu không tồn tại coupon, reset các giá trị giảm giá về 0 và thông báo lỗi
     showToast("Mã giảm giá không hợp lệ!");
     currentDiscount = 0;
     isFreeShip = false;
@@ -247,56 +343,72 @@ function applyCoupon() {
     return;
   }
 
+  // Lấy danh sách sản phẩm và tính tiền tạm tính để làm căn cứ tính số tiền giảm
   const cart = getCart();
   const subtotal = cart.reduce((s, i) => s + i.price * i.quantity, 0);
 
-  // Reset trạng thái trước khi áp dụng mã mới
+  // Reset trạng thái giảm giá của coupon cũ trước khi áp dụng mã mới
   isFreeShip = false;
   currentDiscount = 0;
 
+  // Tính toán số tiền giảm tương ứng với từng loại coupon
   if (coupon.type === "percent") {
+    // Coupon giảm theo phần trăm: số tiền giảm = (Tạm tính * % giảm) / 100
+    // So sánh với mức giảm tối đa cho phép để lấy giá trị nhỏ hơn
     currentDiscount = Math.min((subtotal * coupon.value) / 100, coupon.max);
   } else if (coupon.type === "fixed") {
+    // Coupon giảm số tiền cố định
     currentDiscount = coupon.value;
   } else if (coupon.type === "freeship") {
+    // Coupon miễn phí vận chuyển
     isFreeShip = true;
   }
 
   showToast(`Áp dụng mã "${code}" thành công!`);
+  // Gọi hàm cập nhật lại các khoản tiền trên giao diện dựa trên số tiền tạm tính
   updateTotals(subtotal);
 }
 
 // ===== ĐIỂM TÍCH LŨY =====
+/**
+ * Khởi tạo giao diện đổi điểm tích lũy thành viên khi thanh toán đơn hàng.
+ * Chỉ hiển thị phần này nếu người dùng đã đăng nhập tài khoản.
+ * 
+ * @function initPoints
+ * @returns {void} Không trả về giá trị
+ */
 function initPoints() {
-  const section = document.getElementById("pointsSection");
+  const section = document.getElementById("pointsSection"); // Vùng chức năng đổi điểm tích lũy
   if (!section) return;
 
-  // Chỉ hiện khi đã đăng nhập
+  // Điều kiện hiển thị: Phải tồn tại lớp UserManager, khách hàng đã đăng nhập và tồn tại PointsManager
   if (
     typeof UserManager === "undefined" ||
     !UserManager.isLoggedIn() ||
     typeof PointsManager === "undefined"
   ) {
+    // Nếu chưa đăng nhập, ẩn vùng đổi điểm và dừng thực thi
     section.classList.add("hidden");
     return;
   }
 
+  // Hiển thị vùng đổi điểm tích lũy
   section.classList.remove("hidden");
 
-  // Hiển điểm hiện tại
+  // Lấy số điểm hiện có của người dùng từ hệ thống quản lý điểm
   const currentPoints = PointsManager.getPoints();
   const currentEl = document.getElementById("pointsCurrent");
   if (currentEl)
     currentEl.textContent = currentPoints.toLocaleString("vi-VN") + " điểm";
 
-  // Set max cho input
+  // Cấu hình ô nhập điểm: điểm tối đa có thể nhập chính là số điểm hiện tại đang sở hữu
   const input = document.getElementById("pointsInput");
   if (input) {
     input.max = currentPoints;
-    input.value = 0;
+    input.value = 0; // Giá trị mặc định ban đầu là 0
   }
 
-  // Cập nhật điểm nhận được
+  // Tính toán và hiển thị điểm thưởng dự kiến nhận được khi thanh toán đơn hàng này
   const cart = getCart();
   const subtotal = cart.reduce((s, i) => s + i.price * i.quantity, 0);
   const earnEl = document.getElementById("pointsEarn");
@@ -305,51 +417,63 @@ function initPoints() {
     earnEl.textContent = "+" + earned.toLocaleString("vi-VN") + " điểm";
   }
 
-  // Sự kiện nút áp dụng điểm
+  // Đăng ký sự kiện click cho nút áp dụng đổi điểm
   const btn = document.getElementById("btnUsePoints");
   if (btn) btn.addEventListener("click", applyPoints);
 }
 
+/**
+ * Quy đổi số điểm khách hàng chọn dùng thành số tiền được giảm.
+ * Tiến hành ràng buộc số điểm hợp lệ, không vượt quá số điểm sở hữu
+ * và số tiền giảm không vượt quá tổng giá trị đơn hàng sau khi trừ coupon.
+ * 
+ * @function applyPoints
+ * @returns {void} Không trả về giá trị
+ */
 function applyPoints() {
   if (typeof PointsManager === "undefined") return;
 
-  const input = document.getElementById("pointsInput");
-  const points = parseInt(input.value) || 0;
-  const currentPoints = PointsManager.getPoints();
+  const input = document.getElementById("pointsInput"); // Ô nhập số điểm muốn dùng
+  const points = parseInt(input.value) || 0; // Chuyển đổi giá trị sang số nguyên, mặc định là 0
+  const currentPoints = PointsManager.getPoints(); // Lấy tổng điểm hiện có
 
+  // Kiểm tra điểm không được âm
   if (points < 0) {
     showToast("Số điểm không hợp lệ!");
     return;
   }
 
+  // Kiểm tra điểm dùng không được vượt quá số điểm hiện có
   if (points > currentPoints) {
     showToast(
       "Bạn không đủ điểm! Hiện có: " +
         currentPoints.toLocaleString("vi-VN") +
         " điểm.",
     );
-    input.value = currentPoints;
+    input.value = currentPoints; // Đưa về số điểm tối đa đang sở hữu
     return;
   }
 
-  // Tính số tiền giảm
+  // Tính số tiền được giảm từ điểm tích lũy quy đổi (ví dụ: 1 điểm = 10đ)
   const cart = getCart();
   const subtotal = cart.reduce((s, i) => s + i.price * i.quantity, 0);
   let discount = PointsManager.pointsToMoney(points);
 
-  // Không cho giảm vượt quá tổng tiền
+  // Ràng buộc bảo vệ: Số tiền giảm từ điểm không được vượt quá số tiền còn lại sau khi đã giảm coupon
   if (discount > subtotal - currentDiscount) {
-    discount = subtotal - currentDiscount;
-    // Tính ngược số điểm cần dùng
+    discount = subtotal - currentDiscount; // Giới hạn mức giảm tối đa bằng số tiền còn lại của đơn hàng
+    // Tính ngược lại số điểm thực tế cần dùng tương ứng với mức giảm giới hạn này
     const actualPoints = Math.ceil(discount / 10);
-    input.value = actualPoints;
-    usedPoints = actualPoints;
-    pointsDiscount = PointsManager.pointsToMoney(actualPoints);
+    input.value = actualPoints; // Cập nhật lại số điểm hiển thị trên ô nhập
+    usedPoints = actualPoints; // Ghi nhận số điểm thực tế sử dụng
+    pointsDiscount = PointsManager.pointsToMoney(actualPoints); // Ghi nhận số tiền giảm thực tế từ điểm
   } else {
+    // Nếu hợp lệ, ghi nhận các giá trị điểm và tiền giảm tương ứng
     usedPoints = points;
     pointsDiscount = discount;
   }
 
+  // Nếu người dùng nhập 0 điểm, xem như hủy sử dụng điểm
   if (points === 0) {
     pointsDiscount = 0;
     usedPoints = 0;
@@ -360,21 +484,31 @@ function applyPoints() {
     );
   }
 
+  // Cập nhật lại các khoản tiền hiển thị trên giao diện thanh toán
   updateTotals(subtotal);
 }
 
 // ===== CHỌN PHƯƠNG THỨC THANH TOÁN =====
-let selectedPayment = "cod"; // Biến lưu phương thức thanh toán: 'cod' hoặc 'banking'
+let selectedPayment = "cod"; // Biến toàn cục lưu phương thức thanh toán hiện tại ('cod' hoặc 'banking')
 
+/**
+ * Xử lý thay đổi phương thức thanh toán khi người dùng lựa chọn trên giao diện.
+ * Cập nhật class active cho các phần tử DOM, ẩn/hiện khu vực QR chuyển khoản,
+ * đổi nhãn nút Đặt hàng và gọi hàm cập nhật mã QR.
+ * 
+ * @function selectPayment
+ * @param {string} method - Phương thức thanh toán được chọn ('cod' hoặc 'banking')
+ * @returns {void} Không trả về giá trị
+ */
 function selectPayment(method) {
-  selectedPayment = method; // Lưu phương thức đã chọn
+  selectedPayment = method; // Cập nhật biến trạng thái toàn cục
 
-  // Xóa class active cũ
+  // Duyệt qua tất cả các thẻ tùy chọn thanh toán để xóa classactive cũ
   document
     .querySelectorAll(".payment-option")
     .forEach((el) => el.classList.remove("active"));
 
-  // Thêm class active cho option được chọn
+  // Thêm class active và chọn radio button của phương thức vừa được click
   const selected = document.querySelector(
     `.payment-option[data-method="${method}"]`,
   );
@@ -383,34 +517,44 @@ function selectPayment(method) {
     selected.querySelector("input[type=radio]").checked = true;
   }
 
-  // Ẩn/hiện phần thông tin chuyển khoản + QR code
+  // Lấy phần tử thông tin chuyển khoản ngân hàng và nút Đặt hàng
   const bankInfo = document.getElementById("bankingInfo");
   const btnPlace = document.getElementById("btnPlaceOrder");
 
+  // Hiển thị khung QR chuyển khoản nếu chọn phương thức 'banking', ẩn nếu chọn 'cod'
   if (bankInfo) {
     bankInfo.style.display = method === "banking" ? "block" : "none";
   }
 
   if (method === "banking") {
-    // Đổi text nút thành "ĐẶ HÀNG"
+    // Cập nhật giao diện nút Đặt hàng sang nhãn thanh toán trực tuyến
     if (btnPlace)
       btnPlace.innerHTML = '<i class="fa-solid fa-credit-card"></i> ĐẶT HÀNG';
-    // Cập nhật QR code với số tiền hiện tại
+    // Tiến hành gọi hàm tạo và hiển thị QR Code động thanh toán payOS
     updateQRCode();
   } else {
-    // Đổi text nút về "ĐẶT HÀNG"
+    // Cập nhật giao diện nút Đặt hàng về mặc định (COD)
     if (btnPlace)
       btnPlace.innerHTML = '<i class="fa-solid fa-check"></i> ĐẶT HÀNG';
   }
 }
 
 // ===== DỮ LIỆU CHI NHÁNH =====
+/**
+ * Chứa danh sách các chi nhánh của cửa hàng được phân chia theo mã thành phố.
+ * Sử dụng IIFE tự chạy để đồng bộ hóa dữ liệu từ thư viện chung `GIBOR_BRANCH_UTILS` (nếu có).
+ * Trường hợp không có thư viện chung, hệ thống tự động fallback sử dụng danh sách tĩnh được khai báo.
+ * 
+ * @constant {Object} BRANCHES
+ */
 const BRANCHES = (() => {
+  // Kiểm tra sự tồn tại của tiện ích quản lý chi nhánh toàn cục
   if (
     typeof window !== "undefined" &&
     window.GIBOR_BRANCH_UTILS &&
     typeof window.GIBOR_BRANCH_UTILS.getByCity === "function"
   ) {
+    // Ánh xạ dữ liệu chi nhánh từ hàm getByCity của thư viện chung
     const mapCityBranches = (cityCode) =>
       window.GIBOR_BRANCH_UTILS.getByCity(cityCode).map((branch) => ({
         id: branch.id,
@@ -419,112 +563,123 @@ const BRANCHES = (() => {
       }));
 
     return {
-      hcm: mapCityBranches("hcm"),
-      hn: mapCityBranches("hn"),
-      dn: mapCityBranches("dn"),
+      hcm: mapCityBranches("hcm"), // Danh sách chi nhánh tại TP. Hồ Chí Minh
+      hn: mapCityBranches("hn"),   // Danh sách chi nhánh tại Hà Nội
+      dn: mapCityBranches("dn"),   // Danh sách chi nhánh tại Đà Nẵng
     };
   }
 
-  // Fallback cũ để tránh ảnh hưởng checkout nếu file dữ liệu chưa được include.
+  // Danh sách chi nhánh tĩnh làm phương án dự phòng (fallback)
   return {
-  hcm: [
-    {
-      id: "hcm1",
-      name: "GIBOR Lê Trọng Tấn",
-      address: "140 Lê Trọng Tấn, Tây Thạnh, Tân Phú, TP. Hồ Chí Minh",
-    },
-    {
-      id: "hcm2",
-      name: "GIBOR Nguyễn Huệ",
-      address: "263 Nguyễn Huệ, Bến Nghé, Quận 1, TP. Hồ Chí Minh",
-    },
-    {
-      id: "hcm3",
-      name: "GIBOR Võ Văn Tần",
-      address: "108 Võ Văn Tần, Phường 6, Quận 3, TP. Hồ Chí Minh",
-    },
-    {
-      id: "hcm4",
-      name: "GIBOR Xa lộ Hà Nội",
-      address: "77 Xa lộ Hà Nội, Thảo Điền, TP. Thủ Đức, TP. Hồ Chí Minh",
-    },
-    {
-      id: "hcm5",
-      name: "GIBOR Điện Biên Phủ",
-      address: "23 Điện Biên Phủ, Phường 15, Bình Thạnh, TP. Hồ Chí Minh",
-    },
-  ],
-  hn: [
-    {
-      id: "hn1",
-      name: "GIBOR Trần Duy Hưng",
-      address: "81 Trần Duy Hưng, Trung Hòa, Cầu Giấy, Hà Nội",
-    },
-    {
-      id: "hn2",
-      name: "GIBOR Láng Hạ",
-      address: "66 Láng Hạ, Láng Hạ, Đống Đa, Hà Nội",
-    },
-    {
-      id: "hn3",
-      name: "GIBOR Bạch Mai",
-      address: "115 Bạch Mai, Bạch Mai, Hai Bà Trưng, Hà Nội",
-    },
-    {
-      id: "hn4",
-      name: "GIBOR Hoàng Hoa Thám",
-      address: "632 Hoàng Hoa Thám, Vĩnh Phúc, Ba Đình, Hà Nội",
-    },
-    {
-      id: "hn5",
-      name: "GIBOR Nguyễn Văn Cừ",
-      address: "334 Nguyễn Văn Cừ, Bồ Đề, Long Biên, Hà Nội",
-    },
-  ],
-  dn: [
-    {
-      id: "dn1",
-      name: "GIBOR Võ Nguyên Giáp",
-      address: "567 Võ Nguyên Giáp, Mỹ An, Ngũ Hành Sơn, Đà Nẵng",
-    },
-    {
-      id: "dn2",
-      name: "GIBOR Bạch Đằng",
-      address: "453 Bạch Đằng, Thạch Thang, Hải Châu, Đà Nẵng",
-    },
-    {
-      id: "dn3",
-      name: "GIBOR Nguyễn Văn Linh",
-      address: "638 Nguyễn Văn Linh, Nam Dương, Hải Châu, Đà Nẵng",
-    },
-    {
-      id: "dn4",
-      name: "GIBOR Tôn Đức Thắng",
-      address: "53 Tôn Đức Thắng, Hòa Khánh Bắc, Liên Chiểu, Đà Nẵng",
-    },
-    {
-      id: "dn5",
-      name: "GIBOR Cách Mạng Tháng Tám",
-      address: "55 Cách Mạng Tháng Tám, Khuê Trung, Cẩm Lệ, Đà Nẵng",
-    },
-  ],
+    hcm: [
+      {
+        id: "hcm1",
+        name: "GIBOR Lê Trọng Tấn",
+        address: "140 Lê Trọng Tấn, Tây Thạnh, Tân Phú, TP. Hồ Chí Minh",
+      },
+      {
+        id: "hcm2",
+        name: "GIBOR Nguyễn Huệ",
+        address: "263 Nguyễn Huệ, Bến Nghé, Quận 1, TP. Hồ Chí Minh",
+      },
+      {
+        id: "hcm3",
+        name: "GIBOR Võ Văn Tần",
+        address: "108 Võ Văn Tần, Phường 6, Quận 3, TP. Hồ Chí Minh",
+      },
+      {
+        id: "hcm4",
+        name: "GIBOR Xa lộ Hà Nội",
+        address: "77 Xa lộ Hà Nội, Thảo Điền, TP. Thủ Đức, TP. Hồ Chí Minh",
+      },
+      {
+        id: "hcm5",
+        name: "GIBOR Điện Biên Phủ",
+        address: "23 Điện Biên Phủ, Phường 15, Bình Thạnh, TP. Hồ Chí Minh",
+      },
+    ],
+    hn: [
+      {
+        id: "hn1",
+        name: "GIBOR Trần Duy Hưng",
+        address: "81 Trần Duy Hưng, Trung Hòa, Cầu Giấy, Hà Nội",
+      },
+      {
+        id: "hn2",
+        name: "GIBOR Láng Hạ",
+        address: "66 Láng Hạ, Láng Hạ, Đống Đa, Hà Nội",
+      },
+      {
+        id: "hn3",
+        name: "GIBOR Bạch Mai",
+        address: "115 Bạch Mai, Bạch Mai, Hai Bà Trưng, Hà Nội",
+      },
+      {
+        id: "hn4",
+        name: "GIBOR Hoàng Hoa Thám",
+        address: "632 Hoàng Hoa Thám, Vĩnh Phúc, Ba Đình, Hà Nội",
+      },
+      {
+        id: "hn5",
+        name: "GIBOR Nguyễn Văn Cừ",
+        address: "334 Nguyễn Văn Cừ, Bồ Đề, Long Biên, Hà Nội",
+      },
+    ],
+    dn: [
+      {
+        id: "dn1",
+        name: "GIBOR Võ Nguyên Giáp",
+        address: "567 Võ Nguyên Giáp, Mỹ An, Ngũ Hành Sơn, Đà Nẵng",
+      },
+      {
+        id: "dn2",
+        name: "GIBOR Bạch Đằng",
+        address: "453 Bạch Đằng, Thạch Thang, Hải Châu, Đà Nẵng",
+      },
+      {
+        id: "dn3",
+        name: "GIBOR Nguyễn Văn Linh",
+        address: "638 Nguyễn Văn Linh, Nam Dương, Hải Châu, Đà Nẵng",
+      },
+      {
+        id: "dn4",
+        name: "GIBOR Tôn Đức Thắng",
+        address: "53 Tôn Đức Thắng, Hòa Khánh Bắc, Liên Chiểu, Đà Nẵng",
+      },
+      {
+        id: "dn5",
+        name: "GIBOR Cách Mạng Tháng Tám",
+        address: "55 Cách Mạng Tháng Tám, Khuê Trung, Cẩm Lệ, Đà Nẵng",
+      },
+    ],
   };
 })();
 
-let selectedBranch = null;
+let selectedBranch = null; // Biến toàn cục lưu chi nhánh cửa hàng được chọn (dùng khi uống tại quán)
 
+/**
+ * Hiển thị danh sách các chi nhánh tương ứng với thành phố được chọn lên giao diện.
+ * Tạo HTML dạng thẻ chọn (label) cho từng chi nhánh, khi click sẽ gọi hàm selectBranch.
+ * 
+ * @function renderBranches
+ * @param {string} city - Mã thành phố được chọn ('hcm', 'hn', 'dn')
+ * @returns {void} Không trả về giá trị
+ */
 function renderBranches(city) {
-  const branchList = document.getElementById("branchList");
+  const branchList = document.getElementById("branchList"); // Khu vực hiển thị danh sách chi nhánh
   if (!branchList) return;
 
+  // Reset chi nhánh được chọn về mặc định khi thay đổi thành phố
   selectedBranch = null;
 
+  // Nếu không có thành phố hoặc thành phố không tồn tại trong danh sách chi nhánh, xóa danh sách trên giao diện
   if (!city || !BRANCHES[city]) {
     branchList.innerHTML = "";
     return;
   }
 
   let html = "";
+  // Duyệt qua mảng chi nhánh của thành phố được chọn để sinh cấu trúc HTML radio button
   BRANCHES[city].forEach((branch) => {
     html += `
       <label class="branch-card" data-branch-id="${branch.id}" onclick="selectBranch('${branch.id}', '${city}')">
@@ -540,13 +695,24 @@ function renderBranches(city) {
   branchList.innerHTML = html;
 }
 
+/**
+ * Lưu trữ chi nhánh cửa hàng được chọn và cập nhật trạng thái hiển thị (highlight) trên giao diện.
+ * 
+ * @function selectBranch
+ * @param {string} branchId - Mã định danh của chi nhánh được chọn
+ * @param {string} city - Mã thành phố của chi nhánh ('hcm', 'hn', 'dn')
+ * @returns {void} Không trả về giá trị
+ */
 function selectBranch(branchId, city) {
+  // Tìm kiếm đối tượng chi nhánh tương ứng trong danh sách BRANCHES
   selectedBranch = BRANCHES[city].find((b) => b.id === branchId);
 
+  // Xóa class active (đánh dấu lựa chọn) của toàn bộ các card chi nhánh
   document.querySelectorAll(".branch-card").forEach((card) => {
     card.classList.remove("active");
   });
 
+  // Tìm card chi nhánh vừa được chọn để thêm class active và tích chọn radio button tương ứng
   const selected = document.querySelector(
     `.branch-card[data-branch-id="${branchId}"]`,
   );
@@ -557,14 +723,26 @@ function selectBranch(branchId, city) {
 }
 
 // ===== CHỌN HÌNH THỨC NHẬN HÀNG =====
-let selectedShipping = "delivery";
+let selectedShipping = "delivery"; // Biến toàn cục lưu hình thức nhận hàng ('delivery' hoặc 'dine-in')
 
+/**
+ * Xử lý thay đổi hình thức nhận hàng khi người dùng click chọn trên giao diện.
+ * Hàm này sẽ ẩn/hiện các trường thông tin giao nhận phù hợp, đặt/bỏ thuộc tính bắt buộc,
+ * xóa các lỗi cũ và gọi hàm cập nhật phí vận chuyển.
+ * 
+ * @function selectShipping
+ * @param {string} method - Hình thức nhận hàng được chọn ('delivery' hoặc 'dine-in')
+ * @returns {void} Không trả về giá trị
+ */
 function selectShipping(method) {
-  selectedShipping = method;
+  selectedShipping = method; // Cập nhật biến trạng thái toàn cục
+
+  // Xóa class active của tất cả các tùy chọn hình thức nhận hàng
   document
     .querySelectorAll(".shipping-option")
     .forEach((el) => el.classList.remove("active"));
 
+  // Thêm class active và chọn radio button tương ứng với hình thức nhận hàng được chọn
   const selected = document.querySelector(
     `.shipping-option[data-method="${method}"]`,
   );
@@ -573,47 +751,64 @@ function selectShipping(method) {
     selected.querySelector("input[type=radio]").checked = true;
   }
 
-  const shippingNotice = document.getElementById("shippingNotice");
-  const requiredFields = document.querySelectorAll(".form-group .required");
-  const branchSection = document.getElementById("branchSection");
-  const addressFields = ["groupAddress", "groupCity", "groupWard"];
+  // Lấy các vùng giao diện cần ẩn/hiện hoặc thay đổi cấu hình
+  const shippingNotice = document.getElementById("shippingNotice"); // Dòng thông báo phí vận chuyển
+  const requiredFields = document.querySelectorAll(".form-group .required"); // Các dấu (*) bắt buộc nhập
+  const branchSection = document.getElementById("branchSection"); // Khu vực chọn chi nhánh
+  const addressFields = ["groupAddress", "groupCity", "groupWard"]; // Các ID của form-group liên quan đến địa chỉ giao hàng
 
   if (method === "delivery") {
-    // Hiện thông báo và bắt buộc các trường
-    if (shippingNotice) shippingNotice.style.display = "flex";
+    // Trường hợp: Giao hàng tận nơi (delivery)
+    if (shippingNotice) shippingNotice.style.display = "flex"; // Hiện thông báo phí vận chuyển
+    
+    // Hiển thị các dấu (*) yêu cầu bắt buộc nhập thông tin
     requiredFields.forEach((el) => (el.style.display = "inline"));
-    // Hiện địa chỉ, tỉnh/tp, phường/xã
+    
+    // Hiển thị các trường địa chỉ, tỉnh/thành phố, phường/xã
     addressFields.forEach((id) => {
       const el = document.getElementById(id);
       if (el) el.style.display = "block";
     });
-    // Ẩn chi nhánh
+    
+    // Ẩn khu vực chọn chi nhánh
     if (branchSection) branchSection.style.display = "none";
-    selectedBranch = null;
-    // Xóa lỗi cũ
+    selectedBranch = null; // Reset chi nhánh đã chọn về null
+    
+    // Xóa các thông báo lỗi cũ trên form để giao diện sạch sẽ
     clearAllErrors();
   } else {
-    // Ẩn thông báo và không bắt buộc
-    if (shippingNotice) shippingNotice.style.display = "none";
+    // Trường hợp: Uống tại quán / Tự đến nhận (dine-in)
+    if (shippingNotice) shippingNotice.style.display = "none"; // Ẩn thông báo phí vận chuyển
+    
+    // Ẩn dấu (*) yêu cầu bắt buộc vì không giao hàng tận nơi
     requiredFields.forEach((el) => (el.style.display = "none"));
-    // Ẩn địa chỉ, tỉnh/tp, phường/xã
+    
+    // Ẩn các trường nhập địa chỉ giao hàng
     addressFields.forEach((id) => {
       const el = document.getElementById(id);
       if (el) el.style.display = "none";
     });
-    // Hiện chi nhánh
+    
+    // Hiển thị khu vực chọn chi nhánh cửa hàng
     if (branchSection) branchSection.style.display = "block";
-    // Xóa lỗi cũ
+    
+    // Xóa các thông báo lỗi cũ
     clearAllErrors();
   }
 
-  // Cập nhật phí ship
+  // Tính toán lại các loại phí và tổng tiền vì phí ship có sự thay đổi giữa các hình thức nhận hàng
   const cart = getCart();
   const subtotal = cart.reduce((s, i) => s + i.price * i.quantity, 0);
   updateTotals(subtotal);
 }
 
 // ===== XÓA LỖI =====
+/**
+ * Xóa toàn bộ các lớp cảnh báo lỗi (has-error) và thẻ thông báo lỗi dưới các input trên form.
+ * 
+ * @function clearAllErrors
+ * @returns {void} Không trả về giá trị
+ */
 function clearAllErrors() {
   document.querySelectorAll(".form-group").forEach((group) => {
     group.classList.remove("has-error");
@@ -622,6 +817,15 @@ function clearAllErrors() {
   });
 }
 
+/**
+ * Hiển thị thông báo lỗi dưới một input cụ thể khi validate form thất bại.
+ * 
+ * @function showFieldError
+ * @param {string} inputId - ID của ô input bị lỗi
+ * @param {string} message - Nội dung thông báo lỗi muốn hiển thị
+ * @param {boolean} [shouldFocus=false] - Có tự động đặt con trỏ chuột (focus) vào ô input đó không
+ * @returns {void} Không trả về giá trị
+ */
 function showFieldError(inputId, message, shouldFocus = false) {
   const input = document.getElementById(inputId);
   if (!input) return;
@@ -629,80 +833,94 @@ function showFieldError(inputId, message, shouldFocus = false) {
   const formGroup = input.closest(".form-group");
   if (!formGroup) return;
 
-  // Xóa lỗi cũ nếu có
+  // Xóa thông báo lỗi cũ của form-group này nếu tồn tại
   formGroup.classList.remove("has-error");
   const oldError = formGroup.querySelector(".error-message");
   if (oldError) oldError.remove();
 
-  // Thêm lỗi mới
+  // Thêm class has-error để viền input chuyển màu đỏ (css cấu hình sẵn)
   formGroup.classList.add("has-error");
+  
+  // Tạo phần tử hiển thị nội dung lỗi bên dưới input
   const errorEl = document.createElement("span");
   errorEl.className = "error-message";
   errorEl.textContent = message;
   formGroup.appendChild(errorEl);
 
-  // Focus vào input nếu là lỗi đầu tiên
+  // Tập trung tiêu điểm (focus) vào input nếu đây là lỗi đầu tiên
   if (shouldFocus) input.focus();
 }
 
 // ===== VALIDATE FORM =====
+/**
+ * Kiểm tra tính hợp lệ của toàn bộ dữ liệu do người dùng nhập vào trên form đặt hàng.
+ * Tùy thuộc vào hình thức nhận hàng (giao hàng hoặc tại quán), các trường bắt buộc sẽ khác nhau.
+ * 
+ * @function validateForm
+ * @returns {boolean|string} Trả về true nếu hợp lệ, false nếu lỗi, hoặc "NEED_CONFIRM" nếu cần hiện popup QR chuyển khoản
+ */
 function validateForm() {
-  // Xóa tất cả lỗi cũ
+  // Xóa toàn bộ lỗi cũ trước khi kiểm tra lượt mới
   clearAllErrors();
 
-  const name = document.getElementById("ckName").value.trim();
-  let errors = [];
+  const name = document.getElementById("ckName").value.trim(); // Họ tên khách hàng
+  let errors = []; // Mảng chứa danh sách các lỗi phát hiện được
 
-  // Luôn yêu cầu tên khách hàng
+  // Họ tên khách hàng là trường bắt buộc trong mọi hình thức
   if (!name) errors.push({ id: "ckName", msg: "Vui lòng nhập họ tên" });
 
-  // Nếu sử dụng tại quán, validate tên + chi nhánh
+  // 1. Kiểm tra validate khi chọn hình thức "Uống tại quán/Tự đến lấy":
   if (selectedShipping === "dine-in") {
     if (errors.length > 0) {
       showFieldError("ckName", "Vui lòng nhập họ tên", true);
       showToast("Vui lòng nhập tên khách hàng!");
       return false;
     }
+    // Bắt buộc phải chọn chi nhánh cửa hàng cụ thể
     if (!selectedBranch) {
       showToast("Vui lòng chọn chi nhánh!");
       return false;
     }
-    // Kiểm tra phương thức thanh toán nếu chọn banking
+    // Nếu chọn thanh toán chuyển khoản, trả về cờ yêu cầu hiển thị popup chuyển khoản ngân hàng
     if (selectedPayment === "banking") {
-      // Sẽ được xử lý bằng popup tùy chỉnh trong placeOrder()
       return "NEED_CONFIRM";
     }
     return true;
   }
 
-  // Nếu giao hàng, phải validate các trường bắt buộc
-  const phone = document.getElementById("ckPhone").value.trim();
-  const email = document.getElementById("ckEmail").value.trim();
-  const address = document.getElementById("ckAddress").value.trim();
-  const city = document.getElementById("ckCity").value;
-  const ward = document.getElementById("ckWard").value;
+  // 2. Kiểm tra validate khi chọn hình thức "Giao hàng tận nơi":
+  const phone = document.getElementById("ckPhone").value.trim(); // Số điện thoại
+  const email = document.getElementById("ckEmail").value.trim(); // Địa chỉ Email
+  const address = document.getElementById("ckAddress").value.trim(); // Địa chỉ nhà/Đường
+  const city = document.getElementById("ckCity").value; // Tỉnh/Thành phố
+  const ward = document.getElementById("ckWard").value; // Phường/Xã
 
+  // Ràng buộc số điện thoại không được trống và phải có độ dài tối thiểu 9 chữ số
   if (!phone || phone.length < 9)
     errors.push({ id: "ckPhone", msg: "Vui lòng nhập số điện thoại hợp lệ" });
+  // Ràng buộc email không được trống và phải chứa ký tự '@'
   if (!email || !email.includes("@"))
     errors.push({ id: "ckEmail", msg: "Vui lòng nhập email hợp lệ" });
+  // Ràng buộc địa chỉ cụ thể không trống
   if (!address) errors.push({ id: "ckAddress", msg: "Vui lòng nhập địa chỉ" });
+  // Ràng buộc tỉnh/thành phố phải chọn
   if (!city) errors.push({ id: "ckCity", msg: "Vui lòng chọn Tỉnh/Thành phố" });
+  // Ràng buộc phường/xã phải chọn
   if (!ward) errors.push({ id: "ckWard", msg: "Vui lòng chọn Phường/Xã" });
 
-  // Hiển thị tất cả lỗi, focus vào lỗi đầu tiên
+  // Duyệt mảng lỗi để hiển thị trực quan lên giao diện, focus vào input lỗi đầu tiên
   errors.forEach((err, idx) => {
     showFieldError(err.id, err.msg, idx === 0);
   });
 
+  // Nếu có bất kỳ lỗi nào, thông báo toast và hủy luồng xử lý
   if (errors.length > 0) {
     showToast("Vui lòng điền đầy đủ thông tin giao hàng!");
     return false;
   }
 
-  // Kiểm tra xác nhận thanh toán nếu chọn chuyển khoản ngân hàng
+  // Nếu chọn chuyển khoản ngân hàng, yêu cầu xác nhận hiển thị popup thanh toán QR trước
   if (selectedPayment === "banking") {
-    // Sẽ được xử lý bằng popup tùy chỉnh trong placeOrder()
     return "NEED_CONFIRM";
   }
 
@@ -710,57 +928,72 @@ function validateForm() {
 }
 
 // ===== HIỆN POPUP XÁC NHẬN THANH TOÁN =====
+/**
+ * Hiển thị popup overlay xác nhận thanh toán (chứa mã QR chuyển khoản payOS).
+ * Trả về một Promise sẽ giải quyết (resolve) khi khách hàng bấm Xác nhận hoặc Hủy.
+ * 
+ * @function showConfirmPayment
+ * @returns {Promise<boolean>} Trả về true nếu chọn Xác nhận (đã chuyển khoản), false nếu bấm Hủy
+ */
 function showConfirmPayment() {
   return new Promise((resolve) => {
-    const overlay = document.getElementById("confirmOverlay");
-    const btnOk = document.getElementById("btnConfirmOk");
-    const btnCancel = document.getElementById("btnConfirmCancel");
+    const overlay = document.getElementById("confirmOverlay"); // Overlay chứa popup xác nhận chuyển khoản
+    const btnOk = document.getElementById("btnConfirmOk"); // Nút "Tôi đã chuyển khoản thành công"
+    const btnCancel = document.getElementById("btnConfirmCancel"); // Nút "Hủy giao dịch"
 
+    // Nếu không tồn tại popup overlay trong DOM, tự động coi như đã xác nhận và tiếp tục
     if (!overlay) {
       resolve(true);
       return;
     }
 
+    // Hiển thị popup overlay lên giao diện (thông qua thêm class show)
     overlay.classList.add("show");
     
-    // Đảm bảo banking-info hiển thị trong popup xác nhận
+    // Đảm bảo thông tin ngân hàng hiển thị đầy đủ bên trong popup
     const popupBankInfo = overlay.querySelector("#bankingInfo");
     if (popupBankInfo) {
       popupBankInfo.style.display = "block";
     }
 
-    // Trên mobile, tạo lại QR sau khi popup đã hiển thị để tránh bị hoãn tải ảnh.
+    // Đặc biệt trên mobile: Khởi tạo/tải lại ảnh QR sau khi popup đã hiển thị hoàn toàn
+    // Việc này để tránh các cơ chế hoãn tải tài nguyên (lazy load) của trình duyệt di động
     if (selectedPayment === "banking") {
       requestAnimationFrame(() => {
         setTimeout(updateQRCode, 60);
       });
     }
 
+    // Xử lý sự kiện khi người dùng nhấn Xác nhận
     const handleOk = () => {
-      // Dọn dẹp polling và timeout payOS
+      // Dọn dẹp các tiến trình đồng bộ trạng thái payOS đang chạy nền
       if (typeof payosSyncTimeout !== "undefined" && payosSyncTimeout) clearTimeout(payosSyncTimeout);
       if (typeof payosSyncInterval !== "undefined" && payosSyncInterval) clearInterval(payosSyncInterval);
       
-      overlay.classList.remove("show");
+      overlay.classList.remove("show"); // Ẩn popup
+      // Hủy lắng nghe sự kiện để tránh rò rỉ bộ nhớ
       btnOk.removeEventListener("click", handleOk);
       btnCancel.removeEventListener("click", handleCancel);
-      resolve(true);
+      resolve(true); // Trả về kết quả thành công
     };
 
+    // Xử lý sự kiện khi người dùng nhấn Hủy
     const handleCancel = () => {
-      // Dọn dẹp polling và timeout payOS
+      // Dọn dẹp các tiến trình đồng bộ trạng thái payOS đang chạy nền
       if (typeof payosSyncTimeout !== "undefined" && payosSyncTimeout) clearTimeout(payosSyncTimeout);
       if (typeof payosSyncInterval !== "undefined" && payosSyncInterval) clearInterval(payosSyncInterval);
       
-      overlay.classList.remove("show");
-      // Bấm hủy thì cập nhật lại số tiền hiện tại
+      overlay.classList.remove("show"); // Ẩn popup
+      
+      // Bấm hủy thì tính toán lại tổng tiền của đơn hàng để đồng bộ giao diện
       const cart = getCart();
       const subtotal = cart.reduce((s, i) => s + i.price * i.quantity, 0);
       updateTotals(subtotal);
       
+      // Hủy lắng nghe sự kiện
       btnOk.removeEventListener("click", handleOk);
       btnCancel.removeEventListener("click", handleCancel);
-      resolve(false);
+      resolve(false); // Trả về kết quả thất bại (hủy đặt hàng)
     };
 
     btnOk.addEventListener("click", handleOk);
@@ -769,42 +1002,61 @@ function showConfirmPayment() {
 }
 
 // ===== ĐẶT HÀNG =====
+/**
+ * Thực hiện đặt hàng: Kiểm tra tính hợp lệ của giỏ hàng, xác thực thông tin biểu mẫu,
+ * xử lý xác nhận thanh toán chuyển khoản payOS nếu có, sinh mã đơn hàng ngẫu nhiên,
+ * lưu trữ lịch sử đơn hàng qua OrderManager, cập nhật điểm tích lũy qua PointsManager,
+ * dọn dẹp giỏ hàng và hiển thị popup thông báo đặt hàng thành công.
+ * 
+ * @async
+ * @function placeOrder
+ * @returns {Promise<void>} Không trả về giá trị
+ */
 async function placeOrder() {
-  const cart = getCart();
+  const cart = getCart(); // Lấy dữ liệu giỏ hàng hiện tại
 
+  // Nếu giỏ hàng trống, dừng thao tác đặt hàng và hiển thị thông báo
   if (cart.length === 0) {
     showToast("Giỏ hàng trống, không thể đặt hàng!");
     return;
   }
 
+  // Thực hiện kiểm tra tính hợp lệ của các trường dữ liệu trên form thanh toán
   const validationResult = validateForm();
 
-  // Nếu cần xác nhận thanh toán (chọn Banking)
+  // 1. Xử lý trường hợp hình thức thanh toán trực tuyến (Chuyển khoản qua payOS):
   if (validationResult === "NEED_CONFIRM") {
-    // Mỗi lần bấm đặt hàng với banking: cập nhật lại tổng và tạo QR mới
+    // Mỗi khi khách hàng bấm nút Đặt hàng bằng Banking:
+    // Cập nhật lại tổng tiền chi tiết và tạo/tải lại ảnh QR Code thanh toán động mới nhất
     const subtotal = cart.reduce((s, i) => s + i.price * i.quantity, 0);
     updateTotals(subtotal);
     updateQRCode();
 
+    // Hiển thị popup overlay xác nhận thanh toán payOS và đợi phản hồi từ phía người dùng (Promise)
     const confirmed = await showConfirmPayment();
+    
+    // Nếu khách hàng bấm Hủy hoặc chưa thanh toán thành công, dừng tiến trình đặt hàng
     if (!confirmed) {
       showToast("Vui lòng hoàn tất thanh toán trước khi đặt hàng!");
       return;
     }
   } else if (!validationResult) {
-    // Validate thất bại
+    // 2. Trường hợp validate form giao hàng/tại quán bị thất bại (thiếu thông tin bắt buộc)
     return;
   }
 
-  // Tạo mã đơn hàng
+  // 3. Sinh mã đơn hàng ngẫu nhiên duy nhất (Unique Order Code):
+  // Tiền tố GBR- kết hợp với biểu diễn hệ cơ số 36 của mốc thời gian hiện tại (Date.now()) in hoa
   const code = "GBR-" + Date.now().toString(36).toUpperCase();
   const orderCodeEl = document.getElementById("orderCode");
+  // Cập nhật mã đơn hàng vừa sinh lên giao diện hiển thị popup thành công
   if (orderCodeEl) orderCodeEl.textContent = code;
 
-  // Lưu đơn hàng vào lịch sử (Cho cả khách hàng vãng lai chưa đăng nhập và khách đã đăng nhập)
+  // 4. Lưu trữ thông tin đơn hàng vào hệ thống dữ liệu (OrderManager):
   if (typeof OrderManager !== "undefined") {
     const subtotal = cart.reduce((s, i) => s + i.price * i.quantity, 0);
-    // Lấy thông tin người đặt hàng từ form
+    
+    // Lấy các phần tử nhập liệu trên form thông tin khách hàng
     const ckNameEl = document.getElementById("ckName");
     const ckPhoneEl = document.getElementById("ckPhone");
     const ckEmailEl = document.getElementById("ckEmail");
@@ -812,7 +1064,8 @@ async function placeOrder() {
     const ckCityEl = document.getElementById("ckCity");
     const ckWardEl = document.getElementById("ckWard");
 
-    // Ghép địa chỉ đầy đủ: số nhà + phường/xã + tỉnh/thành phố
+    // Xử lý ghép địa chỉ đầy đủ (Full Address) đối với hình thức giao hàng tận nơi:
+    // Ghép theo thứ tự: Số nhà/Tên đường -> Phường/Xã -> Tỉnh/Thành phố
     let fullAddress = "";
     if (selectedShipping === "delivery") {
       const streetAddr = ckAddressEl ? ckAddressEl.value.trim() : "";
@@ -822,16 +1075,20 @@ async function placeOrder() {
       const cityName = ckCityEl
         ? ckCityEl.options[ckCityEl.selectedIndex]?.text
         : "";
+      // Lọc bỏ các phần tử rỗng hoặc nhãn mặc định của select để ghép chuỗi ngăn cách bằng dấu phẩy
       const parts = [streetAddr, wardName, cityName].filter(
         (p) => p && p !== "--- Chọn ---",
       );
       fullAddress = parts.join(", ");
     }
 
+    // Xác định chi nhánh cửa hàng (Branch) sẽ tiếp nhận và xử lý đơn hàng này:
     let finalBranch = null;
     if (selectedShipping === "dine-in" && selectedBranch) {
+      // Nếu uống tại quán, lấy trực tiếp chi nhánh do khách chọn
       finalBranch = { id: selectedBranch.id, name: selectedBranch.name, address: selectedBranch.address };
     } else if (selectedShipping === "delivery") {
+      // Nếu giao hàng tận nơi, tự động gán đơn hàng cho chi nhánh mặc định đầu tiên của thành phố đó
       const cityVal = ckCityEl ? ckCityEl.value : "";
       if (cityVal && typeof window.GIBOR_BRANCH_UTILS !== "undefined") {
         const branchesOfCity = window.GIBOR_BRANCH_UTILS.getByCity(cityVal);
@@ -843,17 +1100,19 @@ async function placeOrder() {
       }
     }
 
+    // Lấy số tiền thực tế khách cần thanh toán sau khi trừ các khoản giảm giá
     const grandTotal = getCurrentCheckoutAmount();
 
-    // Lưu vào lịch sử đơn hàng chung (để trang quản lý Admin/Nhân viên đọc được)
+    // Gọi hàm saveOrder của OrderManager để ghi nhận đơn hàng mới vào cơ sở dữ liệu Local
     OrderManager.saveOrder({
-      code: code,
+      code: code, // Mã đơn hàng
       customer: {
         name: ckNameEl ? ckNameEl.value.trim() : "",
         phone: ckPhoneEl ? ckPhoneEl.value.trim() : "",
         email: ckEmailEl ? ckEmailEl.value.trim() : "",
-        address: fullAddress,
+        address: fullAddress, // Địa chỉ giao hàng
       },
+      // Ánh xạ mảng sản phẩm trong giỏ hàng sang cấu trúc chi tiết hóa đơn
       items: cart.map((i) => ({
         name: i.name,
         size: i.size,
@@ -865,52 +1124,58 @@ async function placeOrder() {
         note: i.note || "",
         comboItems: i.comboItems || [],
       })),
-      total: grandTotal,
-      subtotal: subtotal,
-      couponDiscount: currentDiscount,
-      pointsUsed: usedPoints,
-      pointsDiscount: pointsDiscount,
+      total: grandTotal, // Tổng tiền cuối cùng
+      subtotal: subtotal, // Tiền tạm tính
+      couponDiscount: currentDiscount, // Số tiền giảm từ coupon
+      pointsUsed: usedPoints, // Số điểm thành viên đã tiêu
+      pointsDiscount: pointsDiscount, // Số tiền được giảm tương ứng từ điểm
       payment:
         selectedPayment === "banking"
           ? "Chuyển khoản"
           : "Thanh toán khi nhận hàng",
       shipping: selectedShipping === "delivery" ? "Giao hàng" : "Uống tại quán",
+      // Thông tin tích hợp cổng thanh toán trực tuyến payOS
       paymentProvider: selectedPayment === "banking" ? (currentPayosPayment && currentPayosPayment.provider) || "payos" : "cod",
       paymentOrderCode: currentPayosPayment ? currentPayosPayment.orderCode : "",
       paymentLinkId: currentPayosPayment ? currentPayosPayment.paymentLinkId || "" : "",
       checkoutUrl: currentPayosPayment ? currentPayosPayment.checkoutUrl || "" : "",
-      branch: finalBranch,
+      branch: finalBranch, // Chi nhánh đảm nhận đơn
+      // Đặt trạng thái mặc định của đơn hàng tùy theo phương thức thanh toán
       status: selectedPayment === "banking"
         ? ((typeof payosPaymentSuccess !== "undefined" && payosPaymentSuccess) ? "Đang xử lý" : "Chờ thanh toán")
         : "Đã ghi nhận",
       paymentStatus: (typeof payosPaymentSuccess !== "undefined" && payosPaymentSuccess) ? "Đã thanh toán" : "Chưa thanh toán",
     });
 
-    // Chỉ thực hiện xử lý điểm tích lũy khi khách hàng ĐÃ ĐĂNG NHẬP
+    // 5. Xử lý cộng/trừ điểm tích lũy thành viên (chỉ chạy khi người dùng ĐÃ ĐĂNG NHẬP):
     if (
       typeof UserManager !== "undefined" &&
       UserManager.isLoggedIn() &&
       typeof PointsManager !== "undefined"
     ) {
-      // Trừ điểm đã dùng
+      // Trừ số điểm tích lũy mà khách hàng đã chọn quy đổi
       if (usedPoints > 0) {
         PointsManager.usePoints(usedPoints);
       }
-      // Cộng điểm mới (chỉ tính trên tiền hàng, không tính phí ship)
+      
+      // Tính toán điểm tích lũy mới được thưởng dựa trên số tiền thực tế mua sản phẩm (không tính phí ship)
       const productOnly = Math.max(
         0,
         subtotal - currentDiscount - pointsDiscount,
       );
+      // Ghi nhận điểm thưởng mới vào ví điểm thành viên
       const earnedPoints = PointsManager.earnPoints(productOnly);
     }
   }
 
-  // Xóa giỏ hàng
+  // 6. Dọn dẹp giỏ hàng sau khi đặt hàng thành công:
+  // Xóa giỏ hàng trong LocalStorage cho cả hai key dự phòng
   localStorage.removeItem("giborCart");
   localStorage.removeItem("cart");
+  // Cập nhật lại số lượng hiển thị trên icon giỏ hàng ở header về 0
   updateCartCount();
 
-  // Hiện popup thành công
+  // 7. Hiển thị popup thông báo đặt hàng thành công
   const overlay = document.getElementById("successOverlay");
   if (overlay) overlay.classList.add("show");
 }
@@ -1280,23 +1545,31 @@ const WARD_NAMES = {
 };
 
 // ===== CẬP NHẬT PHƯỜNG/XÃ THEO TỈNH/THÀNH PHỐ =====
+/**
+ * Tự động cập nhật danh sách các lựa chọn Phường/Xã dựa trên Tỉnh/Thành phố khách hàng chọn.
+ * Sau khi cập nhật các thẻ option của thẻ select gốc, gọi hàm refreshSearchable để làm mới giao diện tìm kiếm giả lập.
+ * 
+ * @function updateWards
+ * @returns {void} Không trả về giá trị
+ */
 function updateWards() {
-  const citySelect = document.getElementById("ckCity");
-  const wardSelect = document.getElementById("ckWard");
+  const citySelect = document.getElementById("ckCity"); // Thẻ select chọn Tỉnh/Thành phố
+  const wardSelect = document.getElementById("ckWard"); // Thẻ select chọn Phường/Xã
 
   if (!citySelect || !wardSelect) return;
 
-  const selectedCity = citySelect.value;
+  const selectedCity = citySelect.value; // Lấy mã thành phố được chọn ('hcm', 'hn', 'dn')
 
-  // Xóa tất cả các option cũ (trừ option đầu tiên)
+  // Xóa toàn bộ danh sách phường/xã cũ (giữ lại tùy chọn placeholder đầu tiên)
   wardSelect.innerHTML = '<option value="">--- Chọn ---</option>';
 
+  // Nếu khách hàng chưa chọn Tỉnh/Thành phố, dừng thực thi và làm mới giao diện tìm kiếm
   if (!selectedCity) {
     refreshSearchable("ckWard");
     return;
   }
 
-  // Lấy danh sách phường/xã cho tỉnh đã chọn
+  // Truy vấn danh sách phường xã của thành phố tương ứng từ đối tượng dữ liệu WARD_NAMES
   const wards = WARD_NAMES[selectedCity];
 
   if (!wards) {
@@ -1304,7 +1577,7 @@ function updateWards() {
     return;
   }
 
-  // Thêm các option mới
+  // Duyệt qua mảng tên phường/xã để tạo các thẻ option mới đưa vào thẻ select gốc
   wards.forEach((ward) => {
     const option = document.createElement("option");
     option.value = ward;
@@ -1312,148 +1585,201 @@ function updateWards() {
     wardSelect.appendChild(option);
   });
 
-  // Cập nhật giao diện tìm kiếm
+  // Cập nhật lại danh sách hiển thị của custom dropdown giả lập tìm kiếm
   refreshSearchable("ckWard");
 }
 
 // ===== ĐÓNG POPUP =====
+/**
+ * Đóng popup overlay thông báo đặt hàng thành công.
+ * 
+ * @function closeSuccess
+ * @returns {void} Không trả về giá trị
+ */
 function closeSuccess() {
   const overlay = document.getElementById("successOverlay");
-  if (overlay) overlay.classList.remove("show");
+  if (overlay) overlay.classList.remove("show"); // Gỡ bỏ class show để ẩn popup
 }
 
 // ===== TÌM KIẾM PHƯỜNG/XÃ, TỈNH/THÀNH PHỐ =====
+/**
+ * Chuyển đổi một thẻ select mặc định của trình duyệt thành một custom dropdown có tính năng tìm kiếm (searchable).
+ * Tạo các thành phần DOM giả lập như thanh hiển thị, khung chứa danh sách, ô tìm kiếm đầu vào.
+ * 
+ * @function makeSearchable
+ * @param {string} selectId - ID của thẻ select gốc cần giả lập
+ * @returns {void} Không trả về giá trị
+ */
 function makeSearchable(selectId) {
-  const select = document.getElementById(selectId);
+  const select = document.getElementById(selectId); // Lấy thẻ select gốc
   if (!select) return;
 
-  // Ẩn select gốc
+  // 1. Ẩn thẻ select mặc định của trình duyệt đi để thay thế bằng giao diện mới
   select.style.display = "none";
 
-  // Tạo wrapper
+  // 2. Tạo wrapper chứa toàn bộ cấu trúc dropdown mới
   const wrapper = document.createElement("div");
   wrapper.className = "ss-wrapper";
-  wrapper.dataset.for = selectId;
+  wrapper.dataset.for = selectId; // Lưu thuộc tính liên kết với selectId gốc
 
-  // Nút hiển thị giá trị đã chọn
+  // 3. Tạo thanh hiển thị giá trị đang chọn
   const display = document.createElement("div");
   display.className = "ss-display";
   display.innerHTML =
     '<span class="ss-display-text">--- Chọn ---</span><i class="fa-solid fa-magnifying-glass-location ss-arrow"></i>';
 
-  // Dropdown
+  // 4. Tạo dropdown chứa ô tìm kiếm và danh sách kết quả
   const dropdown = document.createElement("div");
   dropdown.className = "ss-dropdown";
 
-  // Ô tìm kiếm
+  // 5. Tạo ô input nhập văn bản để tìm kiếm
   const search = document.createElement("input");
   search.type = "text";
   search.className = "ss-search";
   search.placeholder = "Tìm kiếm";
 
-  // Danh sách kết quả
+  // 6. Vùng chứa danh sách các tùy chọn giả lập
   const optList = document.createElement("div");
   optList.className = "ss-options";
 
+  // Ghép nối các thành phần DOM giả lập lại với nhau
   dropdown.appendChild(search);
   dropdown.appendChild(optList);
   wrapper.appendChild(display);
   wrapper.appendChild(dropdown);
 
-  // Chèn sau select
+  // Chèn wrapper giả lập vào vị trí ngay sau thẻ select gốc trong cây DOM
   select.parentElement.insertBefore(wrapper, select.nextSibling);
 
-  // Dựng danh sách options
+  // Dựng danh sách các tùy chọn hiển thị ban đầu dựa trên select gốc
   refreshSearchable(selectId);
 
-  // Mở/đóng dropdown
+  // 7. Thiết lập sự kiện click mở/đóng dropdown giả lập:
   display.addEventListener("click", (e) => {
-    e.stopPropagation();
-    // Đóng các dropdown khác
+    e.stopPropagation(); // Ngăn chặn sự kiện nổi bọt làm kích hoạt click đóng của document
+    
+    // Đóng toàn bộ các dropdown giả lập khác đang mở trên trang
     document.querySelectorAll(".ss-wrapper.open").forEach((w) => {
       if (w !== wrapper) w.classList.remove("open");
     });
+    
+    // Bật tắt class open để ẩn/hiện dropdown hiện tại
     wrapper.classList.toggle("open");
+    
+    // Nếu dropdown được mở ra, reset ô tìm kiếm và tập trung tiêu điểm (focus) vào input nhập liệu
     if (wrapper.classList.contains("open")) {
       search.value = "";
-      filterSSOptions(optList, "");
+      filterSSOptions(optList, ""); // Hiển thị đầy đủ danh sách ban đầu
       setTimeout(() => search.focus(), 50);
     }
   });
 
-  // Tìm kiếm
+  // 8. Thiết lập sự kiện khi người dùng gõ từ khóa vào ô tìm kiếm:
   search.addEventListener("input", () => {
-    filterSSOptions(optList, search.value);
+    filterSSOptions(optList, search.value); // Tiến hành lọc danh sách
   });
 
-  // Không đóng khi click trong dropdown
+  // Ngăn chặn sự kiện click bên trong dropdown làm đóng chính nó
   dropdown.addEventListener("click", (e) => e.stopPropagation());
 
-  // Click ngoài → đóng
+  // Thiết lập sự kiện click toàn trang để đóng dropdown tự động khi click ra ngoài
   document.addEventListener("click", () => {
     wrapper.classList.remove("open");
   });
 }
 
+/**
+ * Xây dựng lại danh sách các tùy chọn (option) hiển thị trong custom dropdown giả lập
+ * đồng bộ theo các thẻ option hiện có của select gốc.
+ * 
+ * @function refreshSearchable
+ * @param {string} selectId - ID của thẻ select gốc
+ * @returns {void} Không trả về giá trị
+ */
 function refreshSearchable(selectId) {
   const select = document.getElementById(selectId);
   if (!select) return;
+  
+  // Tìm wrapper giả lập tương ứng với selectId
   const wrapper = select.parentElement.querySelector(
     '.ss-wrapper[data-for="' + selectId + '"]',
   );
   if (!wrapper) return;
 
-  const optList = wrapper.querySelector(".ss-options");
-  const displayText = wrapper.querySelector(".ss-display-text");
+  const optList = wrapper.querySelector(".ss-options"); // Vùng chứa danh sách
+  const displayText = wrapper.querySelector(".ss-display-text"); // Text hiển thị
+  
+  // Xóa sạch các tùy chọn giả lập cũ
   optList.innerHTML = "";
 
-  let hasOptions = false;
+  let hasOptions = false; // Biến đánh dấu select gốc có chứa dữ liệu hợp lệ hay không
 
+  // Duyệt qua toàn bộ danh sách option thực tế của select gốc
   Array.from(select.options).forEach((opt) => {
-    if (!opt.value) return; // Bỏ placeholder
+    if (!opt.value) return; // Bỏ qua option đầu tiên (placeholder rỗng)
     hasOptions = true;
+    
+    // Tạo phần tử div giả lập thay thế cho thẻ option
     const div = document.createElement("div");
     div.className = "ss-option";
     div.textContent = opt.textContent;
     div.dataset.value = opt.value;
 
+    // Sự kiện click chọn một item giả lập:
     div.addEventListener("click", () => {
-      select.value = opt.value;
-      select.dispatchEvent(new Event("change"));
-      displayText.textContent = opt.textContent;
+      select.value = opt.value; // Gán giá trị được chọn vào select gốc
+      select.dispatchEvent(new Event("change")); // Kích hoạt sự kiện change của select gốc để các logic khác chạy theo
+      
+      displayText.textContent = opt.textContent; // Thay đổi text hiển thị trên thanh hiển thị
       wrapper.querySelector(".ss-display").classList.add("selected");
-      wrapper.classList.remove("open");
-      // Highlight
+      wrapper.classList.remove("open"); // Đóng dropdown
+      
+      // Xóa class active cũ và gán active cho phần tử vừa click để đánh dấu chọn trên giao diện
       optList
         .querySelectorAll(".ss-option")
         .forEach((o) => o.classList.remove("active"));
       div.classList.add("active");
     });
 
-    optList.appendChild(div);
+    optList.appendChild(div); // Thêm phần tử giả lập vào danh sách
   });
 
-  // Reset nếu select chưa chọn hoặc không có options
+  // Nếu select chưa được chọn hoặc select gốc trống, hiển thị trạng thái mặc định
   if (!select.value || !hasOptions) {
     displayText.textContent = "--- Chọn ---";
     wrapper.querySelector(".ss-display").classList.remove("selected");
   }
 }
 
+/**
+ * Thực hiện tìm kiếm lọc danh sách tùy chọn của custom dropdown giả lập.
+ * Lọc không phân biệt chữ hoa/thường và tự động chuyển đổi văn bản Tiếng Việt có dấu thành không dấu để tối ưu tìm kiếm.
+ * 
+ * @function filterSSOptions
+ * @param {HTMLElement} optList - Khung DOM chứa các tùy chọn giả lập
+ * @param {string} query - Từ khóa tìm kiếm do người dùng nhập vào
+ * @returns {void} Không trả về giá trị
+ */
 function filterSSOptions(optList, query) {
+  // Chuẩn hóa từ khóa tìm kiếm: chuyển chữ thường, loại bỏ khoảng trắng dư, chuyển tiếng Việt có dấu về không dấu
   const q = query
     .toLowerCase()
     .trim()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "");
+    
   const options = optList.querySelectorAll(".ss-option");
-  let visibleCount = 0;
+  let visibleCount = 0; // Đếm số lượng tùy chọn khớp với kết quả tìm kiếm
 
+  // Duyệt qua tất cả các tùy chọn để kiểm tra tính khớp
   options.forEach((opt) => {
+    // Chuẩn hóa văn bản của tùy chọn giả lập sang không dấu
     const text = opt.textContent
       .toLowerCase()
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "");
+      
+    // Nếu từ khóa trống hoặc văn bản chứa từ khóa, hiển thị tùy chọn, ngược lại ẩn đi
     if (!q || text.includes(q)) {
       opt.style.display = "";
       visibleCount++;
@@ -1462,7 +1788,7 @@ function filterSSOptions(optList, query) {
     }
   });
 
-  // Hiển thị thông báo nếu không tìm thấy
+  // Hiển thị thông báo "Không tìm thấy kết quả" nếu số lượng khớp bằng 0
   let noResult = optList.querySelector(".ss-no-result");
   if (visibleCount === 0) {
     if (!noResult) {
@@ -1478,28 +1804,32 @@ function filterSSOptions(optList, query) {
 }
 
 // ===== SỰ KIỆN KHI TẢI TRANG =====
+// Đăng ký lắng nghe sự kiện DOMContentLoaded để khởi tạo trang web
 document.addEventListener("DOMContentLoaded", () => {
+  // Cập nhật số lượng sản phẩm trên icon giỏ hàng header
   updateCartCount();
+  // Khởi dựng và hiển thị thông tin giỏ hàng ở cột bên phải
   renderOrderSummary();
 
   // ===== ĐIỀN SẴN THÔNG TIN NGƯỜI DÙNG ĐÃ ĐĂNG NHẬP =====
-  // CODE BỞI TRẦN DƯƠNG GIA BẢO
+  // Kiểm tra sự tồn tại của UserManager và tài khoản đã đăng nhập
   if (typeof UserManager !== "undefined" && UserManager.isLoggedIn()) {
-    const user = UserManager.getCurrentUser();
+    const user = UserManager.getCurrentUser(); // Lấy thông tin user hiện tại
     const ckName = document.getElementById("ckName");
     const ckPhone = document.getElementById("ckPhone");
     const ckEmail = document.getElementById("ckEmail");
+    
+    // Tự động điền thông tin cá nhân vào form thanh toán để giảm thiểu thao tác nhập liệu
     if (ckName && user.displayName) ckName.value = user.displayName;
     if (ckPhone && user.phone) ckPhone.value = user.phone;
     if (ckEmail && user.email) ckEmail.value = user.email;
   }
-  // KẾT THÚC CODE BỞI TRẦN DƯƠNG GIA BẢO
 
-  // Nút áp dụng mã giảm giá
+  // Đăng ký sự kiện click áp dụng coupon giảm giá
   const btnCoupon = document.querySelector(".btn-coupon");
   if (btnCoupon) btnCoupon.addEventListener("click", applyCoupon);
 
-  // Enter trên input mã giảm giá
+  // Đăng ký sự kiện phím bấm Enter trong ô nhập mã giảm giá
   const couponInput = document.getElementById("couponCode");
   if (couponInput) {
     couponInput.addEventListener("keypress", (e) => {
@@ -1507,7 +1837,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Chọn phương thức thanh toán
+  // Đăng ký sự kiện chọn phương thức thanh toán (COD / Banking) cho các phần tử DOM
   document.querySelectorAll(".payment-option").forEach((opt) => {
     opt.addEventListener("click", () => {
       const method = opt.dataset.method;
@@ -1515,7 +1845,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  // Chọn hình thức nhận hàng
+  // Đăng ký sự kiện chọn hình thức nhận hàng (Giao hàng / Tại quán)
   document.querySelectorAll(".shipping-option").forEach((opt) => {
     opt.addEventListener("click", () => {
       const method = opt.dataset.method;
@@ -1523,16 +1853,16 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  // Khởi tạo trạng thái mặc định
-  selectShipping("delivery"); // Giao hàng tận nơi
-  selectPayment("cod"); // Thanh toán khi giao hàng
-  initPoints(); // Khởi tạo điểm tích lũy
+  // Khởi tạo các trạng thái mặc định của trang thanh toán ban đầu:
+  selectShipping("delivery"); // Giao hàng tận nơi mặc định
+  selectPayment("cod"); // Thanh toán tiền mặt COD mặc định
+  initPoints(); // Khởi tạo ví điểm tích lũy thành viên
 
-  // Khởi tạo tìm kiếm cho Tỉnh/TP và Phường/Xã
+  // Kích hoạt tính năng tìm kiếm giả lập cho các thẻ select Tỉnh/Thành phố và Phường/Xã
   makeSearchable("ckCity");
   makeSearchable("ckWard");
 
-  // Chọn khu vực chi nhánh
+  // Thiết lập sự kiện change khu vực chi nhánh để cập nhật lại danh sách chi nhánh tương ứng
   const branchCity = document.getElementById("branchCity");
   if (branchCity) {
     branchCity.addEventListener("change", () => {
@@ -1540,31 +1870,31 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Tự động tích sẵn chi nhánh dựa trên chi nhánh khách đã chọn từ thực đơn (menu.html)
+  // Tự động tích chọn chi nhánh cửa hàng trên form nếu trước đó khách hàng đã chọn một chi nhánh cụ thể từ menu:
   const menuSelectedBranchId = localStorage.getItem("gibor_selected_menu_branch") || "all";
   if (menuSelectedBranchId !== "all" && typeof window.GIBOR_BRANCH_UTILS !== "undefined") {
     const activeBranch = window.GIBOR_BRANCH_UTILS.getById(menuSelectedBranchId);
     if (activeBranch && branchCity) {
-      // Set khu vực
+      // Thiết lập thành phố/khu vực tương ứng
       branchCity.value = activeBranch.cityCode;
-      // Render chi nhánh khu vực đó
+      // Khởi tạo hiển thị danh sách các chi nhánh của khu vực đó
       renderBranches(activeBranch.cityCode);
-      // Tích sẵn chi nhánh này
+      // Tích sẵn chọn chi nhánh cụ thể này
       selectBranch(activeBranch.id, activeBranch.cityCode);
     }
   }
 
-  // Chọn tỉnh/thành phố - cập nhật phường/xã
+  // Thiết lập sự kiện change của Tỉnh/Thành phố để cập nhật lại các Phường/Xã tương ứng
   const citySelect = document.getElementById("ckCity");
   if (citySelect) {
     citySelect.addEventListener("change", updateWards);
   }
 
-  // Nút đặt hàng
+  // Đăng ký sự kiện click cho nút Đặt hàng
   const btnPlace = document.getElementById("btnPlaceOrder");
   if (btnPlace) btnPlace.addEventListener("click", placeOrder);
 
-  // Click overlay popup thành công
+  // Đăng ký sự kiện click bên ngoài khung popup thành công để đóng popup
   const overlay = document.getElementById("successOverlay");
   if (overlay) {
     overlay.addEventListener("click", (e) => {

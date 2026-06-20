@@ -1,8 +1,10 @@
-/* ========================================================================================
+/* 
+========================================================================================
 
-                                    TRANG ADMIN
+                                    CODE BỞI NGUYỄN HOÀNG BẢO
 
-============================================================================================= */
+========================================================================================
+*/
 
 // Bắt lỗi toàn cục để hiển thị trực tiếp lên giao diện giúp chẩn đoán từ xa cực nhanh
 window.addEventListener("error", function (event) {
@@ -200,28 +202,58 @@ function getProducts() {
 }
 
 function saveProducts(products) {
+  // Kiểm tra xem đối tượng ProductManager (từ data.js của Trần Gia Bảo) có tồn tại và khả dụng không
   if (typeof ProductManager !== "undefined") {
+    // Nếu có, ủy thác việc lưu danh sách sản phẩm cho ProductManager xử lý
     ProductManager.saveProducts(products);
     return;
   }
+  // Nếu không có ProductManager, ghi trực tiếp chuỗi JSON của danh sách sản phẩm vào LocalStorage
   localStorage.setItem(ADMIN_PRODUCTS_KEY, JSON.stringify(products));
 }
 
+/**
+ * Lấy danh sách toàn bộ người dùng trong hệ thống.
+ * Hàm này hoạt động như một lớp trung gian (Wrapper API), ưu tiên gọi UserManager từ data.js của Trần Gia Bảo
+ * để đảm bảo tính nhất quán của dữ liệu người dùng trên toàn hệ thống.
+ * 
+ * @returns {Array<Object>} Danh sách đối tượng người dùng, hoặc mảng rỗng nếu không tìm thấy.
+ */
 function getUsers() {
+  // Nếu UserManager (thuộc phần code của Trần Gia Bảo) đã được tải, ưu tiên lấy dữ liệu từ đây
   if (typeof UserManager !== "undefined") return UserManager.getUsers();
+  
+  // Phương thức dự phòng: Đọc trực tiếp từ LocalStorage qua khóa _USERS_KEY và phân tách từ JSON
   return parseJSON(_USERS_KEY, []);
 }
 
+/**
+ * Lưu trữ danh sách người dùng vào bộ nhớ.
+ * Đồng bộ hóa dữ liệu thông qua UserManager nếu có, hoặc ghi đè trực tiếp xuống LocalStorage.
+ * 
+ * @param {Array<Object>} users - Danh sách người dùng cần lưu trữ.
+ */
 function saveUsers(users) {
+  // Nếu UserManager khả dụng, sử dụng cơ chế lưu trữ chuẩn của UserManager (có cập nhật bộ nhớ cache/state)
   if (typeof UserManager !== "undefined") {
     UserManager.saveUsers(users);
     return;
   }
+  
+  // Phương thức dự phòng: Ghi đè trực tiếp vào LocalStorage dưới dạng chuỗi JSON
   localStorage.setItem(_USERS_KEY, JSON.stringify(users));
 }
 
+/**
+ * Lấy thông tin tài khoản admin/quản lý hiện tại đang đăng nhập.
+ * 
+ * @returns {Object|null} Đối tượng người dùng hiện tại hoặc null nếu chưa đăng nhập.
+ */
 function getCurrentAdminUser() {
+  // Ưu tiên truy xuất thông tin phiên đăng nhập hiện tại thông qua UserManager của Trần Gia Bảo
   if (typeof UserManager !== "undefined") return UserManager.getCurrentUser();
+  
+  // Phương thức dự phòng: Đọc trực tiếp trạng thái phiên đăng nhập từ LocalStorage với key "gibor_current_user"
   return parseJSON("gibor_current_user", null);
 }
 
@@ -238,17 +270,36 @@ function isEmailUsedByAnotherUser(users, email, userId = "") {
   return users.some((user) => user && String(user.id) !== String(userId) && String(user.email || "").toLowerCase() === normalizedEmail);
 }
 
+/**
+ * Lấy danh sách tất cả các đơn hàng từ bộ nhớ và tiến hành làm sạch dữ liệu rác.
+ * 
+ * @returns {Array<Object>} Danh sách đơn hàng hợp lệ đã được lọc bỏ phần tử null/undefined.
+ */
 function getOrders() {
+  // Đọc dữ liệu chuỗi JSON từ LocalStorage dựa trên khóa đơn hàng
   const orders = parseJSON(_ORDERS_KEY, []);
+  
+  // Đảm bảo dữ liệu trả về luôn là một mảng và loại bỏ các phần tử lỗi (null hoặc undefined)
   return (Array.isArray(orders) ? orders : []).filter(o => o !== null && o !== undefined);
 }
 
+/**
+ * Lưu danh sách đơn hàng xuống bộ nhớ cục bộ và đồng bộ lên Firebase Realtime Database.
+ * Giúp đảm bảo dữ liệu đơn hàng luôn được cập nhật tức thời ở cả client và máy chủ đám mây Firebase.
+ * 
+ * @param {Array<Object>} orders - Danh sách đơn hàng cần lưu trữ.
+ */
 function saveOrders(orders) {
+  // Ghi danh sách đơn hàng xuống LocalStorage của trình duyệt
   localStorage.setItem(_ORDERS_KEY, JSON.stringify(orders));
+  
+  // Kiểm tra xem Firebase SDK có được tích hợp và Database có khả dụng trên trang quản trị không
   if (typeof firebase !== 'undefined' && firebase.database) {
     try {
+      // Thực hiện đồng bộ trực tiếp mảng đơn hàng lên node 'orders' trên Firebase Realtime Database
       firebase.database().ref('orders').set(orders);
     } catch (e) {
+      // Ghi nhận lỗi console nếu quá trình đồng bộ lên đám mây gặp sự cố (như mất kết nối, sai quyền truy cập)
       console.error("Lỗi đồng bộ orders lên Firebase từ Admin:", e);
     }
   }
@@ -258,21 +309,7 @@ function formatMoney(value) {
   return Number(value || 0).toLocaleString("vi-VN") + "đ";
 }
 
-function formatDate(value) {
-  if (!value) return "-";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "-";
-  return date.toLocaleDateString("vi-VN");
-}
 
-function escapeHTML(value) {
-  return String(value ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-}
 
 function getInitials(user) {
   const name = user.displayName || `${user.lastName || ""} ${user.firstName || ""}`.trim() || user.email || "A";
@@ -316,36 +353,53 @@ function getOrderItemsText(order) {
  * @returns {Array<{key: string, label: string, value: number}>} Danh sách doanh thu theo ngày.
  */
 function getRevenueByDay(days = 7, branchId = "") {
+  // Lấy danh sách toàn bộ đơn hàng hợp lệ đã được làm sạch dữ liệu rác
   const orders = (getOrders() || []).filter(o => o !== null && o !== undefined);
+  // Khởi tạo đối tượng ngày hiện tại để làm mốc thời gian đối chiếu
   const today = new Date();
+  // Khởi tạo mảng chứa danh sách các nhãn ngày (labels) phục vụ vẽ biểu đồ
   const labels = [];
 
+  // Tạo sẵn danh sách các ngày trong khoảng thời gian thống kê (mặc định là 7 ngày gần nhất)
   for (let index = days - 1; index >= 0; index--) {
     const date = new Date(today);
+    // Tính toán lùi ngày tương ứng với chỉ số index
     date.setDate(today.getDate() - index);
+    // Trích xuất chuỗi định dạng YYYY-MM-DD để làm khóa (key) so khớp đơn hàng
     const key = date.toISOString().slice(0, 10);
+    // Thêm ngày vừa tạo vào danh sách nhãn thống kê với giá trị doanh thu ban đầu bằng 0
     labels.push({
       key,
+      // Định dạng hiển thị ngày/tháng tiếng Việt (DD/MM) cho trục biểu đồ
       label: date.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" }),
       value: 0,
     });
   }
 
+  // Duyệt qua từng đơn hàng để cộng dồn doanh thu vào ngày tương ứng
   orders.forEach((order) => {
+    // Nếu đơn hàng không hợp lệ, bỏ qua
     if (!order) return;
-    // Chỉ tính các đơn hàng "Hoàn tất"
+    // Nghiệp vụ: Chỉ tính doanh thu từ những đơn hàng đã hoàn tất giao dịch
     if (order.status !== "Hoàn tất") return;
 
-    // Lọc theo chi nhánh nếu có yêu cầu
+    // Phân quyền & Lọc chi nhánh: Nếu lọc theo chi nhánh xác định, bỏ qua đơn hàng thuộc chi nhánh khác
     if (branchId && (!order.branch || order.branch.id !== branchId)) return;
 
+    // Lấy thông tin thời gian tạo đơn hàng thông qua hàm bổ trợ getOrderDate (từ data.js của Trần Gia Bảo)
     const date = new Date(getOrderDate(order));
+    // Nếu ngày tạo đơn không hợp lệ, bỏ qua
     if (Number.isNaN(date.getTime())) return;
+    
+    // Trích xuất khóa YYYY-MM-DD từ ngày tạo đơn hàng để khớp với nhãn tương ứng
     const key = date.toISOString().slice(0, 10);
+    // Tìm nhãn ngày trùng khớp trong danh sách labels đã chuẩn bị sẵn
     const target = labels.find((item) => item.key === key);
+    // Nếu tìm thấy nhãn trùng khớp, cộng dồn tổng tiền đơn hàng (getOrderTotal) vào doanh thu ngày đó
     if (target) target.value += getOrderTotal(order);
   });
 
+  // Trả về danh sách doanh thu theo ngày phục vụ việc vẽ biểu đồ cột
   return labels;
 }
 
@@ -383,17 +437,26 @@ function renderRevenueBars(targetId, branchId = "") {
 
 function renderDashboard() {
   try {
+    // Lấy danh sách người dùng thông qua wrapper getUsers (sử dụng UserManager)
     const users = getUsers() || [];
+    // Lấy danh sách sản phẩm thông qua wrapper getProducts (sử dụng ProductManager)
     const products = getProducts() || [];
+    // Lấy danh sách tất cả các đơn hàng đã được lọc sạch phần tử lỗi
     const orders = (getOrders() || []).filter(o => o !== null && o !== undefined);
     
-    // Xác định chi nhánh cần lọc
+    // Khởi động biến lưu ID chi nhánh cần lọc doanh thu và thông tin
     let activeBranchId = "";
+    // Truy xuất thông tin người dùng hiện tại thông qua đối tượng UserManager của Trần Gia Bảo
     const currentUser = typeof UserManager !== 'undefined' ? UserManager.getCurrentUser() : null;
+    
+    // Cơ chế phân quyền hiển thị số liệu Dashboard:
     if (currentUser) {
+      // Nếu là Quản lý chi nhánh (branch_manager), chỉ được xem số liệu thuộc chi nhánh của mình
       if (currentUser.role === "branch_manager") {
         activeBranchId = currentUser.branchId;
-      } else if (currentUser.role === "admin") {
+      } 
+      // Nếu là Admin tối cao, mặc định xem tất cả, hoặc lọc theo lựa chọn trên giao diện bộ lọc chi nhánh
+      else if (currentUser.role === "admin") {
         const dbBranchFilter = document.getElementById("dashboardBranchFilter");
         if (dbBranchFilter && dbBranchFilter.value !== "all") {
           activeBranchId = dbBranchFilter.value;
@@ -401,29 +464,35 @@ function renderDashboard() {
       }
     }
 
-    // Lọc đơn hàng theo chi nhánh
+    // Tiến hành lọc đơn hàng dựa trên ID chi nhánh đã xác định ở trên
     const filteredOrders = activeBranchId 
       ? orders.filter(o => o && o.branch && o.branch.id === activeBranchId)
       : orders;
 
+    // Lọc ra các đơn hàng đã hoàn tất giao dịch để tính toán doanh thu
     const completedOrders = filteredOrders.filter(o => o && o.status === "Hoàn tất");
+    // Tính tổng doanh thu bằng cách duyệt qua các đơn hàng hoàn tất và cộng dồn số tiền (qua helper getOrderTotal)
     const revenue = completedOrders.reduce((sum, order) => sum + getOrderTotal(order), 0);
 
+    // Lấy các thẻ HTML hiển thị thông số thống kê tổng quan
     const statUsers = document.getElementById("statUsers");
     const statProducts = document.getElementById("statProducts");
     const statOrders = document.getElementById("statOrders");
     const statRevenue = document.getElementById("statRevenue");
 
+    // Hiển thị số lượng người dùng, sản phẩm, đơn hàng và tổng doanh thu định dạng tiền tệ Việt Nam
     if (statUsers) statUsers.textContent = users.length;
     if (statProducts) statProducts.textContent = products.length;
     if (statOrders) statOrders.textContent = filteredOrders.length;
     if (statRevenue) statRevenue.textContent = formatMoney(revenue);
 
+    // Xử lý hiển thị danh sách 5 đơn hàng mới nhất trên bảng Dashboard
     const recentTable = document.getElementById("recentOrdersTable");
     if (recentTable) {
+      // Sao chép mảng đơn hàng đã lọc và sắp xếp giảm dần theo thời gian tạo (sử dụng getOrderDate của Gia Bảo)
       const recentOrders = [...filteredOrders]
         .sort((a, b) => new Date(getOrderDate(b)) - new Date(getOrderDate(a)))
-        .slice(0, 5);
+        .slice(0, 5); // Chỉ lấy 5 đơn hàng đầu tiên sau khi sắp xếp
  
       recentTable.innerHTML = recentOrders.length
         ? recentOrders
@@ -571,7 +640,9 @@ function renderProducts() {
     const table = document.getElementById("productsTable");
     if (!table) return;
 
+    // Sử dụng đối tượng UserManager của Trần Gia Bảo để truy xuất thông tin phiên đăng nhập của người dùng hiện tại
     const currentUser = typeof UserManager !== 'undefined' ? UserManager.getCurrentUser() : null;
+    // Kiểm tra xem người dùng hiện tại có vai trò là Quản lý chi nhánh hay không (phục vụ phân quyền chức năng sản phẩm)
     const isBranchManager = currentUser && currentUser.role === "branch_manager";
 
     let products = (getProducts() || []).filter(p => p !== null && p !== undefined && p.status !== "deleted" && p.isDeleted !== true);
@@ -717,13 +788,17 @@ function renderOrders() {
       return dateB - dateA;
     });
 
-    // Xác định phân quyền và lọc theo chi nhánh của người đăng nhập
+    // Phân quyền quản lý đơn hàng theo chi nhánh:
     let activeBranchId = "";
+    // Sử dụng UserManager của Trần Gia Bảo để lấy thông tin phiên làm việc hiện tại của tài khoản đang đăng nhập
     const currentUser = typeof UserManager !== 'undefined' ? UserManager.getCurrentUser() : null;
     if (currentUser) {
+      // Nếu là Quản lý chi nhánh (branch_manager), chỉ được thấy và xử lý các đơn hàng của chi nhánh đó
       if (currentUser.role === "branch_manager") {
         activeBranchId = currentUser.branchId;
-      } else if (currentUser.role === "admin") {
+      } 
+      // Nếu là Admin tối cao, có quyền chọn lọc chi nhánh thông qua bộ lọc trên giao diện
+      else if (currentUser.role === "admin") {
         const branchFilter = document.getElementById("filterOrderBranch");
         if (branchFilter && branchFilter.value) {
           activeBranchId = branchFilter.value;
@@ -880,15 +955,20 @@ function renderOrders() {
 
 function renderRevenueReport() {
   try {
+    // Lấy toàn bộ đơn hàng hợp lệ đã làm sạch từ bộ nhớ
     const orders = (getOrders() || []).filter(o => o !== null && o !== undefined);
     
-    // Xác định chi nhánh cần lọc
+    // Phân quyền lọc dữ liệu báo cáo theo chi nhánh:
     let activeBranchId = "";
+    // Sử dụng UserManager của Trần Gia Bảo để lấy thông tin phiên đăng nhập của người dùng hiện tại
     const currentUser = typeof UserManager !== 'undefined' ? UserManager.getCurrentUser() : null;
     if (currentUser) {
+      // Nếu là Quản lý chi nhánh (branch_manager), chỉ được thống kê doanh thu của chi nhánh mình quản lý
       if (currentUser.role === "branch_manager") {
         activeBranchId = currentUser.branchId;
-      } else if (currentUser.role === "admin") {
+      } 
+      // Nếu là Admin, có quyền tùy chọn chi nhánh cần lọc từ bộ lọc trên giao diện báo cáo doanh thu
+      else if (currentUser.role === "admin") {
         const revBranchFilter = document.getElementById("filterRevenueBranch");
         if (revBranchFilter && revBranchFilter.value) {
           activeBranchId = revBranchFilter.value;
@@ -1226,8 +1306,9 @@ function bindTableActions() {
       const b = window.GIBOR_BRANCH_UTILS.getById(deleteBranchId);
       if (!b) return;
 
-      // Cảnh báo nếu có đơn hàng hoạt động chưa hoàn thành được gán cho chi nhánh này
+      // Nghiệp vụ ràng buộc: Lấy toàn bộ đơn hàng thông qua getOrders() để kiểm tra trước khi thực hiện xóa
       const orders = getOrders();
+      // Lọc các đơn hàng chưa hoàn tất hoặc chưa hủy có liên kết với chi nhánh đang yêu cầu xóa
       const activeBranchOrders = orders.filter(o => o && o.branch && (o.branch.id === b.id || o.branch.name === b.name) && o.status !== "Hoàn tất" && o.status !== "Đã hủy");
       if (activeBranchOrders.length > 0) {
         showToast(`Không thể xóa chi nhánh vì hiện đang có ${activeBranchOrders.length} đơn hàng chưa hoàn thành do chi nhánh này xử lý.`, "error");
@@ -1296,10 +1377,12 @@ function bindTableActions() {
       });
     }
 
-    // Xem chi tiết đơn hàng
+    // Xử lý sự kiện xem thông tin chi tiết của một đơn hàng cụ thể
     const viewOrderCode = event.target.closest("[data-view-order-detail]")?.dataset.viewOrderDetail;
     if (viewOrderCode) {
+      // Truy xuất danh sách đơn hàng qua hàm getOrders() để tìm kiếm thông tin
       const orders = getOrders();
+      // Tìm kiếm đơn hàng khớp với mã code hoặc ID đơn hàng được yêu cầu xem chi tiết
       const order = orders.find(o => (o.code || o.id) === viewOrderCode);
       if (order) {
         document.getElementById("detailOrderCode").textContent = `#${viewOrderCode}`;
@@ -1475,6 +1558,7 @@ function bindTableActions() {
   document.addEventListener("change", (event) => {
     // 1. Cập nhật Trạng thái đơn hàng
     if (event.target.matches("[data-order-code]")) {
+      // Truy xuất danh sách đơn hàng qua hàm getOrders()
       const orders = getOrders();
       const code = event.target.dataset.orderCode;
       const orderIdx = orders.findIndex(o => (o.code || o.id) === code);
@@ -1497,6 +1581,7 @@ function bindTableActions() {
 
     // 2. Cập nhật Trạng thái thanh toán
     if (event.target.matches("[data-order-code-paystat]")) {
+      // Truy xuất danh sách đơn hàng qua hàm getOrders() để cập nhật trạng thái thanh toán
       const orders = getOrders();
       const code = event.target.dataset.orderCodePaystat;
       const orderIdx = orders.findIndex(o => (o.code || o.id) === code);
@@ -1583,9 +1668,12 @@ function handleLogout() {
     confirmText: "Đăng xuất",
     cancelText: "Hủy",
     onConfirm: () => {
+      // Ưu tiên sử dụng cơ chế đăng xuất chuẩn của UserManager để xóa phiên đăng nhập và xóa cache/state
       if (typeof UserManager !== 'undefined') {
         UserManager.logout();
-      } else {
+      } 
+      // Phương thức dự phòng nếu UserManager chưa được tải: Xóa thủ công key gibor_current_user khỏi LocalStorage
+      else {
         localStorage.removeItem("gibor_current_user");
       }
       window.location.href = "login.html";
@@ -1765,9 +1853,12 @@ function initAdminPage() {
   let isAuthorized = false;
   let currentUser = null;
   
+  // Cơ chế bảo vệ trang quản trị (Authorization Middleware):
+  // Sử dụng UserManager của Trần Gia Bảo để kiểm tra quyền truy cập của người dùng đang đăng nhập
   if (typeof UserManager !== 'undefined') {
     currentUser = UserManager.getCurrentUser();
     if (currentUser) {
+      // Cho phép truy cập nếu người dùng có quyền Admin (UserManager.isAdmin()) hoặc có vai trò là Quản lý chi nhánh (branch_manager)
       if (UserManager.isAdmin() || currentUser.role === "branch_manager") {
         isAuthorized = true;
       }
@@ -1963,8 +2054,11 @@ function bindAccountForm() {
 
     saveUsers(users);
 
+    // Nghiệp vụ đồng bộ session: Nếu admin/quản lý tự cập nhật thông tin của chính mình
     if (currentUser && idStr !== "" && String(currentUser.id) === String(idStr) && typeof UserManager !== "undefined") {
+      // Tìm lại thông tin người dùng vừa được cập nhật trong danh sách
       const updatedSelf = users.find(u => String(u.id) === String(idStr));
+      // Cập nhật lại thông tin mới nhất vào phiên đăng nhập thông qua UserManager để đồng bộ lập tức
       if (updatedSelf) UserManager.setCurrentUser(updatedSelf);
     }
     
@@ -2035,7 +2129,9 @@ function renderBranches() {
     let list = window.GIBOR_BRANCH_UTILS.all();
 
     // Xác định phân quyền hiển thị đối với Branch Manager
+    // Lấy thông tin tài khoản hiện tại thông qua đối tượng UserManager của Trần Gia Bảo
     const currentUser = typeof UserManager !== 'undefined' ? UserManager.getCurrentUser() : null;
+    // Kiểm tra xem người dùng hiện tại có phải là Quản lý chi nhánh hay không
     const isBranchManager = currentUser && currentUser.role === "branch_manager";
 
     // Ẩn/hiện card form chi nhánh dựa trên phân quyền
@@ -2282,7 +2378,7 @@ function bindPayosForm() {
 
   window.addEventListener("gibor_payos_config_updated", loadPayosConfig);
 
-  // Phân quyền kiểm tra người dùng hiện tại
+  // Phân quyền bảo mật: Kiểm tra danh tính tài khoản đang thao tác thông qua UserManager của Trần Gia Bảo
   const currentUser = typeof UserManager !== "undefined" ? UserManager.getCurrentUser() : null;
   const isBranchManager = currentUser && currentUser.role === "branch_manager";
 
@@ -2360,13 +2456,23 @@ function bindPayosForm() {
     return ["Đã hủy", "Đã huỷ", "Canceled", "Cancelled"].includes(order && order.status);
   }
 
+  /**
+   * Xác định chi nhánh hoạt động hiện tại để lập báo cáo thống kê doanh thu.
+   * Hỗ trợ tự động nhận diện và khóa chi nhánh đối với tài khoản Quản lý chi nhánh (Branch Manager).
+   * 
+   * @returns {string} ID của chi nhánh cần thống kê (để trống nếu thống kê toàn hệ thống).
+   */
   function getActiveRevenueBranchId() {
     let activeBranchId = "";
+    // Sử dụng UserManager của Trần Gia Bảo để truy xuất thông tin tài khoản hiện tại
     const currentUser = typeof UserManager !== "undefined" ? UserManager.getCurrentUser() : null;
 
+    // Phân quyền xác định ID chi nhánh:
     if (currentUser && currentUser.role === "branch_manager") {
+      // Nếu là Quản lý chi nhánh, mặc định lấy mã chi nhánh liên kết với tài khoản này
       activeBranchId = currentUser.branchId || "";
     } else {
+      // Nếu là Admin, lấy chi nhánh được chọn từ dropdown bộ lọc trên giao diện
       const revBranchFilter = document.getElementById("filterRevenueBranch");
       activeBranchId = revBranchFilter ? revBranchFilter.value : "";
     }
@@ -2394,6 +2500,7 @@ function bindPayosForm() {
   }
 
   function buildRevenuePeriods(period, branchId) {
+    // Truy xuất toàn bộ các đơn hàng hiện có thông qua getOrders() để tính toán số liệu doanh thu theo kỳ
     const orders = (getOrders() || []).filter(Boolean);
     const today = new Date();
     const config = getPeriodConfig(period);
@@ -2523,8 +2630,12 @@ function bindPayosForm() {
       : `<tr><td class="admin-empty" colspan="4">Chưa có dữ liệu doanh thu.</td></tr>`;
   }
 
+  /**
+   * Hàm toàn cục để khởi chạy và kết xuất báo cáo doanh thu lên giao diện quản trị.
+   */
   window.renderRevenueReport = function () {
     try {
+      // Đọc toàn bộ danh sách đơn hàng từ bộ nhớ thông qua getOrders()
       const orders = (getOrders() || []).filter(Boolean);
       const activeBranchId = getActiveRevenueBranchId();
       const period = document.getElementById("filterRevenuePeriod")?.value || "day";
@@ -2684,10 +2795,12 @@ function renderCustomers() {
     const tableBody = document.getElementById("customersTableBody");
     if (!tableBody) return;
 
+    // Đọc danh sách tất cả người dùng trong hệ thống (sử dụng getUsers)
     const users = (getUsers() || []).filter(u => u !== null && u !== undefined);
-    // Chỉ hiển thị khách hàng (role !== 'admin' && role !== 'branch_manager')
+    // Chỉ lọc ra các tài khoản là khách hàng (loại bỏ tài khoản Quản trị viên và Quản lý chi nhánh)
     let customers = users.filter(u => u.role !== 'admin' && u.role !== 'branch_manager');
 
+    // Lấy toàn bộ đơn hàng hợp lệ đã làm sạch (sử dụng getOrders) để phục vụ tính toán chi tiêu khách hàng
     const orders = (getOrders() || []).filter(o => o !== null && o !== undefined);
     
     // Lấy bộ lọc chi nhánh
