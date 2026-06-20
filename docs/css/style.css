@@ -617,13 +617,14 @@ body.dark .top-image-marquee__item {
 .nav {
   flex: 1;
   min-width: 0;
+  margin: 0 10px;
 }
 
 .nav-links {
   display: flex;
   list-style: none;
   justify-content: center;
-  gap: 24px;
+  gap: clamp(6px, 1.5vw, 24px);
   margin: 0 auto;
   white-space: nowrap;
   flex-wrap: nowrap;
@@ -638,10 +639,10 @@ body.dark .top-image-marquee__item {
   align-items: center;
   justify-content: center;
   min-height: 42px;
-  padding: 0 20px;
+  padding: 0 clamp(8px, 1.2vw, 20px);
   border-radius: 999px;
   color: rgba(255, 255, 255, 0.85);
-  font-size: 0.9rem;
+  font-size: clamp(0.78rem, 0.85vw, 0.9rem);
   font-weight: 600;
   letter-spacing: 0.5px;
   transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
@@ -1071,12 +1072,7 @@ a {
     font-size: 0.6rem;
     letter-spacing: 1px;
   }
-  .nav-links {
-    gap: 12px;
-  }
   .nav-links a {
-    padding: 0 12px;
-    font-size: 0.84rem;
     min-height: 38px;
   }
   .header-actions {
@@ -1122,13 +1118,6 @@ a {
     padding: 10px 20px;
     gap: 12px;
   }
-  .nav-links {
-    gap: 10px;
-  }
-  .nav-links a {
-    padding: 0 10px;
-    font-size: 0.83rem;
-  }
   .header-actions {
     gap: 8px;
   }
@@ -1143,13 +1132,6 @@ a {
   .header-container {
     padding: 10px 16px;
     gap: 8px;
-  }
-  .nav-links {
-    gap: 5px;
-  }
-  .nav-links a {
-    padding: 0 6px;
-    font-size: 0.78rem;
   }
   .header-actions {
     gap: 4px;
