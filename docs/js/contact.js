@@ -29,7 +29,9 @@ if (contactForm) {
 
     const contactData = {
       hoTen: formData.get("fullname") || "",
+      email: formData.get("email") || "",
       soDienThoai: formData.get("phone") || "",
+      boPhan: formData.get("department") || "Customer Support",
       loiNhan: formData.get("message") || "",
       thoiGianGui: new Date().toLocaleString("vi-VN"),
     };
@@ -41,21 +43,20 @@ if (contactForm) {
 
     // 4. GIẢ LẬP GỬI DỮ LIỆU
     setTimeout(() => {
-      // 5. TẠO FILE JSON VÀ TẢI XUỐNG
-      const jsonString = JSON.stringify(contactData, null, 2);
-      const blob = new Blob([jsonString], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
+      // 5. LƯU VÀO LOCALSTORAGE
+      const messages = JSON.parse(localStorage.getItem("gibor_contact_messages") || "[]");
+      messages.push(contactData);
+      localStorage.setItem("gibor_contact_messages", JSON.stringify(messages));
 
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `contact-${Date.now()}.json`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-
-      // 6. HIỆN MODAL
-      if (modal) {
+      // 6. HIỂN THỊ POPUP THÔNG BÁO
+      if (typeof showGiborPopup === "function") {
+        showGiborPopup({
+          type: "success",
+          title: "Gửi thành công!",
+          message: "Cảm ơn bạn đã gửi lời nhắn. GIBOR COFFEE sẽ phản hồi bạn trong thời gian sớm nhất!",
+          confirmText: "Đồng ý"
+        });
+      } else if (modal) {
         modal.style.display = "block";
       }
 
@@ -66,7 +67,7 @@ if (contactForm) {
 
       // 8. RESET FORM
       contactForm.reset();
-    }, 1500);
+    }, 1200);
   });
 }
 

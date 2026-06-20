@@ -173,6 +173,18 @@
               </div>
 
               <div class="contact-field">
+                <label for="email" class="form-label">Địa chỉ Email</label>
+                <input
+                  class="form-control"
+                  type="email"
+                  id="email"
+                  name="email"
+                  placeholder="Ví dụ: name@example.com"
+                  required
+                />
+              </div>
+
+              <div class="contact-field">
                 <label for="phone" class="form-label">Số điện thoại</label>
                 <input
                   class="form-control"
@@ -185,12 +197,27 @@
               </div>
 
               <div class="contact-field">
-                <label for="message" class="form-label">Nội dung</label>
+                <label for="department" class="form-label">Bộ phận liên hệ</label>
+                <select
+                  class="form-select"
+                  id="department"
+                  name="department"
+                  required
+                  style="border-radius: 12px; padding: 12px; border: 1px solid rgba(75, 44, 32, 0.15); background-color: var(--card); color: var(--text);"
+                >
+                  <option value="Customer Support">Hỗ trợ khách hàng & Đơn hàng</option>
+                  <option value="Business Partnership">Hợp tác kinh doanh & Nhượng quyền</option>
+                  <option value="Feedback">Góp ý & Khiếu nại dịch vụ</option>
+                </select>
+              </div>
+
+              <div class="contact-field">
+                <label for="message" class="form-label">Nội dung chi tiết</label>
                 <textarea
                   class="form-control"
                   id="message"
                   name="message"
-                  rows="6"
+                  rows="5"
                   placeholder="Bạn cần GIBOR hỗ trợ vấn đề gì?"
                   required
                 ></textarea>
