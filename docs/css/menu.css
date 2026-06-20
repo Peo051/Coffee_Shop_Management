@@ -88,149 +88,10 @@ body {
 }
 
 /* 
-========================================== PHẦN HEADER ==================================
+========================================================================================
+   PHẦN HEADER DÙNG CHUNG ĐÃ ĐƯỢC CHUYỂN HÀN TOÀN SANG STYLE.CSS
+========================================================================================
 */
-.header {
-  position: sticky;
-  /* cuộn xuống */
-  top: 0;
-  z-index: 999;
-  background: var(--primary);
-  transition: all 0.3s ease;
-}
-
-.header-container {
-  max-width: 1200px;
-  margin: auto;
-  padding: 12px 20px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-/* LOGO */
-.logo {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-family: var(--font-heading);
-  font-size: 1.6rem;
-  color: var(--white);
-}
-
-.logo img {
-  width: 100px;
-  height: 100px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 2px solid var(--accent);
-  transition: 0.4s ease;
-}
-
-.logo:hover img {
-  transform: rotate(8deg) scale(1.05);
-  box-shadow: 0 0 15px rgba(212, 163, 115, 0.7);
-}
-
-/* THANH ĐIỀU HƯỚNG */
-
-.navbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 8%;
-  background: rgba(75, 44, 32, 0.95);
-  backdrop-filter: blur(6px);
-  position: sticky;
-  top: 0;
-  z-index: 1000;
-  transition:
-    background 0.4s ease,
-    box-shadow 0.4s ease;
-}
-
-.nav-links {
-  display: flex;
-  list-style: none;
-  gap: 30px;
-}
-
-.nav-links li {
-  position: relative;
-}
-
-.nav-links a {
-  color: var(--white);
-  font-size: 15px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  padding: 6px 0;
-  transition: color 0.3s ease;
-}
-
-/* Gạch chân chạy */
-.nav-links a::after {
-  content: "";
-  position: absolute;
-  left: 50%;
-  bottom: 0;
-  width: 0;
-  height: 2px;
-  background: var(--accent);
-  transition: all 0.3s ease;
-  transform: translateX(-50%);
-}
-
-.nav-links a:hover {
-  color: var(--accent);
-}
-
-.nav-links a:hover::after {
-  width: 100%;
-}
-
-/* Khi scroll */
-.header.scrolled {
-  background-color: var(--primary-color);
-  /* Sử dụng đúng tên biến đã khai báo ở :root */
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
-  /* Đổ bóng dùng rgba để chỉnh độ mờ cho đẹp */
-  padding: 10px 5%;
-  /* Thu gọn header lại một chút khi cuộn cho tinh tế */
-  transition: all 0.4s ease;
-  /* Giúp hiệu ứng biến đổi mượt mà */
-}
-
-.header-actions {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-}
-
-.icon-btn {
-  padding: 8px 16px;
-  border-radius: 20px;
-  border: 1px solid var(--accent);
-  color: var(--white);
-  font-size: 14px;
-}
-
-.icon-btn:hover {
-  background: var(--accent);
-  color: var(--primary);
-}
-
-.icon-btn.cart {
-  font-size: 18px;
-  padding: 6px 12px;
-}
-
-.header.scrolled {
-  background: rgba(75, 44, 32, 0.9);
-  backdrop-filter: blur(6px);
-  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
-}
 
 /* ========================================== PHẦN THÂN ================================== */
 
@@ -793,6 +654,7 @@ body.dark #menuBranchSelector:focus {
     overflow: hidden;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
+    line-clamp: 2;
   }
 
   .price {
