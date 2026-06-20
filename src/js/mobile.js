@@ -16,15 +16,7 @@
   const path = location.pathname.replace(/\\/g, "/");
   const page = path.split("/").pop() || "index.html";
 
-  /**
-   * Phân tích cú pháp chuỗi JSON một cách an toàn.
-   * Sử dụng khối try-catch để ngăn chặn ứng dụng bị dừng hoạt động khi chuỗi JSON bị lỗi định dạng.
-   * 
-   * @function safeParseJSON
-   * @param {string} value - Chuỗi JSON cần phân tích
-   * @param {*} fallback - Giá trị dự phòng trả về nếu xảy ra lỗi phân tích
-   * @returns {*} Kết quả đối tượng JS sau khi phân tích hoặc giá trị fallback
-   */
+  // safeParseJSON: Phân tích cú pháp chuỗi JSON một cách an toàn tránh gây lỗi dừng ứng dụng.
   function safeParseJSON(value, fallback) {
     try {
       return JSON.parse(value);
@@ -33,13 +25,7 @@
     }
   }
 
-  /**
-   * Lấy thông tin tài khoản người dùng hiện tại đang đăng nhập.
-   * Hàm kiểm tra tuần tự qua UserManager (Firebase/Local) và các key lưu trữ localStorage dự phòng.
-   * 
-   * @function getActiveUser
-   * @returns {Object|null} Trả về thông tin user hoặc null nếu chưa đăng nhập
-   */
+  // getActiveUser: Lấy thông tin tài khoản người dùng hiện đang đăng nhập từ local.
   function getActiveUser() {
     if (typeof UserManager !== "undefined" && typeof UserManager.getCurrentUser === "function") {
       return UserManager.getCurrentUser();
@@ -49,40 +35,20 @@
     return safeParseJSON(localStorage.getItem("loggedInUser"), null);
   }
 
-  /**
-   * Xác định khóa định danh (Key) của trang hiện tại để phục vụ việc kích hoạt class active trên menu.
-   * Gom nhóm các trang đăng nhập, đăng ký và tài khoản vào chung khóa 'account'.
-   * 
-   * @function getCurrentPageKey
-   * @returns {string} Khóa định danh của trang
-   */
+  // getCurrentPageKey: Trả về khóa định danh của trang hiện tại để đánh dấu nút menu hoạt động.
   function getCurrentPageKey() {
     if (["login.html", "register.html", "account.html"].includes(page))
       return "account";
     return page;
   }
 
-  /**
-   * Điều hướng người dùng đến trang quản lý tài khoản nếu đã đăng nhập,
-   * ngược lại điều hướng đến trang đăng nhập nếu là khách vãng lai.
-   * 
-   * @function openAccountPanel
-   * @returns {void} Không trả về giá trị
-   */
+  // openAccountPanel: Chuyển hướng người dùng tới trang thông tin tài khoản hoặc trang đăng nhập.
   function openAccountPanel() {
     const user = getActiveUser();
     location.href = user ? "account.html" : "login.html";
   }
 
-  /**
-   * Khóa hoặc mở khóa cuộn trang (Scroll Lock) trên thẻ body.
-   * Giúp ngăn chặn hiện tượng cuộn nền (background scroll bounce) khi mở menu drawer trên iOS.
-   * Riêng thiết bị Android được bỏ qua do cơ chế hiển thị khác.
-   * 
-   * @function setBodyScrollLock
-   * @param {boolean} locked - Thiết lập true để khóa cuộn, false để mở khóa
-   * @returns {void} Không trả về giá trị
-   */
+  // setBodyScrollLock: Bật/tắt việc khóa cuộn trang nền để tránh giật màn hình trên thiết bị di động.
   function setBodyScrollLock(locked) {
     if (IS_ANDROID) {
       document.body.classList.remove("m-lock-scroll");
@@ -91,12 +57,7 @@
     document.body.classList.toggle("m-lock-scroll", !!locked);
   }
 
-  /**
-   * Khôi phục lại trạng thái khóa cuộn của body dựa trên việc menu drawer di động có đang mở hay không.
-   * 
-   * @function recoverScrollLockState
-   * @returns {void} Không trả về giá trị
-   */
+  // recoverScrollLockState: Tự động phục hồi lại trạng thái khóa cuộn trang dựa trên việc menu drawer có đang mở hay không.
   function recoverScrollLockState() {
     const overlay = document.getElementById("m-drawer-overlay");
     const shouldLock = !!(
@@ -111,13 +72,7 @@
     }
   }
 
-  /**
-   * Dọn dẹp toàn bộ các thành phần giao diện di động khi màn hình co dãn về kích thước Desktop.
-   * Hàm này giúp giải phóng tài nguyên và reset lại các thuộc tính CSS của header, body.
-   * 
-   * @function cleanupDesktopArtifacts
-   * @returns {void} Không trả về giá trị
-   */
+  // cleanupDesktopArtifacts: Xóa bỏ và dọn dẹp các thành phần HTML/CSS di động khi màn hình co dãn về kích thước desktop.
   function cleanupDesktopArtifacts() {
     // Xóa overlay và drawer menu
     const overlay = document.getElementById("m-drawer-overlay");
@@ -153,13 +108,7 @@
     window.setMobileDrawerState = null;
   }
 
-  /**
-   * Đo đạc chiều cao thực tế của Header và thiết lập vào biến CSS toàn cục `--m-header-h`.
-   * Biến này giúp các thành phần con tính toán khoảng cách neo đậu (sticky offset) chính xác.
-   * 
-   * @function syncHeaderHeightVar
-   * @returns {void} Không trả về giá trị
-   */
+  // syncHeaderHeightVar: Đo chiều cao thực tế của Header và cập nhật vào biến CSS toàn cục --m-header-h.
   function syncHeaderHeightVar() {
     const header = document.querySelector(".header");
     if (!header) return;
@@ -168,23 +117,13 @@
   }
 
   // ===== UTILITY =====
-  /**
-   * Kiểm tra xem kích thước chiều rộng cửa sổ trình duyệt hiện tại có thuộc chế độ di động hay không.
-   * 
-   * @function isMobile
-   * @returns {boolean} Trả về true nếu chiều rộng <= 768px, ngược lại false
-   */
+  // isMobile: Kiểm tra chiều rộng màn hình có thuộc chế độ di động hay không (<= 768px).
   function isMobile() {
     return window.innerWidth <= MOBILE_BP;
   }
 
   // ===== DRAWER MENU DI ĐỘNG =====
-  /**
-   * Khởi tạo cấu trúc HTML và thiết lập sự kiện đóng mở cho Drawer Menu (Menu vuốt) trên di động.
-   * 
-   * @function initDrawer
-   * @returns {void} Không trả về giá trị
-   */
+  // initDrawer: Khởi tạo và thiết lập các sự kiện đóng mở cho Drawer Menu (menu vuốt di động).
   function initDrawer() {
     if (!isMobile()) return;
     // Kiểm tra nếu drawer đã tồn tại trên DOM thì không khởi tạo lại
@@ -289,7 +228,7 @@
     }
   }
 
-  // Toggle drawer from menu toggle btn
+  // bindMenuToggle: Liên kết sự kiện click của nút hamburger trên header với việc đóng mở Drawer Menu.
   function bindMenuToggle() {
     const toggle = document.querySelector(".menu-toggle, #menuToggle");
     if (!toggle) return;
@@ -314,13 +253,7 @@
   }
 
   // ===== BOTTOM NAVIGATION DI ĐỘNG =====
-  /**
-   * Khởi tạo thanh điều hướng chân trang (Bottom Navigation) dành riêng cho giao diện di động.
-   * Hỗ trợ cập nhật badge số lượng sản phẩm trong giỏ hàng và điều hướng nhanh các trang chính.
-   * 
-   * @function initBottomNav
-   * @returns {void} Không trả về giá trị
-   */
+  // initBottomNav: Khởi tạo thanh điều hướng chân trang (Bottom Navigation) dành cho thiết bị di động.
   function initBottomNav() {
     if (!isMobile()) return;
     if (document.getElementById("m-bottom-nav")) return; // Không khởi tạo trùng lặp
@@ -368,12 +301,7 @@
     document.body.appendChild(nav);
   }
 
-  /**
-   * Tính toán tổng số lượng các món hàng hiện có trong giỏ hàng.
-   * 
-   * @function getCartCount
-   * @returns {number} Tổng số lượng sản phẩm
-   */
+  // getCartCount: Tính tổng số lượng sản phẩm đang có trong giỏ hàng.
   function getCartCount() {
     try {
       if (typeof getCart === "function") {
@@ -389,13 +317,7 @@
     }
   }
 
-  /**
-   * Cập nhật số lượng hiển thị trên Badge giỏ hàng của thanh bottom nav di động.
-   * Hàm này được gắn vào đối tượng window để có thể gọi từ bất kỳ file nào (như cart.js, menu.js).
-   * 
-   * @function window.updateBottomNavBadge
-   * @returns {void} Không trả về giá trị
-   */
+  // updateBottomNavBadge: Cập nhật số lượng hiển thị trên badge giỏ hàng của thanh bottom nav di động.
   window.updateBottomNavBadge = function () {
     const badge = document.querySelector(
       '.m-bottom-nav [data-page="cart.html"] .m-nav-badge',
@@ -425,13 +347,7 @@
   };
 
   // ===== FOOTER ACCORDION =====
-  /**
-   * Chuyển đổi các cột thông tin chân trang (Footer Columns) thành dạng đóng mở (Accordion) trên di động.
-   * Giúp giao diện di động gọn gàng, giảm chiều dài cuộn trang và tăng trải nghiệm người dùng.
-   * 
-   * @function initFooterAccordion
-   * @returns {void} Không trả về giá trị
-   */
+  // initFooterAccordion: Chuyển các cột thông tin chân trang (Footer) thành dạng đóng mở (accordion) trên di động.
   function initFooterAccordion() {
     if (!isMobile()) return;
     const cols = document.querySelectorAll(".footer-col");
@@ -453,14 +369,7 @@
   }
 
   // ===== CATEGORY TABS (Trang thực đơn menu.html) =====
-  /**
-   * Khởi tạo thanh trượt danh mục món ăn (Sticky Category Tabs) cố định phía trên ở trang thực đơn.
-   * Hỗ trợ tự động cập nhật tab active khi người dùng cuộn trang đến phần tương ứng,
-   * và cuộn mượt (smooth scroll) màn hình đến vùng món ăn khi click chọn tab.
-   * 
-   * @function initCategoryTabs
-   * @returns {void} Không trả về giá trị
-   */
+  // initCategoryTabs: Khởi tạo thanh danh mục món ăn (Category Tabs) dính phía trên ở trang thực đơn.
   function initCategoryTabs() {
     if (!isMobile()) return;
     if (page !== "menu.html") return; // Chỉ khởi chạy riêng ở trang menu.html
@@ -606,13 +515,7 @@
   }
 
   // ===== TỐI ƯU HÓA HIỆU NĂNG TẢI TRANG =====
-  /**
-   * Tự động thiết lập cơ chế trì hoãn tải ảnh (lazy loading) và giải mã ảnh bất đồng bộ (async decoding).
-   * Giúp tăng tốc độ tải trang ban đầu (First Contentful Paint) và giảm giật lag UI khi cuộn trên di động.
-   * 
-   * @function optimizeImagesForMobile
-   * @returns {void} Không trả về giá trị
-   */
+  // optimizeImagesForMobile: Tự động tối ưu hóa tải ảnh (lazy load và async decode) trên thiết bị di động.
   function optimizeImagesForMobile() {
     if (!isMobile()) return;
     const images = document.querySelectorAll("img");
@@ -631,13 +534,7 @@
   }
 
   // ===== KHỞI CHẠY HỆ THỐNG DI ĐỘNG =====
-  /**
-   * Khởi tạo giao diện di động: Thiết lập các biến kích thước,
-   * đăng ký các sự kiện và gọi khởi tạo Drawer, Bottom Nav, Accordion, Category Tabs.
-   * 
-   * @function init
-   * @returns {void} Không trả về giá trị
-   */
+  // init: Đăng ký các sự kiện resize, orientationchange và khởi chạy toàn bộ hệ thống giao diện di động.
   function init() {
     // Ensure stale lock class is never carried across history restores.
     setBodyScrollLock(false);

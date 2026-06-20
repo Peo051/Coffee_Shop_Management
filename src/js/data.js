@@ -81,18 +81,7 @@ const PRODUCT_IMAGE_OVERRIDES = {
   "p-44": "images/menu/3Q.jpg",
 };
 
-/**
- * Tên hàm: normalizeProduct
- * Mục đích: Đồng nhất cấu trúc thuộc tính của đối tượng sản phẩm, khôi phục ảnh mặc định và tạo ID ngẫu nhiên nếu bị thiếu.
- * Tham số:
- *   - product (Object): Đối tượng sản phẩm thô cần chuẩn hóa.
- * Giá trị trả về:
- *   - (Object): Đối tượng sản phẩm đã được chuẩn hóa đầy đủ cấu trúc thuộc tính.
- * Luồng xử lý chính:
- *   1. Lấy ảnh hiện tại hoặc ghi đè nếu nằm trong danh sách PRODUCT_IMAGE_OVERRIDES.
- *   2. Nếu ảnh bị lỗi/rỗng/fallback, tìm ảnh chuẩn tương ứng từ danh sách defaultProducts.
- *   3. Trả về cấu trúc đối tượng hoàn chỉnh chứa id, name, category, price, img, desc, isBestSeller, status.
- */
+// normalizeProduct: Chuẩn hóa thông tin sản phẩm và khôi phục ảnh mặc định nếu bị thiếu.
 function normalizeProduct(product) {
   let img = product.img || "";
   const overrideImg = PRODUCT_IMAGE_OVERRIDES[product.id];
@@ -124,19 +113,7 @@ function normalizeProduct(product) {
 
 // Đối tượng quản lý toàn bộ nghiệp vụ liên quan đến sản phẩm
 const ProductManager = {
-  /**
-   * Tên hàm: getProducts
-   * Mục đích: Lấy toàn bộ danh sách sản phẩm từ LocalStorage hoặc khôi phục danh sách mặc định nếu trống.
-   * Tham số: Không.
-   * Giá trị trả về:
-   *   - (Array): Mảng chứa các đối tượng sản phẩm đã được chuẩn hóa.
-   * Luồng xử lý chính:
-   *   1. Đọc dữ liệu từ LocalStorage qua key `gibor_products_cache_v3`.
-   *   2. Nếu dữ liệu rỗng hoặc lỗi parse JSON, dùng danh sách mặc định defaultProducts và ghi lại vào LocalStorage.
-   *   3. Lọc bỏ các sản phẩm lỗi (null/undefined), chuẩn hóa ảnh sản phẩm qua normalizeProduct().
-   *   4. Nếu phát hiện ảnh sản phẩm bị thay đổi (ví dụ: khôi phục từ ảnh logo fallback sang ảnh gốc chuẩn), ghi lại vào LocalStorage.
-   *   5. Trả về mảng sản phẩm.
-   */
+  // getProducts: Lấy danh sách sản phẩm từ localStorage, nếu trống thì khởi tạo dữ liệu mặc định.
   getProducts() {
     let products = [];
     try {
@@ -169,17 +146,7 @@ const ProductManager = {
     return products;
   },
 
-  /**
-   * Tên hàm: saveProducts
-   * Mục đích: Lưu danh sách sản phẩm mới vào LocalStorage và đồng bộ lên Firebase Database.
-   * Tham số:
-   *   - products (Array): Mảng các sản phẩm cần lưu.
-   * Giá trị trả về: Không.
-   * Luồng xử lý chính:
-   *   1. Loại bỏ phần tử null/undefined và chuẩn hóa từng phần tử qua normalizeProduct().
-   *   2. Ghi mảng sản phẩm dạng chuỗi JSON vào LocalStorage.
-   *   3. Nếu Firebase SDK đã được nhúng, gọi API Firebase Realtime Database ghi đè lên nhánh 'products' để đồng bộ.
-   */
+  // saveProducts: Lưu danh sách sản phẩm mới vào localStorage và đồng bộ lên Firebase.
   saveProducts(products) {
     const cleanProducts = (products || []).filter(p => p !== null && p !== undefined).map(normalizeProduct);
     localStorage.setItem(ADMIN_PRODUCTS_KEY, JSON.stringify(cleanProducts));
@@ -199,6 +166,7 @@ const ProductManager = {
 let activeDbUrl = "https://manage-coffee-3a860-default-rtdb.asia-southeast1.firebasedatabase.app";
 let dbWrapperSetup = false;
 
+// setupDatabaseURLWrapper: Định cấu hình bọc hàm firebase.database() để tự động trỏ đến URL cơ sở dữ liệu phù hợp.
 function setupDatabaseURLWrapper() {
   if (dbWrapperSetup) return;
   if (typeof firebase !== 'undefined' && firebase.database) {
@@ -233,6 +201,7 @@ function setupDatabaseURLWrapper() {
   }
 }
 
+// loadFirebaseDatabase: Tải SDK Firebase Realtime Database một cách động nếu chưa tồn tại.
 function loadFirebaseDatabase(callback) {
   if (typeof firebase !== 'undefined' && firebase.database) {
     setupDatabaseURLWrapper();
@@ -249,13 +218,7 @@ function loadFirebaseDatabase(callback) {
   document.head.appendChild(script);
 }
 
-/**
- * Gộp danh sách sản phẩm từ local và remote dựa trên thời gian cập nhật mới nhất.
- * 
- * @param {Array} local - Danh sách sản phẩm lưu ở local cache.
- * @param {Array} remote - Danh sách sản phẩm từ Firebase.
- * @returns {Array} Danh sách sản phẩm đã được gộp.
- */
+// mergeProducts: Gộp danh sách sản phẩm local và remote dựa theo thời gian cập nhật mới nhất.
 function mergeProducts(local, remote) {
   const localMap = new Map((local || []).map(product => [product.id, product]));
   const remoteMap = new Map((remote || []).map(product => [product.id, product]));
@@ -281,13 +244,7 @@ function mergeProducts(local, remote) {
   return Array.from(mergedMap.values());
 }
 
-/**
- * Gộp danh sách đơn hàng từ local và remote dựa trên mức độ ưu tiên trạng thái đơn hàng.
- * 
- * @param {Array} local - Danh sách đơn hàng từ local.
- * @param {Array} remote - Danh sách đơn hàng từ Firebase.
- * @returns {Array} Danh sách đơn hàng đã gộp.
- */
+// mergeOrders: Gộp danh sách đơn hàng local và remote dựa theo độ ưu tiên của trạng thái đơn.
 function mergeOrders(local, remote) {
   const getKey = (order) => String(order.code || order.id || "");
   const localMap = new Map((local || []).map(order => [getKey(order), order]));
@@ -331,13 +288,7 @@ function mergeOrders(local, remote) {
   return Array.from(mergedMap.values());
 }
 
-/**
- * Gộp danh sách tài khoản người dùng từ local và remote dựa trên thời gian cập nhật.
- * 
- * @param {Array} local - Danh sách tài khoản từ local.
- * @param {Array} remote - Danh sách tài khoản từ Firebase.
- * @returns {Array} Danh sách tài khoản đã gộp.
- */
+// mergeUsers: Gộp danh sách người dùng local và remote dựa theo thời gian cập nhật.
 function mergeUsers(local, remote) {
   const localMap = new Map((local || []).map(user => [String(user.id), user]));
   const remoteMap = new Map((remote || []).map(user => [String(user.id), user]));
@@ -363,6 +314,7 @@ function mergeUsers(local, remote) {
   return Array.from(mergedMap.values());
 }
 
+// initFirebaseSync: Khởi chạy đồng bộ hóa dữ liệu 2 chiều (Products, Orders, Users, PayOS configs) với Firebase.
 function initFirebaseSync() {
   setupDatabaseURLWrapper();
   loadFirebaseDatabase(() => {
@@ -533,6 +485,7 @@ if (document.readyState === 'loading') {
 }
 
 const UserManager = {
+  // ensureDefaultAdmin: Khởi tạo tài khoản Admin mặc định và 15 tài khoản Quản lý chi nhánh nếu chưa tồn tại.
   ensureDefaultAdmin() {
     const users = this.getUsers();
     let changed = false;
@@ -633,10 +586,7 @@ const UserManager = {
     }
   },
 
-  /**
-   * Lấy danh sách tất cả người dùng từ localStorage
-   * @returns {Array} Mảng các đối tượng user
-   */
+  // getUsers: Lấy danh sách tất cả tài khoản người dùng từ localStorage.
   getUsers() {
     try {
       const users = localStorage.getItem("gibor_users");
@@ -647,10 +597,7 @@ const UserManager = {
     }
   },
 
-  /**
-   * Lưu danh sách người dùng vào localStorage
-   * @param {Array} users - Mảng người dùng
-   */
+  // saveUsers: Lưu danh sách tài khoản người dùng vào localStorage và đồng bộ lên Firebase.
   saveUsers(users) {
     const cleanUsers = (users || []).filter(u => u !== null && u !== undefined);
     localStorage.setItem("gibor_users", JSON.stringify(cleanUsers));
@@ -665,16 +612,7 @@ const UserManager = {
     }
   },
 
-  /**
-   * Đăng ký tài khoản mới
-   * @param {Object} param0
-   * @param {string} param0.lastName - Họ
-   * @param {string} param0.firstName - Tên
-   * @param {string} param0.email - Email
-   * @param {string} param0.phone - Số điện thoại
-   * @param {string} param0.password - Mật khẩu
-   * @returns {Object} { success, message, user }
-   */
+  // register: Đăng ký tài khoản người dùng mới dựa trên thông tin email/mật khẩu.
   register({ lastName, firstName, email, phone, password }) {
     const users = this.getUsers();
 
@@ -733,12 +671,7 @@ const UserManager = {
     return { success: true, message: "Đăng ký thành công!", user: newUser };
   },
 
-  /**
-   * Đăng nhập
-   * @param {string} loginId
-   * @param {string} password
-   * @returns {Object} { success, message, user }
-   */
+  // login: Xác thực thông tin đăng nhập tài khoản (bằng email hoặc username).
   login(loginId, password) {
     const users = this.getUsers();
     // Allow login by email or username
@@ -774,10 +707,7 @@ const UserManager = {
     };
   },
 
-  /**
-   * Lưu thông tin user đang đăng nhập (không lưu password)
-   * @param {Object} user
-   */
+  // setCurrentUser: Lưu thông tin tài khoản đang đăng nhập hiện tại vào localStorage.
   setCurrentUser(user) {
     const safeUser = {
       id: user.id,
@@ -796,19 +726,13 @@ const UserManager = {
     localStorage.setItem("gibor_current_user", JSON.stringify(safeUser));
   },
 
-  /**
-   * Lấy thông tin user đang đăng nhập
-   * @returns {Object|null}
-   */
+  // getCurrentUser: Lấy thông tin tài khoản đang đăng nhập hiện tại từ localStorage.
   getCurrentUser() {
     const user = localStorage.getItem("gibor_current_user");
     return user ? JSON.parse(user) : null;
   },
 
-  /**
-   * Kiểm tra quyền Admin
-   * @returns {boolean}
-   */
+  // isAdmin: Kiểm tra xem tài khoản hiện tại có vai trò quản trị viên (admin) hay không.
   isAdmin() {
     const user = this.getCurrentUser();
     if (!user) return false;
@@ -817,19 +741,13 @@ const UserManager = {
     return user.role === "admin" && user.status !== "locked";
   },
   
-  /**
-   * Kiểm tra role
-   * @param {string} role
-   * @returns {boolean}
-   */
+  // hasRole: Kiểm tra xem tài khoản hiện tại có vai trò khớp với tham số yêu cầu hay không.
   hasRole(role) {
     const user = this.getCurrentUser();
     return user && user.role === role;
   },
   
-  /**
-   * Chặn truy cập trang admin nếu không đủ quyền
-   */
+  // requireAdmin: Kiểm tra quyền quản trị và chuyển hướng về trang login nếu không đủ quyền.
   requireAdmin() {
     if (!this.isAdmin()) {
       alert("Bạn không có quyền truy cập trang quản trị. Vui lòng đăng nhập bằng tài khoản admin và mật khẩu tương ứng.");
@@ -840,23 +758,17 @@ const UserManager = {
   /**
    * Đăng xuất
    */
+  // logout: Đăng xuất tài khoản, xóa phiên làm việc hiện tại khỏi localStorage.
   logout() {
     localStorage.removeItem("gibor_current_user");
   },
 
-  /**
-   * Kiểm tra đã đăng nhập chưa
-   * @returns {boolean}
-   */
+  // isLoggedIn: Kiểm tra xem người dùng hiện tại đã đăng nhập vào hệ thống chưa.
   isLoggedIn() {
     return this.getCurrentUser() !== null;
   },
 
-  /**
-   * Cập nhật thông tin cá nhân (họ, tên, email, sđt)
-   * @param {Object} updates - { lastName, firstName, email, phone }
-   * @returns {Object} { success, message }
-   */
+  // updateProfile: Cập nhật các thông tin cá nhân (họ, tên, sđt, email) của người dùng hiện tại.
   updateProfile(updates) {
     const currentUser = this.getCurrentUser();
     if (!currentUser) return { success: false, message: "Chưa đăng nhập." };
@@ -900,12 +812,7 @@ const UserManager = {
     };
   },
 
-  /**
-   * Đổi mật khẩu
-   * @param {string} oldPassword - Mật khẩu cũ
-   * @param {string} newPassword - Mật khẩu mới
-   * @returns {Object} { success, message }
-   */
+  // updatePassword: Thay đổi mật khẩu mới cho tài khoản người dùng hiện tại.
   updatePassword(oldPassword, newPassword) {
     const currentUser = this.getCurrentUser();
     if (!currentUser) return { success: false, message: "Chưa đăng nhập." };
@@ -933,12 +840,7 @@ const UserManager = {
     return { success: true, message: "Đổi mật khẩu thành công!" };
   },
 
-  /**
-   * Đặt lại mật khẩu (dành cho Quên mật khẩu)
-   * @param {string} email - Email của tài khoản
-   * @param {string} newPassword - Mật khẩu mới
-   * @returns {Object} { success, message }
-   */
+  // resetPassword: Đặt lại mật khẩu mới cho tài khoản dựa trên địa chỉ email (quên mật khẩu).
   resetPassword(email, newPassword) {
     const users = this.getUsers();
     const idx = users.findIndex((u) => u.email === email);
@@ -958,14 +860,7 @@ const UserManager = {
     return { success: true, message: "Lấy lại mật khẩu thành công!" };
   },
 
-  /**
-   * Đăng nhập/Đăng ký bằng Google (Firebase Auth)
-   * Kiểm tra email đã tồn tại chưa:
-   * - Nếu đã có trong localStorage → đăng nhập (nhưng kiểm tra provider)
-   * - Nếu chưa có → tạo tài khoản mới
-   * @param {Object} googleUser - { displayName, email, photoURL, uid }
-   * @returns {Object} { success, message, user, isNew }
-   */
+  // loginWithGoogle: Đăng nhập hoặc đăng ký tài khoản mới bằng tài khoản Google (Firebase Auth).
   loginWithGoogle(googleUser) {
     const users = this.getUsers();
     let user = users.find((u) => u.email.toLowerCase() === googleUser.email.toLowerCase());
@@ -1036,12 +931,7 @@ const UserManager = {
     };
   },
 
-  /**
-   * Đăng nhập/đăng ký bằng GitHub (Firebase Auth)
-   * Kiểm tra email đã tồn tại chưa:
-   * - Nếu đã có trong localStorage → đăng nhập (nhưng kiểm tra provider)
-   * - Nếu chưa có → tạo tài khoản mới
-   */
+  // loginWithGithub: Đăng nhập hoặc đăng ký tài khoản mới bằng tài khoản GitHub (Firebase Auth).
   loginWithGithub(githubUser) {
     const users = this.getUsers();
     let user = users.find((u) => u.email.toLowerCase() === githubUser.email.toLowerCase());
@@ -1122,17 +1012,7 @@ const UserManager = {
  *   - Sử dụng: 1 điểm tích lũy = 10đ giảm giá trực tiếp vào hóa đơn.
  */
 const PointsManager = {
-  /**
-   * Tên hàm: getPoints
-   * Mục đích: Lấy số điểm tích lũy hiện tại của người dùng đang đăng nhập.
-   * Tham số: Không.
-   * Giá trị trả về:
-   *   - (number): Số điểm tích lũy hiện tại (mặc định là 0 nếu chưa có hoặc chưa đăng nhập).
-   * Luồng xử lý chính:
-   *   1. Lấy thông tin user hiện tại qua UserManager.getCurrentUser().
-   *   2. Đọc LocalStorage key `gibor_points`.
-   *   3. Trả về số điểm tương ứng của userId đó.
-   */
+  // getPoints: Lấy số điểm tích lũy hiện tại của người dùng đang đăng nhập.
   getPoints() {
     const user = UserManager.getCurrentUser();
     if (!user) return 0;
@@ -1140,17 +1020,7 @@ const PointsManager = {
     return allPoints[user.id] || 0;
   },
 
-  /**
-   * Tên hàm: setPoints
-   * Mục đích: Cập nhật số điểm tích lũy mới cho người dùng đang đăng nhập vào LocalStorage.
-   * Tham số:
-   *   - points (number): Số điểm mới.
-   * Giá trị trả về: Không.
-   * Luồng xử lý chính:
-   *   1. Xác định user hiện tại đang đăng nhập.
-   *   2. Lấy danh sách điểm từ LocalStorage, cập nhật điểm cho user đó (đảm bảo không âm và làm tròn xuống).
-   *   3. Lưu lại danh sách điểm vào LocalStorage.
-   */
+  // setPoints: Cập nhật số điểm tích lũy mới cho người dùng đang đăng nhập.
   setPoints(points) {
     const user = UserManager.getCurrentUser();
     if (!user) return;
@@ -1159,36 +1029,14 @@ const PointsManager = {
     localStorage.setItem("gibor_points", JSON.stringify(allPoints));
   },
 
-  /**
-   * Tên hàm: earnPoints
-   * Mục đích: Tích điểm mới cho khách hàng dựa trên số tiền của đơn hàng đã thanh toán.
-   * Tham số:
-   *   - amount (number): Tổng số tiền thanh toán của đơn hàng (VNĐ).
-   * Giá trị trả về:
-   *   - (number): Số điểm được cộng thêm từ đơn hàng này.
-   * Luồng xử lý chính:
-   *   1. Tính toán số điểm nhận được: 1.000đ = 1 điểm (làm tròn xuống).
-   *   2. Lấy số điểm hiện tại, cộng thêm điểm mới tính và cập nhật qua setPoints().
-   *   3. Trả về số điểm vừa được cộng.
-   */
+  // earnPoints: Cộng điểm tích lũy cho người dùng dựa trên số tiền chi tiêu (1.000đ = 1 điểm).
   earnPoints(amount) {
     const earned = Math.floor(amount / 1000);
     this.setPoints(this.getPoints() + earned);
     return earned;
   },
 
-  /**
-   * Tên hàm: usePoints
-   * Mục đích: Trừ điểm tích lũy của khách hàng khi họ quyết định quy đổi điểm để giảm giá.
-   * Tham số:
-   *   - points (number): Số điểm khách hàng yêu cầu sử dụng.
-   * Giá trị trả về:
-   *   - (boolean): True nếu trừ điểm thành công, False nếu số điểm yêu cầu vượt quá số điểm hiện có.
-   * Luồng xử lý chính:
-   *   1. Lấy số điểm hiện tại của khách hàng.
-   *   2. Nếu số điểm yêu cầu lớn hơn số điểm đang có, từ chối giao dịch (trả về false).
-   *   3. Trừ bớt điểm và lưu số điểm còn lại qua setPoints(), trả về true.
-   */
+  // usePoints: Trừ điểm tích lũy của người dùng khi tiến hành quy đổi giảm giá.
   usePoints(points) {
     const current = this.getPoints();
     if (points > current) return false;
@@ -1196,26 +1044,12 @@ const PointsManager = {
     return true;
   },
 
-  /**
-   * Tên hàm: pointsToMoney
-   * Mục đích: Quy đổi số điểm tích lũy thành số tiền tương ứng được giảm giá (1 điểm = 10đ).
-   * Tham số:
-   *   - points (number): Số điểm cần quy đổi.
-   * Giá trị trả về:
-   *   - (number): Số tiền được giảm tương ứng (VNĐ).
-   */
+  // pointsToMoney: Quy đổi điểm tích lũy thành số tiền giảm giá tương ứng (1 điểm = 10đ).
   pointsToMoney(points) {
     return points * 10;
   },
 
-  /**
-   * Tên hàm: moneyToPoints
-   * Mục đích: Tính toán số điểm tích lũy được từ tổng số tiền chi tiêu (1.000đ = 1 điểm).
-   * Tham số:
-   *   - amount (number): Số tiền chi tiêu (VNĐ).
-   * Giá trị trả về:
-   *   - (number): Số điểm tích lũy tương ứng.
-   */
+  // moneyToPoints: Tính toán số điểm tích lũy được từ tổng số tiền chi tiêu.
   moneyToPoints(amount) {
     return Math.floor(amount / 1000);
   },
@@ -1227,17 +1061,7 @@ const PointsManager = {
  * Lưu trữ: Lưu trong LocalStorage dưới key `gibor_orders` và đồng bộ lên Firebase Database.
  */
 const OrderManager = {
-  /**
-   * Tên hàm: getOrders
-   * Mục đích: Lấy toàn bộ đơn hàng của người dùng hiện tại đang đăng nhập.
-   * Tham số: Không.
-   * Giá trị trả về:
-   *   - (Array): Mảng chứa các đối tượng đơn hàng của riêng người dùng này.
-   * Luồng xử lý chính:
-   *   1. Lấy thông tin user hiện tại qua UserManager.getCurrentUser().
-   *   2. Đọc LocalStorage key `gibor_orders` và parse thành mảng.
-   *   3. Lọc bỏ phần tử null/undefined và lọc các đơn hàng có userId khớp với id của user hiện tại.
-   */
+  // getOrders: Lấy danh sách lịch sử đơn hàng của riêng người dùng đang đăng nhập.
   getOrders() {
     try {
       const currentUser = UserManager.getCurrentUser();
@@ -1251,19 +1075,7 @@ const OrderManager = {
     }
   },
 
-  /**
-   * Tên hàm: saveOrder
-   * Mục đích: Lưu đơn hàng mới vào lịch sử LocalStorage và đồng bộ lên Firebase Database.
-   * Tham số:
-   *   - order (Object): Thông tin đơn hàng mới chứa code, items, total, payment, shipping, v.v.
-   * Giá trị trả về: Không.
-   * Luồng xử lý chính:
-   *   1. Lấy thông tin user hiện tại.
-   *   2. Đọc danh sách đơn hàng cũ từ LocalStorage.
-   *   3. Tạo đối tượng đơn hàng mới bổ sung userId, userName, thời gian tạo createdAt, trạng thái mặc định.
-   *   4. Push đơn hàng mới vào danh sách và lưu lại LocalStorage.
-   *   5. Đồng bộ mảng đơn hàng lên nhánh 'orders' của Firebase Database nếu có kết nối.
-   */
+  // saveOrder: Ghi nhận đơn hàng mới vào localStorage và đồng bộ lên Firebase.
   saveOrder(order) {
     try {
       const currentUser = UserManager.getCurrentUser();
@@ -1298,13 +1110,7 @@ if (typeof UserManager !== 'undefined') {
 // GLOBAL HELPERS (GIỎ HÀNG, TOAST, ĐỊNH DẠNG TIỀN)
 // ============================================================================
 
-/**
- * Tên hàm: getCart
- * Mục đích: Đọc và lấy danh sách sản phẩm trong giỏ hàng hiện tại của khách hàng từ LocalStorage.
- * Tham số: Không.
- * Giá trị trả về:
- *   - (Array): Mảng chứa các sản phẩm trong giỏ hàng.
- */
+// getCart: Đọc và lấy danh sách sản phẩm có trong giỏ hàng từ localStorage.
 function getCart() {
   try {
     const cart = localStorage.getItem("giborCart") || localStorage.getItem("cart") || "[]";
@@ -1314,13 +1120,7 @@ function getCart() {
   }
 }
 
-/**
- * Tên hàm: saveCart
- * Mục đích: Lưu danh sách giỏ hàng mới vào LocalStorage dưới key `giborCart`.
- * Tham số:
- *   - cart (Array): Mảng chứa danh sách sản phẩm mới cần lưu.
- * Giá trị trả về: Không.
- */
+// saveCart: Lưu danh sách giỏ hàng mới vào localStorage.
 function saveCart(cart) {
   try {
     localStorage.setItem("giborCart", JSON.stringify(cart || []));
@@ -1329,25 +1129,12 @@ function saveCart(cart) {
   }
 }
 
-/**
- * Tên hàm: formatPrice
- * Mục đích: Định dạng số tiền thô thành chuỗi hiển thị đơn vị tiền tệ VNĐ (ví dụ: 30000 -> "30.000đ").
- * Tham số:
- *   - price (number): Số tiền cần định dạng.
- * Giá trị trả về:
- *   - (string): Chuỗi tiền tệ đã định dạng.
- */
+// formatPrice: Định dạng số tiền thô thành chuỗi hiển thị đơn vị tiền tệ VNĐ.
 function formatPrice(price) {
   return (Number(price) || 0).toLocaleString("vi-VN") + "đ";
 }
 
-/**
- * Tên hàm: showToast
- * Mục đích: Hiển thị hộp thông báo nhanh (Toast) tự động ẩn sau 2.5 giây cho khách hàng.
- * Tham số:
- *   - message (string): Nội dung thông báo hiển thị.
- * Giá trị trả về: Không.
- */
+// showToast: Hiển thị hộp thông báo nhanh toast tự động ẩn sau 2.5 giây.
 function showToast(message) {
   const toast = document.getElementById("toast");
   const toastMsg = document.getElementById("toastMessage");
@@ -1364,12 +1151,7 @@ function showToast(message) {
   }, 2500);
 }
 
-/**
- * Tên hàm: updateCartCount
- * Mục đích: Tính toán và cập nhật số lượng badge giỏ hàng hiển thị ở tất cả vị trí trên giao diện (desktop và mobile).
- * Tham số: Không.
- * Giá trị trả về: Không.
- */
+// updateCartCount: Cập nhật số lượng sản phẩm giỏ hàng hiển thị trên badge giao diện.
 function updateCartCount() {
   const cart = getCart();
   const totalItems = cart.reduce((sum, item) => sum + (item.quantity || 1), 0);
@@ -1391,14 +1173,7 @@ function updateCartCount() {
   }
 }
 
-/**
- * Tên hàm: escapeHTML
- * Mục đích: Chuẩn hóa chuỗi ký tự, thay thế các ký tự đặc biệt thành HTML Entities nhằm ngăn chặn tấn công XSS.
- * Tham số:
- *   - value (string): Chuỗi thô cần lọc.
- * Giá trị trả về:
- *   - (string): Chuỗi an toàn đã được mã hóa ký tự đặc biệt.
- */
+// escapeHTML: Chuẩn hóa chuỗi ký tự đặc biệt thành HTML entities để ngăn chặn lỗi bảo mật XSS.
 function escapeHTML(value) {
   return String(value ?? "")
     .replace(/&/g, "&amp;")
@@ -1408,15 +1183,7 @@ function escapeHTML(value) {
     .replace(/'/g, "&#039;");
 }
 
-/**
- * Tên hàm: formatDate
- * Mục đích: Định dạng mốc thời gian thành chuỗi hiển thị tiếng Việt (ngày/tháng/năm hoặc ngày/tháng/năm giờ:phút:giây).
- * Tham số:
- *   - value (string|number|Date): Thời gian đầu vào.
- *   - includeTime (boolean): Có hiển thị kèm theo giờ phút giây không (mặc định là false).
- * Giá trị trả về:
- *   - (string): Chuỗi thời gian đã định dạng.
- */
+// formatDate: Định dạng mốc thời gian thành chuỗi hiển thị dạng ngày/tháng/năm.
 function formatDate(value, includeTime = false) {
   if (!value) return "-";
   const date = new Date(value);
