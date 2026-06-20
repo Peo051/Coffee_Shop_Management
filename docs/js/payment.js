@@ -6,15 +6,7 @@
 ========================================================================================
 */
 
-/**
- * Cập nhật và hiển thị mã QR thanh toán qua payOS.
- * Hàm này sẽ gọi API tạo yêu cầu thanh toán với số tiền hiện tại,
- * hiển thị trạng thái đang xử lý và hiển thị mã QR kèm đường link thanh toán khi thành công.
- * 
- * @async
- * @function updateQRCode
- * @returns {Promise<void>} Không trả về giá trị
- */
+// updateQRCode: Cập nhật và hiển thị mã QR thanh toán qua payOS.
 async function updateQRCode() {
   // Lấy các phần tử DOM liên quan đến khu vực hiển thị QR thanh toán
   const loader = document.getElementById("qrLoader"); // Icon loading khi đang tạo mã QR
@@ -127,14 +119,7 @@ async function updateQRCode() {
   qrImg.src = getQrImageUrl(payment);
 }
 
-/**
- * Hiển thị thông tin tóm tắt giỏ hàng (cột bên phải trang thanh toán).
- * Hàm này lấy dữ liệu giỏ hàng hiện tại, tạo HTML cấu trúc danh sách sản phẩm,
- * hiển thị số lượng và các tùy chọn đi kèm (size, toppings, combo) của từng món.
- * 
- * @function renderOrderSummary
- * @returns {void} Không trả về giá trị
- */
+// renderOrderSummary: Hiển thị thông tin tóm tắt giỏ hàng tại trang thanh toán.
 function renderOrderSummary() {
   const cart = getCart(); // Lấy mảng sản phẩm trong giỏ hàng từ localStorage
   const orderItems = document.getElementById("orderItems"); // Phần tử chứa danh sách món
@@ -216,14 +201,7 @@ let isFreeShip = false;  // Biến lưu trạng thái đơn hàng có được m
 let pointsDiscount = 0; // Số tiền được giảm khi áp dụng điểm tích lũy của khách hàng thành viên
 let usedPoints = 0; // Số điểm tích lũy thực tế đã sử dụng cho đơn hàng này
 
-/**
- * Tính toán phí vận chuyển, các khoản giảm giá và cập nhật tổng tiền đơn hàng lên giao diện.
- * Đồng thời tính toán số điểm thưởng tích lũy dự kiến khách hàng nhận được khi mua hàng.
- * 
- * @function updateTotals
- * @param {number} subtotal - Số tiền tạm tính của các sản phẩm trong giỏ hàng (chưa gồm giảm giá và phí ship)
- * @returns {void} Không trả về giá trị
- */
+// updateTotals: Tính toán phí vận chuyển, các khoản giảm giá và cập nhật tổng tiền đơn hàng.
 function updateTotals(subtotal) {
   // Lấy các phần tử hiển thị giá trị tiền trên giao diện
   const subEl = document.getElementById("subtotalPrice"); // Tiền tạm tính
@@ -315,13 +293,7 @@ const COUPONS = {
   FREESHIP: { type: "freeship", value: 0 },            // Miễn phí vận chuyển
 };
 
-/**
- * Kiểm tra và áp dụng mã giảm giá do người dùng nhập vào.
- * Tính toán lại số tiền được giảm tương ứng với loại mã và cập nhật lại tổng tiền.
- * 
- * @function applyCoupon
- * @returns {void} Không trả về giá trị
- */
+// applyCoupon: Kiểm tra và áp dụng mã giảm giá của cửa hàng.
 function applyCoupon() {
   const input = document.getElementById("couponCode"); // Ô nhập mã giảm giá
   const code = input.value.trim().toUpperCase(); // Loại bỏ khoảng trắng và chuyển thành chữ in hoa
@@ -370,13 +342,7 @@ function applyCoupon() {
 }
 
 // ===== ĐIỂM TÍCH LŨY =====
-/**
- * Khởi tạo giao diện đổi điểm tích lũy thành viên khi thanh toán đơn hàng.
- * Chỉ hiển thị phần này nếu người dùng đã đăng nhập tài khoản.
- * 
- * @function initPoints
- * @returns {void} Không trả về giá trị
- */
+// initPoints: Khởi tạo giao diện đổi điểm tích lũy thành viên khi thanh toán.
 function initPoints() {
   const section = document.getElementById("pointsSection"); // Vùng chức năng đổi điểm tích lũy
   if (!section) return;
@@ -422,14 +388,7 @@ function initPoints() {
   if (btn) btn.addEventListener("click", applyPoints);
 }
 
-/**
- * Quy đổi số điểm khách hàng chọn dùng thành số tiền được giảm.
- * Tiến hành ràng buộc số điểm hợp lệ, không vượt quá số điểm sở hữu
- * và số tiền giảm không vượt quá tổng giá trị đơn hàng sau khi trừ coupon.
- * 
- * @function applyPoints
- * @returns {void} Không trả về giá trị
- */
+// applyPoints: Quy đổi điểm tích lũy thành viên thành số tiền được giảm giá.
 function applyPoints() {
   if (typeof PointsManager === "undefined") return;
 
@@ -491,15 +450,7 @@ function applyPoints() {
 // ===== CHỌN PHƯƠNG THỨC THANH TOÁN =====
 let selectedPayment = "cod"; // Biến toàn cục lưu phương thức thanh toán hiện tại ('cod' hoặc 'banking')
 
-/**
- * Xử lý thay đổi phương thức thanh toán khi người dùng lựa chọn trên giao diện.
- * Cập nhật class active cho các phần tử DOM, ẩn/hiện khu vực QR chuyển khoản,
- * đổi nhãn nút Đặt hàng và gọi hàm cập nhật mã QR.
- * 
- * @function selectPayment
- * @param {string} method - Phương thức thanh toán được chọn ('cod' hoặc 'banking')
- * @returns {void} Không trả về giá trị
- */
+// selectPayment: Xử lý thay đổi phương thức thanh toán khi người dùng lựa chọn.
 function selectPayment(method) {
   selectedPayment = method; // Cập nhật biến trạng thái toàn cục
 
@@ -657,14 +608,7 @@ const BRANCHES = (() => {
 
 let selectedBranch = null; // Biến toàn cục lưu chi nhánh cửa hàng được chọn (dùng khi uống tại quán)
 
-/**
- * Hiển thị danh sách các chi nhánh tương ứng với thành phố được chọn lên giao diện.
- * Tạo HTML dạng thẻ chọn (label) cho từng chi nhánh, khi click sẽ gọi hàm selectBranch.
- * 
- * @function renderBranches
- * @param {string} city - Mã thành phố được chọn ('hcm', 'hn', 'dn')
- * @returns {void} Không trả về giá trị
- */
+// renderBranches: Hiển thị danh sách các chi nhánh tương ứng với thành phố được chọn.
 function renderBranches(city) {
   const branchList = document.getElementById("branchList"); // Khu vực hiển thị danh sách chi nhánh
   if (!branchList) return;
@@ -695,14 +639,7 @@ function renderBranches(city) {
   branchList.innerHTML = html;
 }
 
-/**
- * Lưu trữ chi nhánh cửa hàng được chọn và cập nhật trạng thái hiển thị (highlight) trên giao diện.
- * 
- * @function selectBranch
- * @param {string} branchId - Mã định danh của chi nhánh được chọn
- * @param {string} city - Mã thành phố của chi nhánh ('hcm', 'hn', 'dn')
- * @returns {void} Không trả về giá trị
- */
+// selectBranch: Lưu thông tin chi nhánh cửa hàng được chọn và cập nhật giao diện.
 function selectBranch(branchId, city) {
   // Tìm kiếm đối tượng chi nhánh tương ứng trong danh sách BRANCHES
   selectedBranch = BRANCHES[city].find((b) => b.id === branchId);
@@ -725,15 +662,7 @@ function selectBranch(branchId, city) {
 // ===== CHỌN HÌNH THỨC NHẬN HÀNG =====
 let selectedShipping = "delivery"; // Biến toàn cục lưu hình thức nhận hàng ('delivery' hoặc 'dine-in')
 
-/**
- * Xử lý thay đổi hình thức nhận hàng khi người dùng click chọn trên giao diện.
- * Hàm này sẽ ẩn/hiện các trường thông tin giao nhận phù hợp, đặt/bỏ thuộc tính bắt buộc,
- * xóa các lỗi cũ và gọi hàm cập nhật phí vận chuyển.
- * 
- * @function selectShipping
- * @param {string} method - Hình thức nhận hàng được chọn ('delivery' hoặc 'dine-in')
- * @returns {void} Không trả về giá trị
- */
+// selectShipping: Xử lý thay đổi hình thức nhận hàng và cập nhật các trường thông tin tương ứng.
 function selectShipping(method) {
   selectedShipping = method; // Cập nhật biến trạng thái toàn cục
 
@@ -803,12 +732,7 @@ function selectShipping(method) {
 }
 
 // ===== XÓA LỖI =====
-/**
- * Xóa toàn bộ các lớp cảnh báo lỗi (has-error) và thẻ thông báo lỗi dưới các input trên form.
- * 
- * @function clearAllErrors
- * @returns {void} Không trả về giá trị
- */
+// clearAllErrors: Xóa toàn bộ các lớp cảnh báo và thông báo lỗi trên form.
 function clearAllErrors() {
   document.querySelectorAll(".form-group").forEach((group) => {
     group.classList.remove("has-error");
@@ -817,15 +741,7 @@ function clearAllErrors() {
   });
 }
 
-/**
- * Hiển thị thông báo lỗi dưới một input cụ thể khi validate form thất bại.
- * 
- * @function showFieldError
- * @param {string} inputId - ID của ô input bị lỗi
- * @param {string} message - Nội dung thông báo lỗi muốn hiển thị
- * @param {boolean} [shouldFocus=false] - Có tự động đặt con trỏ chuột (focus) vào ô input đó không
- * @returns {void} Không trả về giá trị
- */
+// showFieldError: Hiển thị thông báo lỗi dưới một trường nhập liệu cụ thể khi validate thất bại.
 function showFieldError(inputId, message, shouldFocus = false) {
   const input = document.getElementById(inputId);
   if (!input) return;
@@ -852,13 +768,7 @@ function showFieldError(inputId, message, shouldFocus = false) {
 }
 
 // ===== VALIDATE FORM =====
-/**
- * Kiểm tra tính hợp lệ của toàn bộ dữ liệu do người dùng nhập vào trên form đặt hàng.
- * Tùy thuộc vào hình thức nhận hàng (giao hàng hoặc tại quán), các trường bắt buộc sẽ khác nhau.
- * 
- * @function validateForm
- * @returns {boolean|string} Trả về true nếu hợp lệ, false nếu lỗi, hoặc "NEED_CONFIRM" nếu cần hiện popup QR chuyển khoản
- */
+// validateForm: Kiểm tra tính hợp lệ của toàn bộ dữ liệu nhập vào trên form đặt hàng.
 function validateForm() {
   // Xóa toàn bộ lỗi cũ trước khi kiểm tra lượt mới
   clearAllErrors();
@@ -928,13 +838,7 @@ function validateForm() {
 }
 
 // ===== HIỆN POPUP XÁC NHẬN THANH TOÁN =====
-/**
- * Hiển thị popup overlay xác nhận thanh toán (chứa mã QR chuyển khoản payOS).
- * Trả về một Promise sẽ giải quyết (resolve) khi khách hàng bấm Xác nhận hoặc Hủy.
- * 
- * @function showConfirmPayment
- * @returns {Promise<boolean>} Trả về true nếu chọn Xác nhận (đã chuyển khoản), false nếu bấm Hủy
- */
+// showConfirmPayment: Hiển thị popup overlay xác nhận thanh toán chứa mã QR.
 function showConfirmPayment() {
   return new Promise((resolve) => {
     const overlay = document.getElementById("confirmOverlay"); // Overlay chứa popup xác nhận chuyển khoản
@@ -1002,16 +906,7 @@ function showConfirmPayment() {
 }
 
 // ===== ĐẶT HÀNG =====
-/**
- * Thực hiện đặt hàng: Kiểm tra tính hợp lệ của giỏ hàng, xác thực thông tin biểu mẫu,
- * xử lý xác nhận thanh toán chuyển khoản payOS nếu có, sinh mã đơn hàng ngẫu nhiên,
- * lưu trữ lịch sử đơn hàng qua OrderManager, cập nhật điểm tích lũy qua PointsManager,
- * dọn dẹp giỏ hàng và hiển thị popup thông báo đặt hàng thành công.
- * 
- * @async
- * @function placeOrder
- * @returns {Promise<void>} Không trả về giá trị
- */
+// placeOrder: Thực hiện quy trình đặt hàng, lưu trữ thông tin đơn hàng và hiển thị popup thành công.
 async function placeOrder() {
   const cart = getCart(); // Lấy dữ liệu giỏ hàng hiện tại
 
@@ -1545,13 +1440,7 @@ const WARD_NAMES = {
 };
 
 // ===== CẬP NHẬT PHƯỜNG/XÃ THEO TỈNH/THÀNH PHỐ =====
-/**
- * Tự động cập nhật danh sách các lựa chọn Phường/Xã dựa trên Tỉnh/Thành phố khách hàng chọn.
- * Sau khi cập nhật các thẻ option của thẻ select gốc, gọi hàm refreshSearchable để làm mới giao diện tìm kiếm giả lập.
- * 
- * @function updateWards
- * @returns {void} Không trả về giá trị
- */
+// updateWards: Cập nhật danh sách các lựa chọn Phường/Xã dựa trên Tỉnh/Thành phố được chọn.
 function updateWards() {
   const citySelect = document.getElementById("ckCity"); // Thẻ select chọn Tỉnh/Thành phố
   const wardSelect = document.getElementById("ckWard"); // Thẻ select chọn Phường/Xã
@@ -1590,26 +1479,14 @@ function updateWards() {
 }
 
 // ===== ĐÓNG POPUP =====
-/**
- * Đóng popup overlay thông báo đặt hàng thành công.
- * 
- * @function closeSuccess
- * @returns {void} Không trả về giá trị
- */
+// closeSuccess: Đóng popup overlay thông báo đặt hàng thành công.
 function closeSuccess() {
   const overlay = document.getElementById("successOverlay");
   if (overlay) overlay.classList.remove("show"); // Gỡ bỏ class show để ẩn popup
 }
 
 // ===== TÌM KIẾM PHƯỜNG/XÃ, TỈNH/THÀNH PHỐ =====
-/**
- * Chuyển đổi một thẻ select mặc định của trình duyệt thành một custom dropdown có tính năng tìm kiếm (searchable).
- * Tạo các thành phần DOM giả lập như thanh hiển thị, khung chứa danh sách, ô tìm kiếm đầu vào.
- * 
- * @function makeSearchable
- * @param {string} selectId - ID của thẻ select gốc cần giả lập
- * @returns {void} Không trả về giá trị
- */
+// makeSearchable: Biến đổi thẻ select mặc định thành custom dropdown có ô tìm kiếm.
 function makeSearchable(selectId) {
   const select = document.getElementById(selectId); // Lấy thẻ select gốc
   if (!select) return;
@@ -1688,14 +1565,7 @@ function makeSearchable(selectId) {
   });
 }
 
-/**
- * Xây dựng lại danh sách các tùy chọn (option) hiển thị trong custom dropdown giả lập
- * đồng bộ theo các thẻ option hiện có của select gốc.
- * 
- * @function refreshSearchable
- * @param {string} selectId - ID của thẻ select gốc
- * @returns {void} Không trả về giá trị
- */
+// refreshSearchable: Cập nhật danh sách tùy chọn giả lập đồng bộ theo select gốc.
 function refreshSearchable(selectId) {
   const select = document.getElementById(selectId);
   if (!select) return;
@@ -1751,15 +1621,7 @@ function refreshSearchable(selectId) {
   }
 }
 
-/**
- * Thực hiện tìm kiếm lọc danh sách tùy chọn của custom dropdown giả lập.
- * Lọc không phân biệt chữ hoa/thường và tự động chuyển đổi văn bản Tiếng Việt có dấu thành không dấu để tối ưu tìm kiếm.
- * 
- * @function filterSSOptions
- * @param {HTMLElement} optList - Khung DOM chứa các tùy chọn giả lập
- * @param {string} query - Từ khóa tìm kiếm do người dùng nhập vào
- * @returns {void} Không trả về giá trị
- */
+// filterSSOptions: Lọc danh sách tùy chọn của dropdown giả lập theo từ khóa tìm kiếm không dấu.
 function filterSSOptions(optList, query) {
   // Chuẩn hóa từ khóa tìm kiếm: chuyển chữ thường, loại bỏ khoảng trắng dư, chuyển tiếng Việt có dấu về không dấu
   const q = query
@@ -1926,16 +1788,19 @@ var payosPaymentSuccess = false; // Biến đánh dấu đã thanh toán thành 
 
 // Ghi chú: Hàm getPayosConfig, createHmacSha256Hex và createPayosSignature đã bị loại bỏ vì các thao tác xử lý bảo mật/tạo chữ ký thanh toán payOS đã được chuyển hoàn toàn lên phía máy chủ (/api/create-payos-payment) để đảm bảo không rò rỉ API Keys/Checksum Keys.
 
+// getCurrentCheckoutAmount: Lấy số tiền thanh toán cuối cùng của đơn hàng từ giao diện.
 function getCurrentCheckoutAmount() {
   const totalEl = document.getElementById("grandTotal");
   const totalText = totalEl ? totalEl.innerText : "0";
   return parseInt(totalText.replace(/[^0-9]/g, "") || "0", 10);
 }
 
+// buildPayosOrderCode: Tạo mã đơn hàng số ngẫu nhiên phục vụ cho payOS.
 function buildPayosOrderCode() {
   return Number(String(Date.now()).slice(-9));
 }
 
+// buildReturnUrl: Xây dựng URL trả về sau khi hoàn tất hoặc hủy thanh toán payOS.
 function buildReturnUrl() {
   const url = new URL(window.location.href);
   url.searchParams.set("payos", "return");
@@ -1943,6 +1808,7 @@ function buildReturnUrl() {
 }
 
 
+// createPayosPaymentRequest: Tạo yêu cầu thanh toán payOS thông qua serverless API hoặc chế độ giả lập.
 async function createPayosPaymentRequest(amount) {
   // Lấy cấu hình công khai
   const branchId = selectedBranch ? selectedBranch.id : "";
@@ -2006,6 +1872,7 @@ async function createPayosPaymentRequest(amount) {
   };
 }
 
+// fetchPayosPaymentStatus: Lấy trạng thái giao dịch thanh toán payOS từ máy chủ.
 async function fetchPayosPaymentStatus(payment) {
   if (!payment || !payment.orderCode) return null;
 
@@ -2044,6 +1911,7 @@ async function fetchPayosPaymentStatus(payment) {
   };
 }
 
+// getQrImageUrl: Tạo hoặc lấy đường dẫn ảnh QR thanh toán từ thông tin giao dịch.
 function getQrImageUrl(payment) {
   if (payment.qrCode) {
     return `https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encodeURIComponent(payment.qrCode)}`;
@@ -2051,6 +1919,7 @@ function getQrImageUrl(payment) {
   return payment.qrImageUrl || "";
 }
 
+// playSuccessSound: Phát âm thanh báo hiệu khi giao dịch thanh toán thành công.
 function playSuccessSound() {
   try {
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
