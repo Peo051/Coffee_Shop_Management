@@ -96,7 +96,7 @@ async function updateQRCode() {
   // Nếu có link thanh toán checkoutUrl từ payOS, hiển thị nút mở trang thanh toán
   if (payment.checkoutUrl) {
     checkoutLink.href = payment.checkoutUrl;
-    checkoutLink.innerHTML = `<i class="fa-solid fa-arrow-up-right-from-square"></i> Mo trang thanh toan payOS`;
+    checkoutLink.innerHTML = `<i class="fa-solid fa-arrow-up-right-from-square"></i> Mở trang thanh toán PayOS`;
     checkoutLink.style.display = "block";
   } else {
     checkoutLink.style.display = "none";
