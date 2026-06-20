@@ -177,7 +177,7 @@
     // Nếu không có đơn hàng nào, hiển thị giao diện thông báo đơn hàng trống
     if (!orders.length) {
       list.innerHTML =
-        '<div class="order-empty"><i class="fas fa-box-open"></i><p>Bạn chưa có đơn hàng nào.</p></div>';
+        '<div class="order-empty"><i class="fa-solid fa-box-open"></i><p>Bạn chưa có đơn hàng nào.</p></div>';
       return;
     }
 

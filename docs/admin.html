@@ -42,45 +42,45 @@
               <h1>GIBOR COFFEE</h1>
             </div>
             <button class="admin-sidebar-toggle" id="sidebarToggle" aria-label="Thu nhỏ thanh điều hướng" type="button">
-              <i class="fas fa-angle-left"></i>
+              <i class="fa-solid fa-angle-left"></i>
             </button>
           </div>
 
           <nav class="admin-menu" style="display: flex; flex-direction: column; height: calc(100% - 90px);">
             <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
               <button class="admin-nav-btn active" data-admin-tab="dashboard">
-                <i class="fas fa-chart-line"></i>
+                <i class="fa-solid fa-chart-line"></i>
                 <span>Bảng điều khiển</span>
               </button>
               <button class="admin-nav-btn" data-admin-tab="accounts">
-                <i class="fas fa-users"></i>
+                <i class="fa-solid fa-users"></i>
                 <span>Quản lý tài khoản</span>
               </button>
               <button class="admin-nav-btn" data-admin-tab="customers">
-                <i class="fas fa-user-tag"></i>
+                <i class="fa-solid fa-user-tag"></i>
                 <span>Quản lý khách hàng</span>
               </button>
               <button class="admin-nav-btn" data-admin-tab="products">
-                <i class="fas fa-mug-hot"></i>
+                <i class="fa-solid fa-mug-hot"></i>
                 <span>Quản lý sản phẩm</span>
               </button>
               <button class="admin-nav-btn" data-admin-tab="branches">
-                <i class="fas fa-store"></i>
+                <i class="fa-solid fa-store"></i>
                 <span>Quản lý chi nhánh</span>
               </button>
               <button class="admin-nav-btn" data-admin-tab="orders">
-                <i class="fas fa-receipt"></i>
+                <i class="fa-solid fa-receipt"></i>
                 <span>Quản lý đơn hàng</span>
               </button>
               <button class="admin-nav-btn" data-admin-tab="revenue">
-                <i class="fas fa-coins"></i>
+                <i class="fa-solid fa-coins"></i>
                 <span>Báo cáo doanh thu</span>
               </button>
 
               <div class="admin-menu-divider" style="margin: 10px 0;"></div>
 
               <button class="admin-nav-btn" onclick="window.location.href='index.html'">
-                <i class="fas fa-home"></i>
+                <i class="fa-solid fa-home"></i>
                 <span>Về Trang Chủ</span>
               </button>
             </div>
@@ -96,7 +96,7 @@
               </div>
 
               <button class="admin-nav-btn admin-nav-btn-logout" onclick="handleLogout()" style="width: 100%;">
-                <i class="fas fa-sign-out-alt"></i>
+                <i class="fa-solid fa-sign-out-alt"></i>
                 <span>Đăng Xuất</span>
               </button>
             </div>
@@ -116,7 +116,7 @@
               </button>
 
               <div class="admin-date">
-                <i class="fas fa-calendar-day"></i>
+                <i class="fa-solid fa-calendar-day"></i>
                 <span id="adminToday"></span>
               </div>
             </div>
@@ -127,7 +127,7 @@
               <div class="col">
                 <div class="card border-0 shadow-sm admin-stat-card h-100">
                   <div class="card-body d-flex align-items-center gap-3">
-                    <span class="stat-icon"><i class="fas fa-users"></i></span>
+                    <span class="stat-icon"><i class="fa-solid fa-users"></i></span>
                     <div>
                       <p class="text-muted small mb-1">Người dùng</p>
                       <strong id="statUsers" class="fs-4">0</strong>
@@ -138,7 +138,7 @@
               <div class="col">
                 <div class="card border-0 shadow-sm admin-stat-card h-100">
                   <div class="card-body d-flex align-items-center gap-3">
-                    <span class="stat-icon"><i class="fas fa-mug-hot"></i></span>
+                    <span class="stat-icon"><i class="fa-solid fa-mug-hot"></i></span>
                     <div>
                       <p class="text-muted small mb-1">Sản phẩm</p>
                       <strong id="statProducts" class="fs-4">0</strong>
@@ -149,7 +149,7 @@
               <div class="col">
                 <div class="card border-0 shadow-sm admin-stat-card h-100">
                   <div class="card-body d-flex align-items-center gap-3">
-                    <span class="stat-icon"><i class="fas fa-store"></i></span>
+                    <span class="stat-icon"><i class="fa-solid fa-store"></i></span>
                     <div>
                       <p class="text-muted small mb-1">Chi nhánh</p>
                       <strong id="statBranches" class="fs-4">0</strong>
@@ -160,7 +160,7 @@
               <div class="col">
                 <div class="card border-0 shadow-sm admin-stat-card h-100">
                   <div class="card-body d-flex align-items-center gap-3">
-                    <span class="stat-icon"><i class="fas fa-receipt"></i></span>
+                    <span class="stat-icon"><i class="fa-solid fa-receipt"></i></span>
                     <div>
                       <p class="text-muted small mb-1">Đơn hàng</p>
                       <strong id="statOrders" class="fs-4">0</strong>
@@ -171,7 +171,7 @@
               <div class="col">
                 <div class="card border-0 shadow-sm admin-stat-card revenue h-100">
                   <div class="card-body d-flex align-items-center gap-3">
-                    <span class="stat-icon"><i class="fas fa-coins"></i></span>
+                    <span class="stat-icon"><i class="fa-solid fa-coins"></i></span>
                     <div>
                       <p class="text-white-50 small mb-1">Doanh thu</p>
                       <strong id="statRevenue" class="fs-4 text-white">0đ</strong>
@@ -184,7 +184,7 @@
             <!-- Bộ lọc trên Bảng điều khiển -->
             <div class="card border-0 shadow-sm mb-4 admin-filter-card" id="dashboardFilterBar">
               <div class="card-body d-flex align-items-center gap-3 py-2 px-3">
-                <span class="fw-bold text-primary small"><i class="fas fa-filter"></i> Lọc theo chi nhánh:</span>
+                <span class="fw-bold text-primary small"><i class="fa-solid fa-filter"></i> Lọc theo chi nhánh:</span>
                 <div style="width: 250px;">
                   <select id="dashboardBranchFilter" class="form-select border-primary-subtle rounded-pill">
                     <option value="all">Toàn hệ thống</option>
@@ -254,7 +254,7 @@
                     <div class="input-group">
                       <input id="payosClientId" type="password" class="form-control rounded-start-3" placeholder="Ví dụ: c60d8359-370b-45a4-94c9-830d2e0cd9dd" />
                       <button class="btn btn-outline-secondary toggle-password-btn" type="button" data-target="payosClientId" style="border-color: #ced4da; border-top-right-radius: 8px; border-bottom-right-radius: 8px;">
-                        <i class="fas fa-eye-slash"></i>
+                        <i class="fa-solid fa-eye-slash"></i>
                       </button>
                     </div>
                   </div>
@@ -263,7 +263,7 @@
                     <div class="input-group">
                       <input id="payosApiKey" type="password" class="form-control rounded-start-3" placeholder="Nhập API Key từ payOS..." />
                       <button class="btn btn-outline-secondary toggle-password-btn" type="button" data-target="payosApiKey" style="border-color: #ced4da; border-top-right-radius: 8px; border-bottom-right-radius: 8px;">
-                        <i class="fas fa-eye-slash"></i>
+                        <i class="fa-solid fa-eye-slash"></i>
                       </button>
                     </div>
                   </div>
@@ -272,7 +272,7 @@
                     <div class="input-group">
                       <input id="payosChecksumKey" type="password" class="form-control rounded-start-3" placeholder="Nhập Checksum Key từ payOS..." />
                       <button class="btn btn-outline-secondary toggle-password-btn" type="button" data-target="payosChecksumKey" style="border-color: #ced4da; border-top-right-radius: 8px; border-bottom-right-radius: 8px;">
-                        <i class="fas fa-eye-slash"></i>
+                        <i class="fa-solid fa-eye-slash"></i>
                       </button>
                     </div>
                   </div>
@@ -286,7 +286,7 @@
                   </div>
                   <div class="col-12">
                     <button class="btn btn-info text-white fw-bold px-4 rounded-pill" type="submit">
-                      <i class="fas fa-save me-2"></i> Lưu cấu hình payOS
+                      <i class="fa-solid fa-save me-2"></i> Lưu cấu hình payOS
                     </button>
                   </div>
                 </form>
@@ -336,10 +336,10 @@
                   </div>
                   <div class="col-12 d-flex gap-2 justify-content-end align-items-end">
                     <button class="btn btn-primary fw-bold px-4 rounded-pill" type="submit">
-                      <i class="fas fa-save me-2"></i> <span id="accountSubmitText">Thêm tài khoản</span>
+                      <i class="fa-solid fa-save me-2"></i> <span id="accountSubmitText">Thêm tài khoản</span>
                     </button>
                     <button class="btn btn-outline-secondary rounded-circle" type="button" id="resetAccountForm" style="width: 40px; height: 40px; display: inline-flex; align-items: center; justify-content: center;" title="Đặt lại">
-                      <i class="fas fa-rotate-left"></i>
+                      <i class="fa-solid fa-rotate-left"></i>
                     </button>
                   </div>
                 </form>
@@ -357,7 +357,7 @@
                 <div class="row g-3 mb-3 p-3 bg-light rounded-3 align-items-center">
                   <div class="col-12 col-md-6">
                     <div class="input-group">
-                      <span class="input-group-text bg-white border-end-0 text-muted"><i class="fas fa-search"></i></span>
+                      <span class="input-group-text bg-white border-end-0 text-muted"><i class="fa-solid fa-search"></i></span>
                       <input type="text" id="searchAccount" placeholder="Tìm kiếm theo tên, email, số điện thoại..." class="form-control border-start-0" style="padding-left: 8px;" />
                     </div>
                   </div>
@@ -401,7 +401,7 @@
             <div class="card border-0 shadow-sm mb-4 admin-section-card">
               <div class="card-header border-0 bg-transparent pt-4 px-4 pb-2">
                 <h3 class="card-title fw-bold text-dark fs-5 m-0">
-                  <i class="fas fa-user-tag text-warning me-2"></i> Bảng xếp hạng & Quản lý khách hàng
+                  <i class="fa-solid fa-user-tag text-warning me-2"></i> Bảng xếp hạng & Quản lý khách hàng
                 </h3>
                 <p class="text-muted small m-0">Xem danh sách khách hàng thân thiết, tổng chi tiêu, tổng số đơn hàng và điểm tích lũy.</p>
               </div>
@@ -410,7 +410,7 @@
                 <div class="row g-3 mb-3 p-3 bg-light rounded-3 align-items-center">
                   <div class="col-12 col-md-4">
                     <div class="input-group">
-                      <span class="input-group-text bg-white border-end-0 text-muted"><i class="fas fa-search"></i></span>
+                      <span class="input-group-text bg-white border-end-0 text-muted"><i class="fa-solid fa-search"></i></span>
                       <input type="text" id="searchCustomer" placeholder="Tìm tên, email, số điện thoại..." class="form-control border-start-0" style="padding-left: 8px;" />
                     </div>
                   </div>
@@ -510,10 +510,10 @@
                   </div>
                   <div class="col-12 d-flex gap-2 justify-content-end">
                     <button class="btn btn-primary fw-bold px-4 rounded-pill" type="submit">
-                      <i class="fas fa-save me-2"></i> <span id="productSubmitText">Thêm sản phẩm</span>
+                      <i class="fa-solid fa-save me-2"></i> <span id="productSubmitText">Thêm sản phẩm</span>
                     </button>
                     <button class="btn btn-outline-secondary rounded-circle" type="button" id="resetProductForm" style="width: 40px; height: 40px; display: inline-flex; align-items: center; justify-content: center;" title="Đặt lại">
-                      <i class="fas fa-rotate-left"></i>
+                      <i class="fa-solid fa-rotate-left"></i>
                     </button>
                   </div>
                 </form>
@@ -531,7 +531,7 @@
                 <div class="row g-3 mb-3 p-3 bg-light rounded-3 align-items-center">
                   <div class="col-12 col-md-6">
                     <div class="input-group">
-                      <span class="input-group-text bg-white border-end-0 text-muted"><i class="fas fa-search"></i></span>
+                      <span class="input-group-text bg-white border-end-0 text-muted"><i class="fa-solid fa-search"></i></span>
                       <input type="text" id="searchProduct" placeholder="Tìm sản phẩm theo tên..." class="form-control border-start-0" style="padding-left: 8px;" />
                     </div>
                   </div>
@@ -605,20 +605,20 @@
                  <!-- Bộ lọc đơn hàng nâng cao -->
                  <div class="row g-3 mb-4 p-3 bg-light rounded-4 align-items-center" style="border: 1px solid rgba(75, 44, 32, 0.05);">
                    <div class="col-12 col-md-5">
-                     <label class="form-label small fw-bold text-muted mb-1"><i class="fas fa-search me-1"></i> Tìm kiếm đơn hàng</label>
+                     <label class="form-label small fw-bold text-muted mb-1"><i class="fa-solid fa-search me-1"></i> Tìm kiếm đơn hàng</label>
                      <div class="input-group">
-                       <span class="input-group-text bg-white border-end-0 text-muted" style="border-radius: 10px 0 0 10px;"><i class="fas fa-search"></i></span>
+                       <span class="input-group-text bg-white border-end-0 text-muted" style="border-radius: 10px 0 0 10px;"><i class="fa-solid fa-search"></i></span>
                        <input type="text" id="searchOrder" placeholder="Tìm mã đơn, tên khách, SĐT..." class="form-control border-start-0" style="padding-left: 8px; border-radius: 0 10px 10px 0; min-height: 42px;" />
                      </div>
                    </div>
                    <div class="col-6 col-md-4" id="orderBranchFilterContainer">
-                     <label class="form-label small fw-bold text-muted mb-1"><i class="fas fa-store me-1"></i> Lọc theo chi nhánh</label>
+                     <label class="form-label small fw-bold text-muted mb-1"><i class="fa-solid fa-store me-1"></i> Lọc theo chi nhánh</label>
                      <select id="filterOrderBranch" class="form-select" style="border-radius: 10px; min-height: 42px;">
                        <option value="">Tất cả chi nhánh</option>
                      </select>
                    </div>
                    <div class="col-6 col-md-3">
-                      <label class="form-label small fw-bold text-muted mb-1"><i class="fas fa-sort me-1"></i> Sắp xếp</label>
+                      <label class="form-label small fw-bold text-muted mb-1"><i class="fa-solid fa-sort me-1"></i> Sắp xếp</label>
                       <select id="sortOrder" class="form-select" style="border-radius: 10px; min-height: 42px;">
                         <option value="newest">Mới nhất</option>
                         <option value="oldest">Cũ nhất</option>
@@ -726,10 +726,10 @@
                   </div>
                   <div class="col-12 d-flex gap-2 justify-content-end align-items-end">
                     <button class="btn btn-primary fw-bold px-4 rounded-pill" type="submit">
-                      <i class="fas fa-save me-2"></i> <span id="branchSubmitText">Thêm chi nhánh</span>
+                      <i class="fa-solid fa-save me-2"></i> <span id="branchSubmitText">Thêm chi nhánh</span>
                     </button>
                     <button class="btn btn-outline-secondary rounded-circle" type="button" id="resetBranchForm" style="width: 40px; height: 40px; display: inline-flex; align-items: center; justify-content: center;" title="Đặt lại">
-                      <i class="fas fa-rotate-left"></i>
+                      <i class="fa-solid fa-rotate-left"></i>
                     </button>
                   </div>
                 </form>
@@ -746,7 +746,7 @@
                 <div class="row g-3 mb-3 p-3 bg-light rounded-3 align-items-center">
                   <div class="col-12 col-md-8">
                     <div class="input-group">
-                      <span class="input-group-text bg-white border-end-0 text-muted"><i class="fas fa-search"></i></span>
+                      <span class="input-group-text bg-white border-end-0 text-muted"><i class="fa-solid fa-search"></i></span>
                       <input type="text" id="searchBranch" placeholder="Tìm chi nhánh theo tên, địa chỉ..." class="form-control border-start-0" style="padding-left: 8px;" />
                     </div>
                   </div>
@@ -1042,7 +1042,7 @@
 
             <div class="modal-header border-0 bg-light py-3 px-4" style="border-top-left-radius: 16px; border-top-right-radius: 16px;">
               <h5 class="modal-title fw-bold d-flex align-items-center" id="customerDetailModalLabel">
-                <i class="fas fa-id-card text-warning me-2 fs-4"></i> Chi tiết khách hàng
+                <i class="fa-solid fa-id-card text-warning me-2 fs-4"></i> Chi tiết khách hàng
               </h5>
               <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
@@ -1061,7 +1061,7 @@
                 </div>
                 <div class="col-12 col-md-auto text-md-end border-start border-md-0 ps-md-4 mt-3 mt-md-0" style="border-color: #dee2e6 !important;">
                   <div class="small info-box-title">Điểm tích lũy</div>
-                  <div class="fs-4 fw-bold text-warning" id="detCustomerPoints"><i class="fas fa-star me-1"></i>0</div>
+                  <div class="fs-4 fw-bold text-warning" id="detCustomerPoints"><i class="fa-solid fa-star me-1"></i>0</div>
                 </div>
               </div>
 
@@ -1070,7 +1070,7 @@
                 <!-- Thông tin liên hệ -->
                 <div class="col-12 col-md-6">
                   <div class="p-3 border rounded-3 h-100 info-box">
-                    <h6 class="fw-bold border-bottom pb-2 mb-3 info-box-header"><i class="fas fa-info-circle text-primary me-2"></i>Thông tin liên hệ</h6>
+                    <h6 class="fw-bold border-bottom pb-2 mb-3 info-box-header"><i class="fa-solid fa-info-circle text-primary me-2"></i>Thông tin liên hệ</h6>
                     <div class="mb-2 d-flex justify-content-between">
                       <span class="info-box-title">Số điện thoại:</span>
                       <strong id="detCustomerPhone" class="info-box-value">-</strong>
@@ -1085,7 +1085,7 @@
                 <!-- Thống kê mua hàng chung -->
                 <div class="col-12 col-md-6">
                   <div class="p-3 border rounded-3 h-100 info-box">
-                    <h6 class="fw-bold border-bottom pb-2 mb-3 info-box-header"><i class="fas fa-chart-pie text-success me-2"></i>Thống kê mua hàng</h6>
+                    <h6 class="fw-bold border-bottom pb-2 mb-3 info-box-header"><i class="fa-solid fa-chart-pie text-success me-2"></i>Thống kê mua hàng</h6>
                     <div class="mb-2 d-flex justify-content-between">
                       <span class="info-box-title">Tổng số đơn hoàn tất:</span>
                       <strong id="detCustomerTotalOrders" class="text-primary info-box-value">0 đơn</strong>
@@ -1100,11 +1100,11 @@
 
               <!-- Thống kê chi nhánh -->
               <div class="mt-4">
-                <h6 class="fw-bold mb-3"><i class="fas fa-store text-danger me-2"></i>Thống kê mua hàng theo chi nhánh</h6>
+                <h6 class="fw-bold mb-3"><i class="fa-solid fa-store text-danger me-2"></i>Thống kê mua hàng theo chi nhánh</h6>
                 
                 <!-- Chi nhánh mua nhiều nhất -->
                 <div class="alert alert-warning border-0 p-3 mb-3 d-flex align-items-center gap-3" id="detCustomerFavBranchContainer" style="border-radius: 12px; display: none;">
-                  <div class="bg-warning-subtle p-2 rounded-circle text-warning fs-4"><i class="fas fa-heart"></i></div>
+                  <div class="bg-warning-subtle p-2 rounded-circle text-warning fs-4"><i class="fa-solid fa-heart"></i></div>
                   <div>
                     <div class="small text-dark-emphasis fw-bold">Chi nhánh mua nhiều nhất:</div>
                     <div class="fs-6 fw-bold text-warning-emphasis" id="detCustomerFavBranchName">Chưa xác định</div>
@@ -1130,7 +1130,7 @@
 
               <!-- Thống kê theo năm -->
               <div class="mt-4">
-                <h6 class="fw-bold mb-3"><i class="fas fa-calendar-alt text-primary me-2"></i>Thống kê chi tiêu theo năm</h6>
+                <h6 class="fw-bold mb-3"><i class="fa-solid fa-calendar-alt text-primary me-2"></i>Thống kê chi tiêu theo năm</h6>
                 <div class="table-responsive">
                   <table class="table table-hover align-middle table-sm border rounded-3 overflow-hidden">
                     <thead>
@@ -1149,7 +1149,7 @@
 
               <!-- 5 Đơn hàng gần đây -->
               <div class="mt-4">
-                <h6 class="fw-bold mb-3"><i class="fas fa-history text-secondary me-2"></i>5 giao dịch gần đây nhất</h6>
+                <h6 class="fw-bold mb-3"><i class="fa-solid fa-history text-secondary me-2"></i>5 giao dịch gần đây nhất</h6>
                 <div class="table-responsive">
                   <table class="table table-hover align-middle table-sm border rounded-3 overflow-hidden">
                     <thead>
@@ -1170,7 +1170,7 @@
 
               <!-- Chú giải tiêu chí phân hạng thành viên -->
               <div class="mt-4 border-top pt-3">
-                <h6 class="fw-bold mb-2" style="font-size: 0.85rem;"><i class="fas fa-info-circle text-info me-1"></i>Bảng tiêu chí phân hạng thành viên GIBOR</h6>
+                <h6 class="fw-bold mb-2" style="font-size: 0.85rem;"><i class="fa-solid fa-info-circle text-info me-1"></i>Bảng tiêu chí phân hạng thành viên GIBOR</h6>
                 <div class="table-responsive">
                   <table class="table table-bordered table-sm align-middle mb-0" style="font-size: 0.75rem;">
                     <thead class="table-light">
@@ -1182,22 +1182,22 @@
                     </thead>
                     <tbody>
                       <tr>
-                        <td><span class="rank-badge rank-vip"><i class="fas fa-crown text-warning me-1"></i>VIP 👑</span></td>
+                        <td><span class="rank-badge rank-vip"><i class="fa-solid fa-crown text-warning me-1"></i>VIP 👑</span></td>
                         <td>Chi tiêu từ <strong>3.000.000đ</strong> hoặc trên <strong>10 đơn hoàn tất</strong></td>
                         <td class="text-muted">Ưu đãi giảm giá 10% cho mọi đơn hàng tiếp theo.</td>
                       </tr>
                       <tr>
-                        <td><span class="rank-badge rank-loyal"><i class="fas fa-handshake text-success me-1"></i>Thân thiết 🤝</span></td>
+                        <td><span class="rank-badge rank-loyal"><i class="fa-solid fa-handshake text-success me-1"></i>Thân thiết 🤝</span></td>
                         <td>Chi tiêu từ <strong>1.500.000đ</strong> đến dưới <strong>3.000.000đ</strong> hoặc từ <strong>6 đến 10 đơn</strong></td>
                         <td class="text-muted">Tích lũy điểm x1.2 và nhận quà tặng sinh nhật.</td>
                       </tr>
                       <tr>
-                        <td><span class="rank-badge rank-potential"><i class="fas fa-bolt text-primary me-1"></i>Tiềm năng ⚡</span></td>
+                        <td><span class="rank-badge rank-potential"><i class="fa-solid fa-bolt text-primary me-1"></i>Tiềm năng ⚡</span></td>
                         <td>Chi tiêu từ <strong>500.000đ</strong> đến dưới <strong>1.500.000đ</strong> hoặc từ <strong>3 đến 5 đơn</strong></td>
                         <td class="text-muted">Tích lũy điểm x1.1 và nhận voucher ưu đãi tháng.</td>
                       </tr>
                       <tr>
-                        <td><span class="rank-badge rank-new"><i class="fas fa-seedling text-secondary me-1"></i>Mới 🌱</span></td>
+                        <td><span class="rank-badge rank-new"><i class="fa-solid fa-seedling text-secondary me-1"></i>Mới 🌱</span></td>
                         <td>Chi tiêu dưới <strong>500.000đ</strong> và dưới <strong>3 đơn hoàn tất</strong></td>
                         <td class="text-muted">Thành viên mới đăng ký, tích lũy điểm tiêu chuẩn.</td>
                       </tr>

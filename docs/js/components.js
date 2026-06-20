@@ -152,11 +152,11 @@ function renderHeaderComponent() {
 
         <div class="header-actions d-flex align-items-center gap-2">
           <a href="login.html" class="icon-btn auth-btn" id="authLink">
-            <i class="fas fa-user"></i>
+            <i class="fa-solid fa-user"></i>
             <span>Đăng nhập</span>
           </a>
           <a href="cart.html" class="icon-btn cart" aria-label="Giỏ hàng">
-            <i class="fas fa-bag-shopping"></i>
+            <i class="fa-solid fa-cart-shopping"></i>
             <span>Giỏ hàng</span>
             <span id="cart-count">0</span>
           </a>
@@ -164,7 +164,7 @@ function renderHeaderComponent() {
             🌙
           </button>
           <button class="menu-toggle" id="menuToggle" aria-label="Mở menu">
-            <i class="fas fa-bars"></i>
+            <i class="fa-solid fa-bars"></i>
           </button>
         </div>
       </div>
@@ -188,8 +188,8 @@ const FooterComponent = `
             quy trình minh bạch và trải nghiệm phục vụ tử tế mỗi ngày.
           </p>
           <ul class="footer-badges">
-            <li><i class="fas fa-seedling"></i> Rang mộc nguyên bản</li>
-            <li><i class="fas fa-award"></i> Chất lượng ổn định</li>
+            <li><i class="fa-solid fa-seedling"></i> Rang mộc nguyên bản</li>
+            <li><i class="fa-solid fa-award"></i> Chất lượng ổn định</li>
           </ul>
         </div>
 
@@ -209,15 +209,15 @@ const FooterComponent = `
           <h4>Liên Hệ</h4>
           <ul class="footer-contact">
             <li>
-              <i class="fas fa-location-dot"></i>
+              <i class="fa-solid fa-location-dot"></i>
               <span>140 Lê Trọng Tấn, Tân Phú, TP.HCM</span>
             </li>
             <li>
-              <i class="fas fa-phone-volume"></i>
+              <i class="fa-solid fa-phone-volume"></i>
               <a href="tel:0909999999">0909 999 999</a>
             </li>
             <li>
-              <i class="fas fa-envelope"></i>
+              <i class="fa-solid fa-envelope"></i>
               <a href="mailto:hello@giborcoffee.vn">hello@giborcoffee.vn</a>
             </li>
             <li>
@@ -232,9 +232,9 @@ const FooterComponent = `
             <li>Theo dõi GIBOR để cập nhật menu mới và ưu đãi mỗi tuần.</li>
           </ul>
           <div class="social-links">
-            <a href="#" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
-            <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
-            <a href="#" aria-label="TikTok"><i class="fab fa-tiktok"></i></a>
+            <a href="#" aria-label="Facebook"><i class="fa-brands fa-facebook-f"></i></a>
+            <a href="#" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
+            <a href="#" aria-label="TikTok"><i class="fa-brands fa-tiktok"></i></a>
             <img src="images/logo/logoHuit.png" alt="GIBOR Coffee" class="logo-footer-huit" />
           </div>
         </div>

@@ -171,7 +171,7 @@ const initApp = () => {
 
       // Đổi HTML hiển thị icon tài khoản kèm tên rút gọn của người dùng trên header
       authLink.innerHTML =
-        '<i class="fas fa-user-circle"></i> <span>' + displayBtnName + '</span>';
+        '<i class="fa-solid fa-circle-user"></i> <span>' + displayBtnName + '</span>';
       authLink.href = "#"; // Chặn điều hướng trực tiếp đến trang login
       authLink.classList.add("logged-in");
       authLink.title = "Tài khoản của bạn";
@@ -209,17 +209,17 @@ const initApp = () => {
           "</div>" +
           // Chỉ hiển thị điểm tích lũy thành viên đối với vai trò Khách hàng (không hiện cho Admin/Manager)
           ((currentUser.role !== "admin" && currentUser.role !== "branch_manager") ?
-          '<div class="user-dropdown-points"><i class="fas fa-coins"></i> ' +
+          '<div class="user-dropdown-points"><i class="fa-solid fa-coins"></i> ' +
           userPoints.toLocaleString("vi-VN") +
           " điểm</div>" : "") +
           "</div>" +
           "</div>" +
           '<ul class="user-dropdown-menu">' +
           // Hiển thị thêm link Admin nếu tài khoản thuộc nhóm quản trị
-          ((currentUser.role === "admin" || currentUser.role === "branch_manager") ? '<li><a href="admin.html" id="btnAdminPage"><i class="fas fa-user-shield"></i> Trang quản trị</a></li>' : '') +
-          '<li><a href="#" id="btnMyAccount"><i class="fas fa-user"></i> Tài khoản của tôi</a></li>' +
-          '<li><a href="#" id="btnOrderHistory"><i class="fas fa-shopping-bag"></i> Đơn hàng</a></li>' +
-          '<li><button class="logout-btn" id="btnLogout"><i class="fas fa-sign-out-alt"></i> Đăng xuất</button></li>' +
+          ((currentUser.role === "admin" || currentUser.role === "branch_manager") ? '<li><a href="admin.html" id="btnAdminPage"><i class="fa-solid fa-user-shield"></i> Trang quản trị</a></li>' : '') +
+          '<li><a href="#" id="btnMyAccount"><i class="fa-solid fa-user"></i> Tài khoản của tôi</a></li>' +
+          '<li><a href="#" id="btnOrderHistory"><i class="fa-solid fa-shopping-bag"></i> Đơn hàng</a></li>' +
+          '<li><button class="logout-btn" id="btnLogout"><i class="fa-solid fa-sign-out-alt"></i> Đăng xuất</button></li>' +
           "</ul>" +
           "</div>";
 
@@ -762,9 +762,9 @@ function showGiborPopup({
 
   // Icon theo loại
   const iconMap = {
-    success: '<i class="fas fa-check-circle"></i>',
-    error: '<i class="fas fa-times-circle"></i>',
-    warning: '<i class="fas fa-exclamation-triangle"></i>',
+    success: '<i class="fa-solid fa-check-circle"></i>',
+    error: '<i class="fa-solid fa-times-circle"></i>',
+    warning: '<i class="fa-solid fa-exclamation-triangle"></i>',
   };
 
   const overlay = document.createElement("div");
@@ -853,7 +853,7 @@ function showGiborPrompt({
   overlay.innerHTML = `
     <div class="gibor-popup-box">
       <div class="gibor-popup-icon warning">
-        <i class="fas fa-key"></i>
+        <i class="fa-solid fa-key"></i>
       </div>
       <div class="gibor-popup-title">${title}</div>
       <div class="gibor-popup-message" style="margin-bottom: 12px;">${message}</div>
@@ -925,7 +925,7 @@ function showOrderHistoryPopup() {
   if (orders.length === 0) {
     contentHTML =
       '<div class="order-history-empty">' +
-      '<i class="fas fa-receipt"></i>' +
+      '<i class="fa-solid fa-receipt"></i>' +
       "<p>Bạn chưa có đơn hàng nào.</p>" +
       '<p style="font-size:0.85rem;">Hãy đặt hàng để thưởng thức cà phê GIBOR!</p>' +
       "</div>";
@@ -991,22 +991,22 @@ function showOrderHistoryPopup() {
         customerHTML = '<div class="order-card-customer">';
         if (order.customer.name)
           customerHTML +=
-            '<span><i class="fas fa-user"></i> ' +
+            '<span><i class="fa-solid fa-user"></i> ' +
             order.customer.name +
             "</span>";
         if (order.customer.phone)
           customerHTML +=
-            '<span><i class="fas fa-phone"></i> ' +
+            '<span><i class="fa-solid fa-phone"></i> ' +
             order.customer.phone +
             "</span>";
         if (order.customer.email)
           customerHTML +=
-            '<span><i class="fas fa-envelope"></i> ' +
+            '<span><i class="fa-solid fa-envelope"></i> ' +
             order.customer.email +
             "</span>";
         if (order.customer.address)
           customerHTML +=
-            '<span><i class="fas fa-map-marker-alt"></i> ' +
+            '<span><i class="fa-solid fa-map-marker-alt"></i> ' +
             order.customer.address +
             "</span>";
         customerHTML += "</div>";
@@ -1018,12 +1018,12 @@ function showOrderHistoryPopup() {
         branchHTML = '<div class="order-card-customer">';
         if (order.branch.name)
           branchHTML +=
-            '<span><i class="fas fa-store"></i> ' +
+            '<span><i class="fa-solid fa-store"></i> ' +
             order.branch.name +
             "</span>";
         if (order.branch.address)
           branchHTML +=
-            '<span><i class="fas fa-map-marker-alt"></i> ' +
+            '<span><i class="fa-solid fa-map-marker-alt"></i> ' +
             order.branch.address +
             "</span>";
         branchHTML += "</div>";
@@ -1032,7 +1032,7 @@ function showOrderHistoryPopup() {
       contentHTML +=
         '<div class="order-card">' +
         '<div class="order-card-header">' +
-        '<span class="order-card-code"><i class="fas fa-receipt"></i> ' +
+        '<span class="order-card-code"><i class="fa-solid fa-receipt"></i> ' +
         order.code +
         "</span>" +
         '<span class="order-card-date">' +
@@ -1064,7 +1064,7 @@ function showOrderHistoryPopup() {
   overlay.innerHTML =
     '<div class="order-history-box">' +
     '<div class="order-history-header">' +
-    '<h3><i class="fas fa-history"></i> Lịch sử đơn hàng</h3>' +
+    '<h3><i class="fa-solid fa-history"></i> Lịch sử đơn hàng</h3>' +
     '<button class="order-history-close" id="orderHistoryClose">✕</button>' +
     "</div>" +
     contentHTML +
@@ -1173,20 +1173,20 @@ function showPasswordChangeVerificationPopup(email, verificationUrl, token) {
 
   overlay.innerHTML =
     '<div class="gibor-popup-box" style="max-width: 500px;">' +
-    '<div class="gibor-popup-icon warning"><i class="fas fa-shield-alt"></i></div>' +
+    '<div class="gibor-popup-icon warning"><i class="fa-solid fa-shield-alt"></i></div>' +
     '<div class="gibor-popup-title">Xác thực đổi mật khẩu</div>' +
     '<div class="gibor-popup-message">' +
     'Để bảo mật tài khoản, vui lòng xác thực yêu cầu đổi mật khẩu.<br><br>' +
     'Email xác thực sẽ được gửi đến: <strong>' + maskedEmail + '</strong>' +
     '</div>' +
     '<div style="background: #f0f8ff; border: 1px solid #90caf9; border-radius: 8px; padding: 12px; margin: 16px 0; font-size: 0.9rem;">' +
-    '<i class="fas fa-info-circle" style="color: #1565c0;"></i> ' +
+    '<i class="fa-solid fa-info-circle" style="color: #1565c0;"></i> ' +
     '<strong>Lưu ý:</strong> Kiểm tra cả thư mục Spam/Junk nếu không thấy email.' +
     '</div>' +
     '<div class="gibor-popup-actions">' +
     '<button class="gibor-popup-btn secondary" id="btnCancelPasswordChange">Hủy</button>' +
     '<button class="gibor-popup-btn primary" id="btnSendVerificationEmail">' +
-    '<i class="fas fa-paper-plane"></i> Gửi email xác thực' +
+    '<i class="fa-solid fa-paper-plane"></i> Gửi email xác thực' +
     '</button>' +
     '</div>' +
     '</div>';
@@ -1211,7 +1211,7 @@ function showPasswordChangeVerificationPopup(email, verificationUrl, token) {
   document.getElementById("btnSendVerificationEmail").addEventListener("click", () => {
     const btn = document.getElementById("btnSendVerificationEmail");
     btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang gửi...';
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang gửi...';
 
     // Gửi email qua Firebase (sử dụng password reset email)
     firebase.auth().sendPasswordResetEmail(email, {
@@ -1226,7 +1226,7 @@ function showPasswordChangeVerificationPopup(email, verificationUrl, token) {
           message: 
             'Email xác thực đã được gửi đến <strong>' + maskedEmail + '</strong>.<br><br>' +
             '<div style="text-align: left; background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; padding: 12px; margin-top: 12px;">' +
-            '<i class="fas fa-exclamation-triangle" style="color: #856404;"></i> ' +
+            '<i class="fa-solid fa-exclamation-triangle" style="color: #856404;"></i> ' +
             '<strong>Quan trọng:</strong><br>' +
             '• Click vào link trong email để xác nhận đổi mật khẩu<br>' +
             '• Link có hiệu lực trong 15 phút<br>' +
@@ -1237,7 +1237,7 @@ function showPasswordChangeVerificationPopup(email, verificationUrl, token) {
       })
       .catch((error) => {
         btn.disabled = false;
-        btn.innerHTML = '<i class="fas fa-paper-plane"></i> Gửi email xác thực';
+        btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Gửi email xác thực';
         
         let errorMsg = "Không thể gửi email. Vui lòng thử lại.";
         if (error.code === "auth/user-not-found") {
@@ -1393,7 +1393,7 @@ function showEmailOTPPopup(email, onSuccess) {
       instructionText = "Vui lòng kiểm tra email và nhập mã OTP bên dưới để xác thực.";
       otpHintHTML =
         '<div class="otp-firebase-hint">' +
-        '<i class="fas fa-envelope"></i> Email xác thực đã được gửi qua Firebase. ' +
+        '<i class="fa-solid fa-envelope"></i> Email xác thực đã được gửi qua Firebase. ' +
         'Kiểm tra hộp thư đến hoặc thư rác của bạn.' +
         "</div>";
     } else {
@@ -1401,7 +1401,7 @@ function showEmailOTPPopup(email, onSuccess) {
       instructionText = "Nhập mã xác nhận bên dưới để tiếp tục.";
       otpHintHTML =
         '<div class="otp-demo-hint">' +
-        '<i class="fas fa-info-circle"></i> Mã xác nhận: <strong>' +
+        '<i class="fa-solid fa-info-circle"></i> Mã xác nhận: <strong>' +
         otp +
         "</strong>" +
         "</div>";
@@ -1410,7 +1410,7 @@ function showEmailOTPPopup(email, onSuccess) {
     overlay.innerHTML =
       '<div class="gibor-otp-box">' +
       '<div class="otp-header">' +
-      '<div class="otp-icon"><i class="fas fa-envelope-open-text"></i></div>' +
+      '<div class="otp-icon"><i class="fa-solid fa-envelope-open-text"></i></div>' +
       "<h3>Xác thực Email</h3>" +
       "<p>" + instructionText + "<br><strong>" +
       maskedEmail +
@@ -1426,10 +1426,10 @@ function showEmailOTPPopup(email, onSuccess) {
       '<input type="text" maxlength="1" class="otp-digit" data-index="4" autocomplete="off" inputmode="numeric" />' +
       '<input type="text" maxlength="1" class="otp-digit" data-index="5" autocomplete="off" inputmode="numeric" />' +
       "</div>" +
-      '<p class="otp-timer"><i class="fas fa-clock"></i> Mã hết hạn sau <span id="otpCountdown">5:00</span></p>' +
-      '<div class="otp-error" id="otpError" style="display:none;"><i class="fas fa-exclamation-circle"></i> <span id="otpErrorMsg"></span></div>' +
-      '<button class="otp-verify-btn" id="btnVerifyOTP"><i class="fas fa-check-circle"></i> Xác nhận</button>' +
-      '<button class="otp-resend-btn" id="btnResendOTP"><i class="fas fa-redo"></i> Gửi lại mã</button>' +
+      '<p class="otp-timer"><i class="fa-solid fa-clock"></i> Mã hết hạn sau <span id="otpCountdown">5:00</span></p>' +
+      '<div class="otp-error" id="otpError" style="display:none;"><i class="fa-solid fa-exclamation-circle"></i> <span id="otpErrorMsg"></span></div>' +
+      '<button class="otp-verify-btn" id="btnVerifyOTP"><i class="fa-solid fa-check-circle"></i> Xác nhận</button>' +
+      '<button class="otp-resend-btn" id="btnResendOTP"><i class="fa-solid fa-redo"></i> Gửi lại mã</button>' +
       '<button class="otp-cancel-btn" id="btnCancelOTP">Hủy</button>' +
       "</div>";
 
@@ -1610,53 +1610,53 @@ function showProfilePopup() {
     "</div>" +
     // Tab buttons
     '<div class="profile-tabs">' +
-    '<button class="profile-tab active" data-tab="info"><i class="fas fa-user-edit"></i> Thông tin</button>' +
-    '<button class="profile-tab" data-tab="security"><i class="fas fa-lock"></i> Bảo mật</button>' +
+    '<button class="profile-tab active" data-tab="info"><i class="fa-solid fa-user-edit"></i> Thông tin</button>' +
+    '<button class="profile-tab" data-tab="security"><i class="fa-solid fa-lock"></i> Bảo mật</button>' +
     "</div>" +
     // Tab: Thông tin cá nhân
     '<div class="profile-tab-content active" id="tabInfo">' +
     '<div class="profile-form-group">' +
-    '<label><i class="fas fa-user"></i> Họ</label>' +
+    '<label><i class="fa-solid fa-user"></i> Họ</label>' +
     '<input type="text" id="profileLastName" value="' +
     (currentUser.lastName || "") +
     '" />' +
     "</div>" +
     '<div class="profile-form-group">' +
-    '<label><i class="fas fa-user"></i> Tên</label>' +
+    '<label><i class="fa-solid fa-user"></i> Tên</label>' +
     '<input type="text" id="profileFirstName" value="' +
     (currentUser.firstName || "") +
     '" />' +
     "</div>" +
     '<div class="profile-form-group">' +
-    '<label><i class="fas fa-phone"></i> Số điện thoại</label>' +
+    '<label><i class="fa-solid fa-phone"></i> Số điện thoại</label>' +
     '<input type="tel" id="profilePhone" value="' +
     (currentUser.phone || "") +
     '" />' +
     "</div>" +
     '<div class="profile-form-group">' +
-    '<label><i class="fas fa-envelope"></i> Email <span class="profile-verify-badge"><i class="fas fa-shield-alt"></i> Cần xác thực Email</span></label>' +
+    '<label><i class="fa-solid fa-envelope"></i> Email <span class="profile-verify-badge"><i class="fa-solid fa-shield-alt"></i> Cần xác thực Email</span></label>' +
     '<input type="email" id="profileEmail" value="' +
     (currentUser.email || "") +
     '" />' +
     "</div>" +
-    '<button class="profile-save-btn" id="btnSaveProfile"><i class="fas fa-save"></i> Lưu thay đổi</button>' +
+    '<button class="profile-save-btn" id="btnSaveProfile"><i class="fa-solid fa-save"></i> Lưu thay đổi</button>' +
     "</div>" +
     // Tab: Đổi mật khẩu
     '<div class="profile-tab-content" id="tabSecurity">' +
     '<div class="profile-form-group">' +
-    '<label><i class="fas fa-key"></i> Mật khẩu hiện tại</label>' +
+    '<label><i class="fa-solid fa-key"></i> Mật khẩu hiện tại</label>' +
     '<input type="password" id="profileOldPassword" placeholder="Nhập mật khẩu hiện tại" />' +
     "</div>" +
     '<div class="profile-form-group">' +
-    '<label><i class="fas fa-lock"></i> Mật khẩu mới</label>' +
+    '<label><i class="fa-solid fa-lock"></i> Mật khẩu mới</label>' +
     '<input type="password" id="profileNewPassword" placeholder="Nhập mật khẩu mới (ít nhất 6 ký tự)" />' +
     "</div>" +
     '<div class="profile-form-group">' +
-    '<label><i class="fas fa-lock"></i> Xác nhận mật khẩu mới</label>' +
+    '<label><i class="fa-solid fa-lock"></i> Xác nhận mật khẩu mới</label>' +
     '<input type="password" id="profileConfirmPassword" placeholder="Nhập lại mật khẩu mới" />' +
     "</div>" +
-    '<p class="profile-security-note"><i class="fas fa-info-circle"></i> Đổi mật khẩu cần xác thực qua mã gửi đến email của bạn.</p>' +
-    '<button class="profile-save-btn security" id="btnChangePassword"><i class="fas fa-shield-alt"></i> Xác thực Email & Đổi mật khẩu</button>' +
+    '<p class="profile-security-note"><i class="fa-solid fa-info-circle"></i> Đổi mật khẩu cần xác thực qua mã gửi đến email của bạn.</p>' +
+    '<button class="profile-save-btn security" id="btnChangePassword"><i class="fa-solid fa-shield-alt"></i> Xác thực Email & Đổi mật khẩu</button>' +
     "</div>" +
     "</div>";
 
