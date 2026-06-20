@@ -159,15 +159,14 @@ const initApp = () => {
     // Truy vấn thông tin người dùng đang đăng nhập từ UserManager
     const currentUser = UserManager.getCurrentUser();
     if (currentUser) {
-      // Đã đăng nhập → hiển thị tên người dùng rút gọn để tránh tràn layout header
-      let displayBtnName = currentUser.displayName;
-      if (currentUser.role === "admin") {
-        displayBtnName = "Admin"; // Nếu là quản trị viên
-      } else if (currentUser.role === "branch_manager") {
-        displayBtnName = "Quản lý"; // Nếu là quản lý chi nhánh
-      } else {
-        // Khách hàng hoặc người dùng thường: hiển thị Họ + Tên cho đúng quy tắc tiếng Việt
-        displayBtnName = currentUser.displayName || `${currentUser.lastName || ""} ${currentUser.firstName || ""}`.trim();
+      // Đã đăng nhập → hiển thị tên người dùng
+      let displayBtnName = currentUser.firstName || currentUser.displayName || "";
+      if (!displayBtnName) {
+        displayBtnName = `${currentUser.lastName || ""}`.trim() || currentUser.username || "Tài khoản";
+      }
+      // Giới hạn độ dài để tránh vỡ giao diện (tối đa 10 ký tự)
+      if (displayBtnName.length > 10) {
+        displayBtnName = displayBtnName.substring(0, 8) + "..";
       }
 
       // Đổi HTML hiển thị icon tài khoản kèm tên rút gọn của người dùng trên header
