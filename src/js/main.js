@@ -6,7 +6,7 @@
 ========================================================================================
 */
 
-// Cuộn xuống thanh vẫn theo (desktop). Mobile giữ nguyên header nâu.
+// updateHeaderScrollState: Cập nhật trạng thái cuộn của Header trên giao diện desktop (thêm/xóa class 'scrolled').
 const updateHeaderScrollState = () => {
   const navbar = document.querySelector(".header");
   if (!navbar) return;
@@ -22,10 +22,12 @@ const updateHeaderScrollState = () => {
 window.addEventListener("scroll", updateHeaderScrollState);
 window.addEventListener("resize", updateHeaderScrollState);
 
+// syncBootstrapTheme: Đồng bộ thuộc tính giao diện sáng/tối của Bootstrap (data-bs-theme).
 const syncBootstrapTheme = (isDark) => {
   document.documentElement.setAttribute("data-bs-theme", isDark ? "dark" : "light");
 };
 
+// initSmoothReveal: Khởi tạo hiệu ứng hiển thị mượt mà khi cuộn trang (sử dụng IntersectionObserver).
 const initSmoothReveal = () => {
   const revealSelectors = [
     "main > section",
@@ -89,7 +91,7 @@ const initSmoothReveal = () => {
   targets.forEach((el) => observer.observe(el));
 };
 
-// ==================== KHỞI TẠO CÁC TÍNH NĂNG CHUNG ====================
+// initApp: Khởi tạo toàn bộ chức năng chung (menu hamburger, dark mode, trạng thái đăng nhập, preloader).
 const initApp = () => {
   updateHeaderScrollState();
 
@@ -123,6 +125,7 @@ const initApp = () => {
 
   // ==================== CHẾ ĐỘ NỀN TỐI (DARK MODE) ====================
   const toggleBtn = document.getElementById("themeToggle");
+  // applyThemeState: Áp dụng trạng thái theme sáng/tối cho giao diện và cập nhật biểu tượng nút chuyển đổi.
   const applyThemeState = (isDark) => {
     document.body.classList.toggle("dark", isDark);
     syncBootstrapTheme(isDark);
@@ -301,7 +304,7 @@ const initApp = () => {
   }
 };
 
-// Đảm bảo loadComponents (nếu có) chạy trước khi initApp
+// DOMContentLoaded callback: Đảm bảo chèn Header/Footer xong mới chạy initApp và hiệu ứng cuộn trang.
 document.addEventListener("DOMContentLoaded", () => {
   // Nếu có components.js thì loadComponents đã được gọi bằng DOMContentLoaded trong file đó.
   // Tuy nhiên để chắc chắn, ta có thể kiểm tra xem placeholder còn tồn tại không.
@@ -570,6 +573,7 @@ const COMBO_ITEM_DETAILS = Object.freeze({
   "Combo 9": ["Trà đào", "Bánh donut"],
 });
 
+// getComboItemsByName: Trả về danh sách các món ăn kèm trong một gói combo dựa trên tên sản phẩm.
 function getComboItemsByName(productName) {
   if (!productName) return [];
   const normalizedName = String(productName).trim().toLowerCase();
@@ -586,6 +590,7 @@ function getComboItemsByName(productName) {
 
 window.getComboItemsByName = getComboItemsByName;
 
+// addToCart: Thêm sản phẩm hiện tại cùng các lựa chọn (size, đường, đá, toppings, ghi chú) vào giỏ hàng localStorage.
 function addToCart() {
   const sizeError = document.getElementById("sizeError");
   const isFood = currentCategory === "food" || currentCategory === "topping";
@@ -695,7 +700,7 @@ function addToCart() {
   );
 }
 
-// ==================== TOAST THÔNG BÁO (MENU PAGE) ====================
+// showPopupToast: Hiển thị toast thông báo nhanh trên giao diện menu khi thêm sản phẩm thành công.
 function showPopupToast(message) {
   const toast = document.getElementById("popupToast");
   const toastMsg = document.getElementById("popupToastMsg");
@@ -744,10 +749,7 @@ document.addEventListener("DOMContentLoaded", () => {
 ========================================================================================
 */
 
-/**
- * Hệ thống Popup thông báo dùng chung cho toàn bộ website
- * Thay thế alert() và confirm() mặc định của trình duyệt
- */
+// showGiborPopup: Hiển thị hộp thoại popup (modal) thông báo/xác nhận tùy chỉnh cho toàn bộ hệ thống.
 function showGiborPopup({
   type = "success",
   title = "",
@@ -831,9 +833,7 @@ function showGiborPopup({
   }
 }
 
-/**
- * Hệ thống Popup Prompt nhập liệu chuyên nghiệp dùng chung
- */
+// showGiborPrompt: Hiển thị hộp thoại nhập liệu prompt tùy chỉnh phục vụ bảo mật hoặc nhập dữ liệu.
 function showGiborPrompt({
   title = "",
   message = "",
@@ -907,9 +907,7 @@ function showGiborPrompt({
 }
 
 
-/**
- * Hiện popup lịch sử đơn hàng
- */
+// showOrderHistoryPopup: Hiển thị popup chứa danh sách lịch sử đơn hàng đã đặt của người dùng.
 function showOrderHistoryPopup() {
   // Xóa popup cũ nếu có
   const oldOverlay = document.getElementById("orderHistoryOverlay");
@@ -1110,9 +1108,7 @@ if (typeof firebase !== "undefined" && !firebase.apps.length) {
 let _giborOTP = null;
 let _giborOTPExpiry = null;
 
-/**
- * Tạo mã OTP 6 chữ số
- */
+// generateOTP: Tạo mã OTP ngẫu nhiên gồm 6 chữ số kèm thời gian hết hạn sau 5 phút.
 function generateOTP() {
   const otp = Math.floor(100000 + Math.random() * 900000).toString();
   _giborOTP = otp;
@@ -1120,20 +1116,14 @@ function generateOTP() {
   return otp;
 }
 
-/**
- * Tạo token xác thực cho yêu cầu đổi mật khẩu
- */
+// generateVerificationToken: Tạo chuỗi token ngẫu nhiên để xác thực email khi đổi mật khẩu.
 function generateVerificationToken() {
   return Math.random().toString(36).substring(2, 15) + 
          Math.random().toString(36).substring(2, 15) + 
          Date.now().toString(36);
 }
 
-/**
- * Gửi email xác thực yêu cầu đổi mật khẩu qua Firebase
- * @param {string} email - Email người dùng
- * @param {string} token - Token xác thực
- */
+// sendPasswordChangeVerificationEmail: Gửi email chứa đường dẫn xác thực yêu cầu thay đổi mật khẩu.
 function sendPasswordChangeVerificationEmail(email, token) {
   if (typeof firebase === "undefined" || !firebase.auth) {
     console.warn("⚠️ Firebase không khả dụng");
@@ -1159,9 +1149,7 @@ function sendPasswordChangeVerificationEmail(email, token) {
   showPasswordChangeVerificationPopup(email, verificationUrl, token);
 }
 
-/**
- * Hiển thị popup yêu cầu xác thực đổi mật khẩu qua email
- */
+// showPasswordChangeVerificationPopup: Hiển thị popup hướng dẫn người dùng gửi email xác thực để đổi mật khẩu.
 function showPasswordChangeVerificationPopup(email, verificationUrl, token) {
   const oldOverlay = document.getElementById("passwordChangeVerifyOverlay");
   if (oldOverlay) oldOverlay.remove();
@@ -1257,10 +1245,7 @@ function showPasswordChangeVerificationPopup(email, verificationUrl, token) {
   });
 }
 
-/**
- * Xác thực và thực hiện đổi mật khẩu từ link email
- * Gọi hàm này khi trang account.html load với query param verify_password_change
- */
+// verifyAndChangePassword: Kiểm tra tính hợp lệ của token xác thực và thực hiện đổi mật khẩu cho tài khoản.
 function verifyAndChangePassword(token) {
   const requestData = sessionStorage.getItem('gibor_password_change_request');
   
@@ -1327,11 +1312,7 @@ function verifyAndChangePassword(token) {
   }
 }
 
-/**
- * Gửi mã OTP qua email thông qua Firebase
- * Sử dụng Custom Email Action Handler để gửi OTP thực sự
- * Nếu Firebase chưa sẵn sàng → fallback hiện mã trên popup
- */
+// sendOTPViaFirebase: Thực hiện gửi mã OTP hoặc email xác thực đến địa chỉ email bằng Firebase Auth.
 function sendOTPViaFirebase(email, otp) {
   return new Promise((resolve, reject) => {
     if (typeof firebase !== "undefined" && firebase.auth) {
@@ -1365,11 +1346,7 @@ function sendOTPViaFirebase(email, otp) {
   });
 }
 
-/**
- * Hiển thị popup nhập mã OTP xác thực email
- * @param {string} email - Email cần xác thực
- * @param {Function} onSuccess - Callback khi xác thực thành công
- */
+// showEmailOTPPopup: Hiển thị popup giao diện nhập 6 chữ số mã OTP để xác thực email.
 function showEmailOTPPopup(email, onSuccess) {
   // Xóa popup cũ
   const oldOTP = document.getElementById("giborOTPOverlay");
@@ -1572,9 +1549,7 @@ function showEmailOTPPopup(email, onSuccess) {
   });
 }
 
-/**
- * Hiện popup quản lý tài khoản (Thông tin + Đổi mật khẩu)
- */
+// showProfilePopup: Hiển thị popup quản lý thông tin tài khoản cá nhân và cấu trúc đổi mật khẩu.
 function showProfilePopup() {
   const oldOverlay = document.getElementById("profilePopupOverlay");
   if (oldOverlay) oldOverlay.remove();

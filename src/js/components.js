@@ -95,11 +95,13 @@ const TOP_IMAGE_MARQUEE_COMPONENT = `
   </div>
 `;
 
+// getCurrentPage: Lấy tên trang HTML hiện tại từ đường dẫn URL.
 function getCurrentPage() {
   const path = window.location.pathname.replace(/\\/g, "/");
   return (path.split("/").pop() || "index.html").toLowerCase();
 }
 
+// canShowAdminLink: Kiểm tra xem người dùng hiện tại có quyền Admin hoặc Quản lý chi nhánh hay không.
 function canShowAdminLink() {
   try {
     const rawUser = localStorage.getItem("gibor_current_user");
@@ -116,6 +118,7 @@ function canShowAdminLink() {
   }
 }
 
+// renderHeaderComponent: Render mã HTML cho phần Header (bao gồm thanh thông báo chạy chữ, logo, danh sách liên kết điều hướng và các nút thao tác nhanh).
 function renderHeaderComponent() {
   const currentPage = getCurrentPage();
   const showAdminLink = canShowAdminLink();
@@ -250,9 +253,7 @@ const FooterComponent = `
     </footer>
 `;
 
-/**
- * Tự động chèn Header và Footer vào các thẻ placeholder
- */
+// loadComponents: Tự động chèn Header và Footer vào các thẻ placeholder tương ứng trên trang web.
 function loadComponents() {
   const headerPlaceholder = document.getElementById("header-placeholder");
   const footerPlaceholder = document.getElementById("footer-placeholder");

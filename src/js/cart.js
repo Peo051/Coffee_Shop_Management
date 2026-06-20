@@ -28,20 +28,7 @@ Cấu trúc một phần tử trong Giỏ hàng (CartItem):
 ========================================================================================
 */
 
-/**
- * Tên hàm: renderCart
- * Mục đích: Render toàn bộ danh sách sản phẩm trong giỏ hàng ra bảng HTML.
- * Tham số: Không.
- * Giá trị trả về: Không.
- * Luồng xử lý chính:
- *   1. Lấy giỏ hàng từ LocalStorage qua helper getCart().
- *   2. Kiểm tra nếu giỏ hàng rỗng: hiển thị giao diện báo trống, ẩn bảng chi tiết và dừng.
- *   3. Duyệt qua từng sản phẩm trong giỏ, tính toán thành tiền của từng món (price * quantity) và cộng dồn vào tổng số lượng và tổng tiền.
- *   4. Xử lý chuỗi hiển thị toppings, đá, đường, ghi chú, combo.
- *   5. Tạo chuỗi HTML và chèn vào thẻ tbody (`#cartBody`).
- *   6. Cập nhật tổng số lượng và tổng tiền hiển thị trên UI.
- *   7. Gọi updateCartCount() đồng bộ badge ở header và gắn các sự kiện click nút tăng/giảm/xóa.
- */
+// renderCart: Lấy dữ liệu giỏ hàng từ localStorage và vẽ giao diện bảng danh sách sản phẩm cùng tổng tiền thanh toán.
 function renderCart() {
   const cart = getCart();
   const cartEmpty = document.getElementById("cartEmpty"); // Element báo giỏ hàng trống
@@ -145,12 +132,7 @@ function renderCart() {
   addCartActionListeners(); // Gắn sự kiện click cho các nút mới được sinh ra
 }
 
-/**
- * Tên hàm: addCartActionListeners
- * Mục đích: Gắn sự kiện click cho các nút thay đổi số lượng và nút xóa sản phẩm vừa được sinh động trong bảng.
- * Tham số: Không.
- * Giá trị trả về: Không.
- */
+// addCartActionListeners: Đăng ký sự kiện click cho các nút thay đổi số lượng và nút xóa sản phẩm vừa được sinh ra.
 function addCartActionListeners() {
   // Gắn sự kiện cho các nút tăng/giảm số lượng
   document.querySelectorAll(".btn-quantity").forEach((button) => {
@@ -170,19 +152,7 @@ function addCartActionListeners() {
   });
 }
 
-/**
- * Tên hàm: changeQuantity
- * Mục đích: Thay đổi số lượng của một sản phẩm trong giỏ hàng (cộng thêm hoặc giảm đi).
- * Tham số:
- *   - index (number): Chỉ số phần tử trong mảng giỏ hàng.
- *   - delta (number): Độ thay đổi số lượng (+1 hoặc -1).
- * Giá trị trả về: Không.
- * Luồng xử lý chính:
- *   1. Lấy danh sách giỏ hàng.
- *   2. Cộng delta vào số lượng của phần tử thứ index.
- *   3. Nếu số lượng sau khi cộng giảm xuống bằng hoặc nhỏ hơn 0, dùng hàm splice xóa sản phẩm ra khỏi mảng và hiển thị Toast thông báo.
- *   4. Lưu lại mảng giỏ hàng vào LocalStorage và chạy render lại giao diện.
- */
+// changeQuantity: Tăng hoặc giảm số lượng của một sản phẩm trong giỏ hàng và cập nhật lại giao diện.
 function changeQuantity(index, delta) {
   const cart = getCart();
 
@@ -200,18 +170,7 @@ function changeQuantity(index, delta) {
   renderCart(); // Render lại bảng dữ liệu
 }
 
-/**
- * Tên hàm: removeItem
- * Mục đích: Xóa một sản phẩm cụ thể ra khỏi giỏ hàng.
- * Tham số:
- *   - index (number): Vị trí của sản phẩm cần xóa trong mảng giỏ hàng.
- * Giá trị trả về: Không.
- * Luồng xử lý chính:
- *   1. Đọc giỏ hàng hiện tại.
- *   2. Cắt bỏ 1 phần tử tại vị trí index bằng hàm splice().
- *   3. Ghi dữ liệu sạch vào LocalStorage.
- *   4. Render lại giao diện và thông báo cho người dùng qua Toast.
- */
+// removeItem: Xóa hoàn toàn một sản phẩm cụ thể ra khỏi giỏ hàng dựa trên index.
 function removeItem(index) {
   const cart = getCart();
 
@@ -224,12 +183,7 @@ function removeItem(index) {
   showToast(`Đã xóa "${removedName}" khỏi giỏ hàng!`);
 }
 
-/**
- * Tên hàm: clearCart
- * Mục đích: Xóa toàn bộ sản phẩm có trong giỏ hàng sau khi người dùng xác nhận.
- * Tham số: Không.
- * Giá trị trả về: Không.
- */
+// clearCart: Xóa sạch toàn bộ sản phẩm trong giỏ hàng sau khi người dùng xác nhận.
 function clearCart() {
   if (confirm("Bạn có chắc muốn xóa tất cả sản phẩm trong giỏ hàng?")) {
     saveCart([]); // Lưu mảng trống vào LocalStorage
@@ -238,12 +192,7 @@ function clearCart() {
   }
 }
 
-/**
- * Tên hàm: openCheckout
- * Mục đích: Kiểm tra giỏ hàng và dẫn người dùng sang trang thanh toán (`payment.html`).
- * Tham số: Không.
- * Giá trị trả về: Không.
- */
+// openCheckout: Kiểm tra điều kiện giỏ hàng và chuyển hướng người dùng sang trang thanh toán payment.html.
 function openCheckout() {
   const cart = getCart();
   // Chặn không cho sang trang thanh toán nếu giỏ hàng rỗng
@@ -254,7 +203,7 @@ function openCheckout() {
   window.location.href = "payment.html";
 }
 
-// Khởi chạy khi trang giỏ hàng được tải xong
+// DOMContentLoaded callback: Khởi tạo giỏ hàng và đăng ký sự kiện cho các nút Xóa giỏ hàng, Thanh toán khi DOM tải xong.
 document.addEventListener("DOMContentLoaded", () => {
   // Render danh sách sản phẩm lần đầu khi tải trang
   renderCart();
