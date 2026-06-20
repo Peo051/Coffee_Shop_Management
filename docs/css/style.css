@@ -630,6 +630,13 @@ body.dark .top-image-marquee__item {
   flex-wrap: nowrap;
 }
 
+/* Ẩn liên kết Admin trên thanh menu chính ở Desktop vì đã có trong dropdown Profile */
+@media (min-width: 992px) {
+  .nav-links .admin-nav-item {
+    display: none !important;
+  }
+}
+
 .nav-links li {
   position: relative;
 }

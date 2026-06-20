@@ -122,10 +122,11 @@ function canShowAdminLink() {
 function renderHeaderComponent() {
   const currentPage = getCurrentPage();
   const showAdminLink = canShowAdminLink();
-  const navLinks = NAV_ITEMS.filter((item) => !item.adminOnly || showAdminLink).map(({ href, label }) => {
-    const active = currentPage === href.toLowerCase();
+  const navLinks = NAV_ITEMS.filter((item) => !item.adminOnly || showAdminLink).map((item) => {
+    const active = currentPage === item.href.toLowerCase();
     const activeAttrs = active ? ' class="is-active" aria-current="page"' : "";
-    return `<li><a href="${href}"${activeAttrs}>${label}</a></li>`;
+    const liClass = item.adminOnly ? ' class="admin-nav-item"' : "";
+    return `<li${liClass}><a href="${item.href}"${activeAttrs}>${item.label}</a></li>`;
   }).join("");
   const marqueeItems = TOP_BANNER_ITEMS.map(
     (text) =>
