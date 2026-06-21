@@ -1,13 +1,4 @@
-/**
- * GIBOR Coffee - API Serverless Lấy Trạng Thái Đơn Hàng payOS
- * Tác giả: Trần Dương Gia Bảo
- * 
- * Mô tả: API nhận mã đơn hàng orderCode từ client dưới dạng Query string, gửi yêu cầu kiểm tra trạng thái
- * thanh toán của giao dịch trực tiếp tới cổng payOS Merchant API bằng x-client-id và x-api-key được bảo mật ở backend.
- * 
- * Đầu vào (GET Query): orderCode
- * Đầu ra (JSON): Trạng thái thanh toán của đơn hàng (PAID, CANCELLED, PENDING,...) và các thông tin liên quan.
- */
+
 module.exports = async (req, res) => {
   // Thiết lập các CORS Headers cho phép client từ mọi Origin gọi API lấy trạng thái
   res.setHeader('Access-Control-Allow-Origin', '*');

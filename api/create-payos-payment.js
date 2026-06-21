@@ -1,14 +1,4 @@
-/**
- * GIBOR Coffee - API Serverless Tạo Thanh Toán payOS
- * Tác giả: Trần Dương Gia Bảo
- * 
- * Mô tả: API nhận thông tin đơn hàng từ Client, lấy cấu hình x-client-id và x-api-key từ biến môi trường
- * của Vercel nhằm mục đích bảo mật, sau đó tính toán mã chữ ký HMAC-SHA256 (signature) và gửi yêu cầu tạo
- * liên kết thanh toán (payment-link) trực tiếp tới cổng thanh toán payOS.
- * 
- * Đầu vào (POST JSON): { amount, description, orderCode, returnUrl, cancelUrl, items }
- * Đầu ra (JSON): Trạng thái trả về từ payOS chứa link thanh toán checkoutUrl và mã QR code.
- */
+
 const crypto = require('crypto');
 
 module.exports = async (req, res) => {
