@@ -1,21 +1,9 @@
 /* 
-  ========================================================================================
-  Tên file: data.js
-  Tác giả: Trần Dương Gia Bảo
-  Vai trò: Lớp dữ liệu (Data Layer) của ứng dụng Coffee Shop Management Web.
-  Các chức năng chính:
-    - Quản lý sản phẩm (ProductManager), đồng bộ hóa với LocalStorage và Firebase.
-    - Quản lý người dùng, phân quyền Admin và Branch Manager (UserManager).
-    - Quản lý điểm tích lũy thành viên (PointsManager).
-    - Quản lý và lưu trữ đơn đặt hàng (OrderManager).
-  LocalStorage Keys liên quan:
-    - `gibor_products_cache_v3`: Lưu danh sách sản phẩm.
-    - `gibor_users`: Lưu danh sách tất cả tài khoản.
-    - `gibor_current_user`: Lưu thông tin tài khoản đang đăng nhập.
-    - `gibor_orders`: Lưu lịch sử tất cả hóa đơn mua hàng.
-    - `gibor_points`: Lưu số điểm tích lũy của khách hàng hiện tại.
-    - `gibor_branches`: Danh sách các chi nhánh của hệ thống.
-  ========================================================================================
+========================================================================================
+
+                                   CODE BỞI TRẦN DƯƠNG GIA BẢO
+
+========================================================================================
 */
 
 const ADMIN_PRODUCTS_KEY = "gibor_products_cache_v3";
