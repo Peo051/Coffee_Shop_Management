@@ -1,30 +1,8 @@
 /* 
 ========================================================================================
-Tên file: cart.js
-Tác giả: Trần Dương Gia Bảo
-Vai trò: Quản lý nghiệp vụ giỏ hàng (Shopping Cart) của hệ thống GIBOR Coffee.
-Các chức năng chính:
-  - Hiển thị danh sách sản phẩm trong giỏ hàng (renderCart).
-  - Tăng/giảm số lượng sản phẩm trực tiếp (changeQuantity).
-  - Xóa sản phẩm đơn lẻ hoặc làm trống giỏ hàng (removeItem, clearCart).
-  - Đồng bộ hóa số lượng sản phẩm lên header.
-  - Chuyển hướng sang trang thanh toán.
-Cấu trúc một phần tử trong Giỏ hàng (CartItem):
-  {
-    id: "p-2",                       // ID của sản phẩm gốc
-    name: "Cà phê sữa",              // Tên sản phẩm
-    image: "images/menu/caphesua.jpg",// Ảnh đại diện sản phẩm
-    size: "M",                       // Size ly (S/M/L) hoặc "Mặc định" (với bánh ngọt)
-    price: 35000,                    // Giá đơn vị (đã cộng tiền size và toppings nếu có)
-    sugar: "50%",                    // Phần trăm lượng đường
-    ice: "100%",                     // Phần trăm lượng đá
-    toppings: [                      // Mảng chứa danh sách toppings thêm
-      { name: "Trân châu trắng", price: 10000 }
-    ],
-    note: "Ít sữa nhiều cafe",      // Ghi chú đặc biệt từ khách hàng
-    comboItems: [],                  // Mảng chứa các món trong combo (nếu là sản phẩm combo)
-    quantity: 2                      // Số lượng món đặt
-  }
+
+                                   CODE BỞI TRẦN DƯƠNG GIA BẢO
+
 ========================================================================================
 */
 
