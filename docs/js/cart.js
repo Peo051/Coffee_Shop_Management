@@ -55,7 +55,7 @@ function renderCart() {
     // Tạo nhãn hiển thị tùy chọn của sản phẩm
     const sugarText = item.sugar ? `Đường: ${item.sugar}` : "";
     const iceText = item.ice ? `Đá: ${item.ice}` : "";
-    const noteText = item.note ? `📝 ${item.note}` : "";
+    const noteText = item.note ? ` ${item.note}` : "";
     const isFood = item.size === "Mặc định"; // Đối với đồ ăn/bánh ngọt thì không hiển thị size
     const toppingText =
       item.toppings && item.toppings.length > 0
