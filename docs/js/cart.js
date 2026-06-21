@@ -55,7 +55,7 @@ function renderCart() {
     // Tạo nhãn hiển thị tùy chọn của sản phẩm
     const sugarText = item.sugar ? `Đường: ${item.sugar}` : "";
     const iceText = item.ice ? `Đá: ${item.ice}` : "";
-    const noteText = item.note ? `📝 ${item.note}` : "";
+    const noteText = item.note ? ` ${item.note}` : "";
     const isFood = item.size === "Mặc định"; // Đối với đồ ăn/bánh ngọt thì không hiển thị size
     const toppingText =
       item.toppings && item.toppings.length > 0
@@ -70,8 +70,8 @@ function renderCart() {
             <img src="${item.image}" alt="${item.name}">
             <div class="cart-product-info">
               <span class="cart-product-name">${item.name}${comboSuffix}</span>
-              ${!isFood ? `<span class="cart-product-options">🍬 ${sugarText} &nbsp;|&nbsp; 🧊 ${iceText}</span>` : ""}
-              ${toppingText ? `<span class="cart-product-options">🧁 ${toppingText}</span>` : ""}
+              ${!isFood ? `<span class="cart-product-options"> ${sugarText} &nbsp;|&nbsp;  ${iceText}</span>` : ""}
+              ${toppingText ? `<span class="cart-product-options"> ${toppingText}</span>` : ""}
               ${noteText ? `<span class="cart-product-note">${noteText}</span>` : ""}
             </div>
           </div>
