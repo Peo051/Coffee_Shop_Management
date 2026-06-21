@@ -131,21 +131,47 @@
           </button>
         </div>
       </section>
-      <!-- Trần Gia Bảo kết thúc chỉnh sửa -->
 
       <h2 class="menu-title text-center mb-4 mb-md-5">MENU GIBOR COFFEE</h2>
       
-      <!-- Lựa chọn chi nhánh dưới dạng nút nhấn thiết kế chuyên nghiệp giống The Coffee House -->
-      <div class="menu-branch-selector-wrap mb-5 p-4 rounded-4 shadow-sm">
-        <label class="form-label fw-bold d-flex align-items-center justify-content-center gap-2 mb-3 menu-branch-label" style="font-size: 1.05rem;">
-          <i class="fa-solid fa-store" style="color: #d4a373;"></i> Bạn muốn xem thực đơn của chi nhánh nào?
-        </label>
-        <button id="menuBranchSelectBtn" class="btn w-100 rounded-pill py-2.5 px-4 fw-semibold d-flex align-items-center justify-content-between menu-branch-button" style="font-size: 0.95rem; transition: all 0.25s ease;">
-          <span id="menuBranchSelectLabel"><i class="fa-solid fa-location-dot me-2" style="color: #d4a373;"></i>Đang tải chi nhánh...</span>
-          <i class="fa-solid fa-chevron-right ms-2" style="font-size: 0.8rem; opacity: 0.7;"></i>
-        </button>
+      <!-- Lựa chọn chi nhánh và Tìm kiếm sản phẩm dưới dạng hàng ngang tiện lợi -->
+      <div class="row g-4 mb-5">
+        <div class="col-12 col-md-6">
+          <div class="menu-branch-selector-wrap h-100 p-4 rounded-4 shadow-sm">
+            <label class="form-label fw-bold d-flex align-items-center gap-2 mb-3 menu-branch-label" style="font-size: 1.05rem;">
+              <i class="fa-solid fa-store" style="color: #d4a373;"></i> Bạn muốn xem thực đơn của chi nhánh nào?
+            </label>
+            <button id="menuBranchSelectBtn" class="btn w-100 rounded-pill py-2.5 px-4 fw-semibold d-flex align-items-center justify-content-between menu-branch-button" style="font-size: 0.95rem; transition: all 0.25s ease;">
+              <span id="menuBranchSelectLabel"><i class="fa-solid fa-location-dot me-2" style="color: #d4a373;"></i>Đang tải chi nhánh...</span>
+              <i class="fa-solid fa-chevron-right ms-2" style="font-size: 0.8rem; opacity: 0.7;"></i>
+            </button>
+          </div>
+        </div>
+        <div class="col-12 col-md-6">
+          <div class="menu-search-wrap h-100 p-4 rounded-4 shadow-sm">
+            <label class="form-label fw-bold d-flex align-items-center gap-2 mb-3 menu-search-label" style="font-size: 1.05rem;">
+              <i class="fa-solid fa-magnifying-glass" style="color: #d4a373;"></i> Tìm kiếm sản phẩm trong thực đơn
+            </label>
+            <div class="menu-search-box-container">
+              <i class="fa-solid fa-magnifying-glass search-icon"></i>
+              <input type="text" id="menuProductSearchInput" placeholder="Nhập tên món ăn, thức uống..." />
+              <button id="menuProductSearchClearBtn" class="clear-btn" style="display: none;">
+                <i class="fa-solid fa-circle-xmark"></i>
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
+      <!-- Thông báo không tìm thấy sản phẩm -->
+      <div id="noProductsFound" class="text-center py-5 mb-5 rounded-4 shadow-sm" style="display: none; background: rgba(95, 61, 36, 0.03); border: 1.5px dashed rgba(95, 61, 36, 0.2);">
+        <i class="fa-solid fa-mug-hot mb-3" style="font-size: 3.5rem; color: var(--accent, #d4a373);"></i>
+        <h4 class="fw-bold" style="color: var(--primary, #4b2c20);">Không tìm thấy sản phẩm phù hợp</h4>
+        <p class="text-muted mb-0">Quý khách vui lòng thử tìm kiếm với từ khóa khác hoặc chuyển chi nhánh.</p>
+      </div>
+
+      <!-- Trần Gia Bảo kết thúc chỉnh sửa -->
+      
       <!-- POPUP / MODAL CHỌN CỬA HÀNG PHONG CÁCH THE COFFEE HOUSE -->
       <div id="branchModalOverlay" class="branch-modal-overlay">
         <div class="branch-modal-box">

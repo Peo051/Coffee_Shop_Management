@@ -12,6 +12,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Khởi tạo popup chọn chi nhánh kiểu mới
     initMenuBranchSelector();
 
+    // Khởi tạo tìm kiếm sản phẩm trong menu
+    initMenuProductSearch();
+
     // 1. Tải và render sản phẩm động lần đầu
     renderMenuProducts();
 
@@ -266,11 +269,16 @@ function renderMenuProducts() {
         return;
     }
 
+    // Lấy từ khóa tìm kiếm hiện tại từ ô nhập liệu
+    const searchInput = document.getElementById("menuProductSearchInput");
+    const keyword = searchInput ? searchInput.value.trim().toLowerCase() : "";
+
     // Lấy chi nhánh được lưu trong localStorage
     const selectedBranchId = localStorage.getItem("gibor_selected_menu_branch") || "all";
 
     const products = ProductManager.getProducts();
     const menuSections = document.querySelectorAll(".menu-section");
+    let totalVisibleProducts = 0;
 
     menuSections.forEach(section => {
         const titleEl = section.querySelector(".section-title");
@@ -290,48 +298,94 @@ function renderMenuProducts() {
 
         if (!targetCategory) return;
 
-        // Lọc sản phẩm theo danh mục
+        // Lọc sản phẩm theo danh mục và trạng thái hoạt động
         let categoryProducts = products.filter(p => p.category === targetCategory && p.status !== "deleted" && p.isDeleted !== true);
 
-        if (categoryProducts.length === 0) {
-            gridEl.innerHTML = `<div class="col-12 text-center text-muted py-3">Danh mục này hiện chưa có sản phẩm nào.</div>`;
-            return;
+        // Lọc sản phẩm theo từ khóa tìm kiếm nếu có
+        if (keyword) {
+            categoryProducts = categoryProducts.filter(p => 
+                p.name.toLowerCase().includes(keyword) || 
+                (p.desc && p.desc.toLowerCase().includes(keyword))
+            );
         }
 
-        // Render danh sách sản phẩm động
-        gridEl.innerHTML = categoryProducts
-            .map(product => {
-                // Mô phỏng tính trạng của chi nhánh cụ thể (Ví dụ: chi nhánh đó có thể hết hàng một số món nhất định)
-                let isOutOfStock = product.status === "out_of_stock";
+        if (categoryProducts.length === 0) {
+            section.style.display = "none";
+            gridEl.innerHTML = "";
+        } else {
+            section.style.display = "block";
+            totalVisibleProducts += categoryProducts.length;
 
-                const cardClass = `menu-card h-100 w-100 ${product.isBestSeller && !isOutOfStock ? 'best-seller' : ''} ${isOutOfStock ? 'out-of-stock' : ''}`;
-                
-                // fallback category cho popup: Bánh ngọt -> food, còn lại -> drink hoặc topping
-                const popupCategory = product.category === "Bánh ngọt" ? "food" : (product.category === "Topping" ? "topping" : "drink");
+            // Render danh sách sản phẩm động
+            gridEl.innerHTML = categoryProducts
+                .map(product => {
+                    // Mô phỏng tính trạng của chi nhánh cụ thể (Ví dụ: chi nhánh đó có thể hết hàng một số món nhất định)
+                    let isOutOfStock = product.status === "out_of_stock";
 
-                return `
-                    <div class="col-6 col-md-4 col-lg-3 d-flex">
-                        <div
-                            class="${cardClass}"
-                            data-name="${escapeHTML(product.name)}"
-                            data-img="${escapeHTML(product.img)}"
-                            data-price="${product.price}"
-                            data-category="${popupCategory}"
-                            ${isOutOfStock ? 'style="opacity: 0.55; cursor: not-allowed;"' : ''}
-                        >
-                            ${product.isBestSeller && !isOutOfStock ? '<span class="badge"> <i class="icon">🔥</i> BÁN CHẠY NHẤT </span>' : ''}
-                            ${isOutOfStock ? '<span class="badge" style="background:#ea4335;"><i class="icon">🚫</i> TẠM HẾT HÀNG </span>' : ''}
-                            <img src="${escapeHTML(product.img)}" alt="${escapeHTML(product.name)}" onerror="this.src='images/logo/logo.jpg'" style="${isOutOfStock ? 'filter: grayscale(80%);' : ''}" />
-                            <h4>${escapeHTML(product.name)}</h4>
-                            <p>${escapeHTML(product.desc || 'Hương vị tuyệt hảo – công thức độc quyền GIBOR')}</p>
-                            <span class="price">${Number(product.price).toLocaleString("vi-VN")}đ</span>
+                    const cardClass = `menu-card h-100 w-100 ${product.isBestSeller && !isOutOfStock ? 'best-seller' : ''} ${isOutOfStock ? 'out-of-stock' : ''}`;
+                    
+                    // fallback category cho popup: Bánh ngọt -> food, còn lại -> drink hoặc topping
+                    const popupCategory = product.category === "Bánh ngọt" ? "food" : (product.category === "Topping" ? "topping" : "drink");
+
+                    return `
+                        <div class="col-6 col-md-4 col-lg-3 d-flex">
+                            <div
+                                class="${cardClass}"
+                                data-name="${escapeHTML(product.name)}"
+                                data-img="${escapeHTML(product.img)}"
+                                data-price="${product.price}"
+                                data-category="${popupCategory}"
+                                ${isOutOfStock ? 'style="opacity: 0.55; cursor: not-allowed;"' : ''}
+                            >
+                                ${product.isBestSeller && !isOutOfStock ? '<span class="badge"> <i class="icon">🔥</i> BÁN CHẠY NHẤT </span>' : ''}
+                                ${isOutOfStock ? '<span class="badge" style="background:#ea4335;"><i class="icon">🚫</i> TẠM HẾT HÀNG </span>' : ''}
+                                <img src="${escapeHTML(product.img)}" alt="${escapeHTML(product.name)}" onerror="this.src='images/logo/logo.jpg'" style="${isOutOfStock ? 'filter: grayscale(80%);' : ''}" />
+                                <h4>${escapeHTML(product.name)}</h4>
+                                <p>${escapeHTML(product.desc || 'Hương vị tuyệt hảo – công thức độc quyền GIBOR')}</p>
+                                <span class="price">${Number(product.price).toLocaleString("vi-VN")}đ</span>
+                            </div>
                         </div>
-                    </div>
-                `;
-            })
-            .join("");
+                    `;
+                })
+                .join("");
+        }
     });
+
+    //  Chỉnh sửa bởi TRẦN GIA BẢO
+
+    // Cập nhật hiển thị thông báo không tìm thấy sản phẩm phù hợp
+    const noProductsEl = document.getElementById("noProductsFound");
+    if (noProductsEl) {
+        noProductsEl.style.display = totalVisibleProducts === 0 ? "block" : "none";
+    }
 }
+
+// Hàm khởi tạo sự kiện tìm kiếm sản phẩm trong menu
+function initMenuProductSearch() {
+    const searchInput = document.getElementById("menuProductSearchInput");
+    const clearBtn = document.getElementById("menuProductSearchClearBtn");
+
+    if (!searchInput) return;
+
+    searchInput.addEventListener("input", (e) => {
+        const val = e.target.value.trim();
+        if (clearBtn) {
+            clearBtn.style.display = val.length > 0 ? "block" : "none";
+        }
+        renderMenuProducts();
+    });
+
+    if (clearBtn) {
+        clearBtn.addEventListener("click", () => {
+            searchInput.value = "";
+            clearBtn.style.display = "none";
+            renderMenuProducts();
+            searchInput.focus();
+        });
+    }
+}
+
+    // KẾT THÚC CODE BỞI TRẦN GIA BẢO
 
 window.addEventListener('gibor_products_updated', () => {
     console.log("⚡ Nhận được cập nhật sản phẩm thời gian thực. Đang tải lại thực đơn...");
