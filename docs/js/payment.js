@@ -70,7 +70,7 @@ async function updateQRCode() {
     qrImg.style.display = "none";
     statusLabel.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> Khong tao duoc ma thanh toan payOS. Kiem tra cau hinh API key hoac CORS cua payOS.`;
     statusLabel.style.color = "#c5221f";
-    showToast("Không tạo được mã thanh toán PayOS.");
+    showToast("Khong tao duoc ma thanh toan payOS.");
     return;
   }
 
@@ -1765,21 +1765,6 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
-/*
-========================================================================================
-
-                            KẾT THÚC CODE BỞI TRẦN DƯƠNG GIA BẢO
-
-========================================================================================
-*/
-
-/*
-========================================================================================
-
-                            BẮT ĐẦU CODE BỞI TRẦN GIA BẢO
-
-========================================================================================
-*/
 
 var payosSyncTimeout = null;
 var payosSyncInterval = null;
@@ -1952,7 +1937,7 @@ function playSuccessSound() {
 /*
 ========================================================================================
 
-                            KẾT THÚC CODE BỞI TRẦN GIA BẢO
+                            KẾT THÚC CODE BỞI TRẦN DƯƠNG GIA BẢO
 
 ========================================================================================
 */
