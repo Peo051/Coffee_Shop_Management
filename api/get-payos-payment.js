@@ -1,4 +1,10 @@
+/* 
+========================================================================================
 
+                                   CODE BỞI TRẦN DƯƠNG GIA BẢO
+
+========================================================================================
+*/
 module.exports = async (req, res) => {
   // Thiết lập các CORS Headers cho phép client từ mọi Origin gọi API lấy trạng thái
   res.setHeader('Access-Control-Allow-Origin', '*');
