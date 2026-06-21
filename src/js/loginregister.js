@@ -152,12 +152,23 @@ if (registerForm) {
     const email = $("regEmail").value.trim();
     const phone = $("regPhone").value.trim();
     const password = $("regPassword").value;
+    const confirmPassword = $("regConfirmPassword").value;
 
-    if (!lastName || !firstName || !email || !phone || !password) {
+    if (!lastName || !firstName || !email || !phone || !password || !confirmPassword) {
       showGiborPopup({
         type: "error",
         title: "Thiếu thông tin",
         message: "Vui lòng nhập đầy đủ thông tin đăng ký.",
+        confirmText: "Đã hiểu",
+      });
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      showGiborPopup({
+        type: "error",
+        title: "Mật khẩu không khớp",
+        message: "Mật khẩu xác nhận không trùng khớp. Vui lòng kiểm tra lại.",
         confirmText: "Đã hiểu",
       });
       return;
@@ -199,24 +210,39 @@ if (registerForm) {
       try {
         await firebase.auth().createUserWithEmailAndPassword(email, password);
       } catch (error) {
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = originalText;
+        console.error("Firebase Registration Error:", error);
         
-        let msg = "Không thể tạo tài khoản.";
-        if (error.code === "auth/email-already-in-use") {
-          msg = "Email này đã được đăng ký trên Firebase. Nếu bạn đã đăng ký bằng Google/GitHub, vui lòng đăng nhập bằng phương thức đó.";
-        } else if (error.code === "auth/weak-password") {
-          msg = "Mật khẩu quá yếu. Tối thiểu 6 ký tự.";
-        } else if (error.code === "auth/invalid-email") {
-          msg = "Địa chỉ email không hợp lệ.";
+        // Danh sách các lỗi nhập liệu của người dùng cần chặn để họ sửa lại
+        const userErrors = [
+          "auth/email-already-in-use",
+          "auth/weak-password",
+          "auth/invalid-email"
+        ];
+        
+        if (userErrors.includes(error.code)) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = originalText;
+          
+          let msg = "Không thể tạo tài khoản.";
+          if (error.code === "auth/email-already-in-use") {
+            msg = "Email này đã được đăng ký trên Firebase. Nếu bạn đã đăng ký bằng Google/GitHub, vui lòng đăng nhập bằng phương thức đó.";
+          } else if (error.code === "auth/weak-password") {
+            msg = "Mật khẩu quá yếu. Tối thiểu 6 ký tự.";
+          } else if (error.code === "auth/invalid-email") {
+            msg = "Địa chỉ email không hợp lệ.";
+          }
+          showGiborPopup({
+            type: "error",
+            title: "Đăng ký thất bại",
+            message: msg,
+            confirmText: "Thử lại",
+          });
+          return; // Dừng vì lỗi nhập liệu của người dùng
         }
-        showGiborPopup({
-          type: "error",
-          title: "Đăng ký thất bại",
-          message: msg,
-          confirmText: "Thử lại",
-        });
-        return; // Dừng nếu Firebase lỗi
+        
+        // Nếu là lỗi cấu hình hệ thống của Firebase (ví dụ: chưa bật Email Provider hoặc lỗi mạng),
+        // ta in log cảnh báo và tiếp tục cho phép đăng ký offline dưới LocalStorage
+        console.warn("Firebase system error or provider disabled. Falling back to local storage registration.");
       }
     }
 
