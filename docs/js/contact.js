@@ -42,33 +42,65 @@ if (contactForm) {
     btn.style.opacity = "0.5";
     btn.style.pointerEvents = "none";
 
-    // 4. GIẢ LẬP GỬI DỮ LIỆU
-    setTimeout(() => {
-      // 5. LƯU VÀO LOCALSTORAGE
-      const messages = JSON.parse(localStorage.getItem("gibor_contact_messages") || "[]");
-      messages.push(contactData);
-      localStorage.setItem("gibor_contact_messages", JSON.stringify(messages));
+    // 4. GỬI DỮ LIỆU QUA FORMSPREE
+    fetch("https://formspree.io/f/mkolwbbk", {
+      method: "POST",
+      body: JSON.stringify({
+        name: contactData.hoTen,
+        email: contactData.email,
+        phone: contactData.soDienThoai,
+        department: contactData.boPhan,
+        message: contactData.loiNhan
+      }),
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      }
+    })
+    .then(response => {
+      if (response.ok) {
+        // 5. LƯU VÀO LOCALSTORAGE
+        const messages = JSON.parse(localStorage.getItem("gibor_contact_messages") || "[]");
+        messages.push(contactData);
+        localStorage.setItem("gibor_contact_messages", JSON.stringify(messages));
 
-      // 6. HIỂN THỊ POPUP THÔNG BÁO
+        // 6. HIỂN THỊ POPUP THÔNG BÁO
+        if (typeof showGiborPopup === "function") {
+          showGiborPopup({
+            type: "success",
+            title: "Gửi thành công!",
+            message: "Cảm ơn bạn đã gửi lời nhắn. GIBOR COFFEE sẽ phản hồi bạn trong thời gian sớm nhất!",
+            confirmText: "Đồng ý"
+          });
+        } else if (modal) {
+          modal.style.display = "block";
+        }
+
+        // 8. RESET FORM
+        contactForm.reset();
+      } else {
+        throw new Error("Form submission failed");
+      }
+    })
+    .catch(error => {
+      console.error(error);
       if (typeof showGiborPopup === "function") {
         showGiborPopup({
-          type: "success",
-          title: "Gửi thành công!",
-          message: "Cảm ơn bạn đã gửi lời nhắn. GIBOR COFFEE sẽ phản hồi bạn trong thời gian sớm nhất!",
-          confirmText: "Đồng ý"
+          type: "error",
+          title: "Gửi thất bại",
+          message: "Đã xảy ra lỗi trong quá trình gửi lời nhắn. Vui lòng thử lại sau.",
+          confirmText: "Đóng"
         });
-      } else if (modal) {
-        modal.style.display = "block";
+      } else {
+        alert("Đã xảy ra lỗi trong quá trình gửi lời nhắn. Vui lòng thử lại sau.");
       }
-
+    })
+    .finally(() => {
       // 7. KHÔI PHỤC NÚT
       btn.innerText = originalText;
       btn.style.opacity = "1";
       btn.style.pointerEvents = "all";
-
-      // 8. RESET FORM
-      contactForm.reset();
-    }, 1200);
+    });
   });
 }
 

@@ -70,8 +70,8 @@ function renderCart() {
             <img src="${item.image}" alt="${item.name}">
             <div class="cart-product-info">
               <span class="cart-product-name">${item.name}${comboSuffix}</span>
-              ${!isFood ? `<span class="cart-product-options">🍬 ${sugarText} &nbsp;|&nbsp; 🧊 ${iceText}</span>` : ""}
-              ${toppingText ? `<span class="cart-product-options">🧁 ${toppingText}</span>` : ""}
+              ${!isFood ? `<span class="cart-product-options"> ${sugarText} &nbsp;|&nbsp;  ${iceText}</span>` : ""}
+              ${toppingText ? `<span class="cart-product-options"> ${toppingText}</span>` : ""}
               ${noteText ? `<span class="cart-product-note">${noteText}</span>` : ""}
             </div>
           </div>
